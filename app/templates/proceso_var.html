@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Cálculo de VaR{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Cálculo de VaR de crédito</h2>
+<p class="descripcion">
+  Simulación Monte Carlo por incumplimiento: Pérdida Esperada, Pérdida No Esperada, VaR,
+  escenarios de estrés e índice de concentración (IHH).
+</p>
+
+<form class="filtros" method="post" action="/procesos/var">
+  <div>
+    <label>Periodo</label>
+    <select name="periodo" required>
+      {% for p in periodos %}<option value="{{ p }}" {% if p == periodo %}selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label>Nivel de confianza (%)</label>
+    <input type="number" name="confianza" step="0.01" min="50" max="99.99" value="{{ parametros.confianza }}">
+  </div>
+  <div>
+    <label>Simulaciones</label>
+    <input type="number" name="simulaciones" step="100" min="100" max="20000" value="{{ parametros.simulaciones }}">
+  </div>
+  <div>
+    <label>Factores de estrés (PI ×)</label>
+    <input type="text" name="factores" value="{{ parametros.factores }}">
+  </div>
+  <button class="boton" type="submit">Calcular VaR</button>
+</form>
+
+{% if resultado %}
+  {% include "var_resultado.html" %}
+  <div class="aviso info">
+    El resultado quedó registrado. Consulte el histórico en <a href="/procesos/analisis-var">Análisis de VaR</a>.
+  </div>
+{% endif %}
+{% endblock %}

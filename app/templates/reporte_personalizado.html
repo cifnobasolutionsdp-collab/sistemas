@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block titulo %}Reportes personalizados{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Reportes personalizados</h2>
+<p class="descripcion">Arme el reporte eligiendo dimensión, periodo, orden y número de renglones; expórtelo a CSV.</p>
+
+<form class="filtros" method="get" action="/reportes/personalizado">
+  <div>
+    <label>Dimensión</label>
+    <select name="dimension">
+      {% for clave, nombre in dimensiones.items() %}
+        <option value="{{ clave }}" {% if clave == dimension %}selected{% endif %}>{{ nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label>Periodo</label>
+    <select name="periodo">
+      {% for p in periodos %}<option value="{{ p }}" {% if p == periodo %}selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label>Ordenar por</label>
+    <select name="orden">
+      <option value="total" {% if orden == 'total' %}selected{% endif %}>Saldo total</option>
+      <option value="vigente" {% if orden == 'vigente' %}selected{% endif %}>Saldo vigente</option>
+      <option value="vencido" {% if orden == 'vencido' %}selected{% endif %}>Saldo vencido</option>
+      <option value="creditos" {% if orden == 'creditos' %}selected{% endif %}>Número de créditos</option>
+      <option value="imor" {% if orden == 'imor' %}selected{% endif %}>IMOR</option>
+    </select>
+  </div>
+  <div>
+    <label>Mostrar (0 = todos)</label>
+    <input type="number" name="limite" min="0" value="{{ limite }}">
+  </div>
+  <button class="boton" type="submit">Generar</button>
+  <a class="boton secundario" href="/reportes/personalizado.csv?dimension={{ dimension }}&periodo={{ periodo }}">Exportar CSV</a>
+</form>
+
+{% if not periodo %}
+  <div class="aviso info">No hay cartera cargada.</div>
+{% else %}
+<table class="datos">
+  <thead>
+    <tr>
+      <th>{{ dimensiones[dimension] }}</th>
+      <th class="num">Créditos</th>
+      <th class="num">Saldo Vigente</th>
+      <th class="num">Saldo Vencido</th>
+      <th class="num">Saldo Total</th>
+      <th class="num">Participación</th>
+      <th class="num">IMOR</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in filas %}
+    <tr>
+      <td>{{ f.grupo }}</td>
+      <td class="num">{{ f.creditos | num }}</td>
+      <td class="num">{{ f.saldo_vigente | moneda }}</td>
+      <td class="num">{{ f.saldo_vencido | moneda }}</td>
+      <td class="num">{{ f.total | moneda }}</td>
+      <td class="num">{{ f.participacion | pct }}</td>
+      <td class="num">{{ f.imor | pct }}</td>
+    </tr>
+    {% endfor %}
+    {% if total %}
+    <tr class="total">
+      <td>Total de la cartera</td>
+      <td class="num">{{ total.creditos | num }}</td>
+      <td class="num">{{ total.saldo_vigente | moneda }}</td>
+      <td class="num">{{ total.saldo_vencido | moneda }}</td>
+      <td class="num">{{ total.total | moneda }}</td>
+      <td class="num">100.00%</td>
+      <td class="num">{{ total.imor | pct }}</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

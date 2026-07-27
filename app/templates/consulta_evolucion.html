@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Evolución histórica{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Evolución histórica de la cartera</h2>
+<p class="descripcion">Comportamiento de la cartera por periodo, con Saldo Vigente, Saldo Vencido e IMOR.</p>
+
+{% if not filas %}
+  <div class="aviso info">No hay cartera cargada.</div>
+{% else %}
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Periodo</th>
+      <th class="num">Créditos</th>
+      <th class="num">Saldo Vigente</th>
+      <th class="num">Saldo Vencido</th>
+      <th class="num">Saldo Total</th>
+      <th class="num">IMOR</th>
+      <th>Evolución (saldo total)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in filas %}
+    <tr>
+      <td>{{ f.periodo }}</td>
+      <td class="num">{{ f.creditos | num }}</td>
+      <td class="num">{{ f.saldo_vigente | moneda }}</td>
+      <td class="num">{{ f.saldo_vencido | moneda }}</td>
+      <td class="num">{{ f.total | moneda }}</td>
+      <td class="num">{{ f.imor | pct }}</td>
+      <td>
+        <div class="barra-fondo">
+          <div class="barra verde" style="width: {{ (f.total / max_total * 100) | round(1) }}%"></div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

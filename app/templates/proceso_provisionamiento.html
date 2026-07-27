@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Provisionamiento{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Cálculo de Provisionamiento de cartera</h2>
+<p class="descripcion">
+  Califica cada crédito por días de mora conforme al catálogo de Calificaciones y aplica el
+  porcentaje del catálogo de Reservas Preventivas.
+</p>
+
+<form class="filtros" method="post" action="/procesos/provisionamiento">
+  <div>
+    <label>Periodo</label>
+    <select name="periodo" required>
+      {% for p in periodos %}<option value="{{ p }}" {% if p == periodo %}selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="boton" type="submit">Calcular provisionamiento</button>
+</form>
+
+{% if resultado %}
+  <div class="tarjetas">
+    <div class="tarjeta"><div class="etiqueta">Créditos calificados</div><div class="valor">{{ resultado.creditos | num }}</div></div>
+    <div class="tarjeta"><div class="etiqueta">Exposición total</div><div class="valor">{{ resultado.total_exposicion | moneda }}</div></div>
+    <div class="tarjeta"><div class="etiqueta">Reserva requerida</div><div class="valor rojo">{{ resultado.total_reserva | moneda }}</div></div>
+    <div class="tarjeta"><div class="etiqueta">Reserva / Cartera</div><div class="valor">{{ resultado.porcentaje_reserva_cartera | pct }}</div></div>
+    <div class="tarjeta"><div class="etiqueta">ICOR (reservas / vencido)</div><div class="valor">{{ resultado.icor | pct }}</div></div>
+  </div>
+
+  <table class="datos">
+    <thead>
+      <tr>
+        <th>Calificación</th><th>Descripción</th><th>Días de mora</th>
+        <th class="num">% Reserva</th><th class="num">Créditos</th>
+        <th class="num">Exposición</th><th class="num">Reserva preventiva</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in resultado.desglose %}
+      <tr>
+        <td><strong>{{ f.calificacion }}</strong></td>
+        <td>{{ f.descripcion }}</td>
+        <td>{{ f.rango_mora }}</td>
+        <td class="num">{{ f.porcentaje_reserva | pct }}</td>
+        <td class="num">{{ f.creditos | num }}</td>
+        <td class="num">{{ f.exposicion | moneda }}</td>
+        <td class="num">{{ f.reserva | moneda }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total">
+        <td colspan="4">Total</td>
+        <td class="num">{{ resultado.creditos | num }}</td>
+        <td class="num">{{ resultado.total_exposicion | moneda }}</td>
+        <td class="num">{{ resultado.total_reserva | moneda }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="aviso info">El resultado quedó registrado en el histórico de procesos de riesgo.</div>
+{% endif %}
+{% endblock %}

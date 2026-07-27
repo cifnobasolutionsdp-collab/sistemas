@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block titulo %}Reporte Ejecutivo{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Reporte Ejecutivo de Riesgo de Crédito</h2>
+<p class="descripcion">Generado el {{ fecha.strftime('%d/%m/%Y %H:%M') }} · Periodo {{ periodo or '—' }}</p>
+
+<form class="filtros" method="get" action="/reportes/ejecutivo">
+  <div>
+    <label>Periodo</label>
+    <select name="periodo" onchange="this.form.submit()">
+      {% for p in periodos %}<option value="{{ p }}" {% if p == periodo %}selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="boton secundario no-imprimir" type="button" onclick="window.print()">Imprimir / PDF</button>
+</form>
+
+{% if not hay_datos %}
+  <div class="aviso info">No hay cartera cargada para generar el reporte.</div>
+{% else %}
+
+<h3>Indicadores generales</h3>
+<div class="tarjetas">
+  <div class="tarjeta"><div class="etiqueta">Cartera total</div><div class="valor">{{ actual.total | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Saldo vigente</div><div class="valor verde">{{ actual.saldo_vigente | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Saldo vencido</div><div class="valor rojo">{{ actual.saldo_vencido | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">IMOR</div><div class="valor">{{ actual.imor | pct }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Créditos</div><div class="valor">{{ actual.creditos | num }}</div></div>
+</div>
+
+<h3>Provisionamiento y cobertura</h3>
+<div class="tarjetas">
+  <div class="tarjeta"><div class="etiqueta">Reserva preventiva requerida</div><div class="valor">{{ provision.total_reserva | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Reserva / Cartera</div><div class="valor">{{ provision.porcentaje_reserva_cartera | pct }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">ICOR</div><div class="valor">{{ provision.icor | pct }}</div></div>
+</div>
+
+{% if var %}
+<h3>Riesgo de crédito (VaR al {{ (var.confianza * 100) | pct(1) }})</h3>
+<div class="tarjetas">
+  <div class="tarjeta"><div class="etiqueta">Pérdida Esperada</div><div class="valor">{{ escenario_base.perdida_esperada | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">VaR</div><div class="valor rojo">{{ escenario_base.var | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Pérdida No Esperada</div><div class="valor">{{ escenario_base.perdida_no_esperada | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">IHH acreditados</div><div class="valor">{{ var.ihh_acreditados | num }}</div></div>
+</div>
+<table class="datos">
+  <thead>
+    <tr><th>Escenario</th><th class="num">Pérdida Esperada</th><th class="num">VaR</th><th class="num">Pérdida No Esperada</th></tr>
+  </thead>
+  <tbody>
+    {% for e in var.escenarios %}
+    <tr>
+      <td>{{ e.nombre }}</td>
+      <td class="num">{{ e.perdida_esperada | moneda }}</td>
+      <td class="num">{{ e.var | moneda }}</td>
+      <td class="num">{{ e.perdida_no_esperada | moneda }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="aviso info no-imprimir">
+  No hay un cálculo de VaR registrado para este periodo. Ejecútelo en <a href="/procesos/var">Cálculo de VaR</a>
+  para incluirlo en el reporte.
+</div>
+{% endif %}
+
+<h3>Calificación de la cartera</h3>
+<table class="datos">
+  <thead>
+    <tr><th>Calificación</th><th>Días de mora</th><th class="num">% Reserva</th><th class="num">Créditos</th><th class="num">Exposición</th><th class="num">Reserva</th></tr>
+  </thead>
+  <tbody>
+    {% for f in provision.desglose %}
+    <tr>
+      <td><strong>{{ f.calificacion }}</strong> — {{ f.descripcion }}</td>
+      <td>{{ f.rango_mora }}</td>
+      <td class="num">{{ f.porcentaje_reserva | pct }}</td>
+      <td class="num">{{ f.creditos | num }}</td>
+      <td class="num">{{ f.exposicion | moneda }}</td>
+      <td class="num">{{ f.reserva | moneda }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="dos-columnas">
+  <div>
+    <h3>Principales productos</h3>
+    <table class="datos">
+      <thead><tr><th>Producto</th><th class="num">Saldo total</th><th class="num">Part.</th><th class="num">IMOR</th></tr></thead>
+      <tbody>
+        {% for f in por_producto %}
+        <tr><td>{{ f.grupo }}</td><td class="num">{{ f.total | moneda }}</td><td class="num">{{ f.participacion | pct(1) }}</td><td class="num">{{ f.imor | pct(1) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <h3>Distribución por región</h3>
+    <table class="datos">
+      <thead><tr><th>Región</th><th class="num">Saldo total</th><th class="num">Part.</th><th class="num">IMOR</th></tr></thead>
+      <tbody>
+        {% for f in por_region %}
+        <tr><td>{{ f.grupo }}</td><td class="num">{{ f.total | moneda }}</td><td class="num">{{ f.participacion | pct(1) }}</td><td class="num">{{ f.imor | pct(1) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>Principales sectores económicos</h3>
+    <table class="datos">
+      <thead><tr><th>Sector</th><th class="num">Saldo total</th><th class="num">Part.</th><th class="num">IMOR</th></tr></thead>
+      <tbody>
+        {% for f in por_sector %}
+        <tr><td>{{ f.grupo }}</td><td class="num">{{ f.total | moneda }}</td><td class="num">{{ f.participacion | pct(1) }}</td><td class="num">{{ f.imor | pct(1) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <h3>Evolución reciente</h3>
+    <table class="datos">
+      <thead><tr><th>Periodo</th><th class="num">Saldo total</th><th class="num">IMOR</th></tr></thead>
+      <tbody>
+        {% for f in evolucion %}
+        <tr><td>{{ f.periodo }}</td><td class="num">{{ f.total | moneda }}</td><td class="num">{{ f.imor | pct(1) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

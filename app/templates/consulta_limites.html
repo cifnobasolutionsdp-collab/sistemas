@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}Límites{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Seguimiento de Límites</h2>
+<p class="descripcion">Comparación de los límites individuales y generales contra la posición actual de la cartera.</p>
+
+<form class="filtros" method="get" action="/consultas/limites">
+  <div>
+    <label>Periodo</label>
+    <select name="periodo" onchange="this.form.submit()">
+      {% for p in periodos %}<option value="{{ p }}" {% if p == periodo %}selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+</form>
+
+{% macro tabla_limites(titulo_seccion, filas) %}
+<h3>{{ titulo_seccion }}</h3>
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Clave</th>
+      <th>Límite</th>
+      <th>Dimensión</th>
+      <th class="num">Valor del límite</th>
+      <th class="num">Posición actual</th>
+      <th class="num">Uso del límite</th>
+      <th>Detalle</th>
+      <th>Estatus</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in filas %}
+    <tr>
+      <td>{{ s.limite.clave }}</td>
+      <td>{{ s.limite.nombre }}</td>
+      <td>{{ s.limite.dimension }}</td>
+      <td class="num">{% if s.limite.unidad == 'MXN' %}{{ s.limite.valor | moneda }}{% else %}{{ s.limite.valor | pct }}{% endif %}</td>
+      <td class="num">{% if s.limite.unidad == 'MXN' %}{{ s.actual | moneda }}{% else %}{{ s.actual | pct }}{% endif %}</td>
+      <td class="num">{{ s.uso | pct(1) }}</td>
+      <td>{{ s.detalle }}</td>
+      <td>
+        {% if s.cumple and s.uso < 80 %}<span class="pastilla ok">Cumple</span>
+        {% elif s.cumple %}<span class="pastilla medio">Cercano al límite</span>
+        {% else %}<span class="pastilla mal">Excedido</span>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8">Sin límites definidos. Regístrelos en el catálogo de <a href="/catalogos/limites">Límites</a>.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{% if not periodo %}
+  <div class="aviso info">No hay cartera cargada.</div>
+{% else %}
+  {{ tabla_limites("Límites Individuales", individuales) }}
+  {{ tabla_limites("Límites Generales", generales) }}
+{% endif %}
+{% endblock %}

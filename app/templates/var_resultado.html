@@ -1,0 +1,88 @@
+<div class="tarjetas">
+  <div class="tarjeta"><div class="etiqueta">Periodo</div><div class="valor">{{ resultado.periodo }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Créditos</div><div class="valor">{{ resultado.creditos | num }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Exposición total</div><div class="valor">{{ resultado.exposicion_total | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Confianza</div><div class="valor">{{ (resultado.confianza * 100) | pct(1) }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">IHH acreditados</div><div class="valor">{{ resultado.ihh_acreditados | num }}</div></div>
+</div>
+
+<h3>Escenarios (base y estrés)</h3>
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Escenario</th>
+      <th class="num">Pérdida Esperada</th>
+      <th class="num">VaR</th>
+      <th class="num">Pérdida No Esperada</th>
+      <th class="num">Pérdida máxima simulada</th>
+      <th class="num">PE / Cartera</th>
+      <th class="num">VaR / Cartera</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in resultado.escenarios %}
+    <tr>
+      <td><strong>{{ e.nombre }}</strong></td>
+      <td class="num">{{ e.perdida_esperada | moneda }}</td>
+      <td class="num">{{ e.var | moneda }}</td>
+      <td class="num">{{ e.perdida_no_esperada | moneda }}</td>
+      <td class="num">{{ e.perdida_maxima | moneda }}</td>
+      <td class="num">{{ e.pe_sobre_cartera | pct }}</td>
+      <td class="num">{{ e.var_sobre_cartera | pct }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if resultado.histograma %}
+<h3>Distribución de pérdidas simuladas (escenario base)</h3>
+{% set max_pct = resultado.histograma | map(attribute='porcentaje') | max %}
+<div class="histograma">
+  {% for bin in resultado.histograma %}
+    <div class="bin" style="height: {{ (bin.porcentaje / (max_pct or 1) * 100) | round(1) }}%"
+         title="{{ bin.desde | moneda }} a {{ bin.hasta | moneda }}: {{ bin.porcentaje | pct(1) }} de los escenarios"></div>
+  {% endfor %}
+</div>
+<div class="leyenda-hist">
+  <span>{{ resultado.histograma[0].desde | moneda }}</span>
+  <span>Pérdida simulada</span>
+  <span>{{ resultado.histograma[-1].hasta | moneda }}</span>
+</div>
+{% endif %}
+
+<div class="dos-columnas">
+  <div>
+    <h3>Concentración por dimensión (IHH)</h3>
+    <table class="datos">
+      <thead><tr><th>Dimensión</th><th class="num">IHH (0 - 10,000)</th><th>Nivel</th></tr></thead>
+      <tbody>
+        {% for d in resultado.ihh_dimensiones %}
+        <tr>
+          <td>{{ d.dimension }}</td>
+          <td class="num">{{ d.ihh | num }}</td>
+          <td>
+            {% if d.ihh < 1000 %}<span class="pastilla ok">Baja</span>
+            {% elif d.ihh < 1800 %}<span class="pastilla medio">Moderada</span>
+            {% else %}<span class="pastilla mal">Alta</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>Mayores acreditados</h3>
+    <table class="datos">
+      <thead><tr><th>Socio</th><th class="num">Exposición</th><th class="num">% Cartera</th></tr></thead>
+      <tbody>
+        {% for m in resultado.mayores_acreditados %}
+        <tr>
+          <td>{{ m.socio }}</td>
+          <td class="num">{{ m.exposicion | moneda }}</td>
+          <td class="num">{{ m.porcentaje | pct }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

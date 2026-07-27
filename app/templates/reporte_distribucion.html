@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Reporte de distribución{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Reporte de distribución de la cartera</h2>
+<p class="descripcion">Generado el {{ fecha.strftime('%d/%m/%Y %H:%M') }} · Periodo {{ periodo or '—' }}</p>
+
+<form class="filtros" method="get" action="/reportes/distribucion">
+  <div>
+    <label>Periodo</label>
+    <select name="periodo" onchange="this.form.submit()">
+      {% for p in periodos %}<option value="{{ p }}" {% if p == periodo %}selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="boton secundario no-imprimir" type="button" onclick="window.print()">Imprimir / PDF</button>
+</form>
+
+{% if not periodo %}
+  <div class="aviso info">No hay cartera cargada.</div>
+{% else %}
+  {% for tabla in tablas %}
+  <h3>Por {{ tabla.titulo }}</h3>
+  <table class="datos">
+    <thead>
+      <tr>
+        <th>{{ tabla.titulo }}</th>
+        <th class="num">Créditos</th>
+        <th class="num">Saldo Vigente</th>
+        <th class="num">Saldo Vencido</th>
+        <th class="num">Saldo Total</th>
+        <th class="num">Participación</th>
+        <th class="num">IMOR</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in tabla.filas %}
+      <tr>
+        <td>{{ f.grupo }}</td>
+        <td class="num">{{ f.creditos | num }}</td>
+        <td class="num">{{ f.saldo_vigente | moneda }}</td>
+        <td class="num">{{ f.saldo_vencido | moneda }}</td>
+        <td class="num">{{ f.total | moneda }}</td>
+        <td class="num">{{ f.participacion | pct }}</td>
+        <td class="num">{{ f.imor | pct }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total">
+        <td>Total</td>
+        <td class="num">{{ tabla.total.creditos | num }}</td>
+        <td class="num">{{ tabla.total.saldo_vigente | moneda }}</td>
+        <td class="num">{{ tabla.total.saldo_vencido | moneda }}</td>
+        <td class="num">{{ tabla.total.total | moneda }}</td>
+        <td class="num">100.00%</td>
+        <td class="num">{{ tabla.total.imor | pct }}</td>
+      </tr>
+    </tbody>
+  </table>
+  {% endfor %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titulo %}Detalle de VaR{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Detalle del cálculo de VaR — {{ registro.periodo }}</h2>
+<p class="descripcion">
+  Ejecutado el {{ registro.fecha.strftime('%Y-%m-%d %H:%M') }} UTC ·
+  Confianza {{ parametros.confianza | pct(1) }} · {{ parametros.simulaciones | num }} simulaciones ·
+  Factores de estrés: {{ parametros.factores | join(', ') }}
+</p>
+{% set resultado = datos %}
+{% include "var_resultado.html" %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Panel de control</h2>
+<p class="descripcion">Sistema de Administración de Riesgos de Crédito para Sociedades Cooperativas de Ahorro y Préstamo (SOCAPS) y SOFOMES.</p>
+
+{% if periodo %}
+  <div class="aviso info">Periodo más reciente cargado: <strong>{{ periodo }}</strong></div>
+  <div class="tarjetas">
+    <div class="tarjeta">
+      <div class="etiqueta">Créditos activos</div>
+      <div class="valor">{{ resumen.creditos | num }}</div>
+    </div>
+    <div class="tarjeta">
+      <div class="etiqueta">Saldo vigente</div>
+      <div class="valor">{{ resumen.saldo_vigente | moneda }}</div>
+    </div>
+    <div class="tarjeta">
+      <div class="etiqueta">Saldo vencido</div>
+      <div class="valor rojo">{{ resumen.saldo_vencido | moneda }}</div>
+    </div>
+    <div class="tarjeta">
+      <div class="etiqueta">IMOR</div>
+      <div class="valor {% if resumen.imor > 5 %}rojo{% else %}verde{% endif %}">{{ resumen.imor | pct }}</div>
+    </div>
+    <div class="tarjeta">
+      <div class="etiqueta">Reservas preventivas</div>
+      <div class="valor">{{ provision.total_reserva | moneda }}</div>
+    </div>
+  </div>
+  <div class="acciones">
+    <a class="boton" href="/reportes/ejecutivo">Ver Reporte Ejecutivo</a>
+    <a class="boton secundario" href="/procesos/var">Calcular VaR</a>
+    <a class="boton secundario" href="/procesos/carga">Cargar información</a>
+  </div>
+{% else %}
+  <div class="aviso info">
+    Aún no hay cartera cargada. Utilice <a href="/procesos/carga">Carga de información</a> para importar el lay out,
+    o ejecute el script de datos de demostración (<code>python scripts/seed.py</code>).
+  </div>
+{% endif %}
+{% endblock %}

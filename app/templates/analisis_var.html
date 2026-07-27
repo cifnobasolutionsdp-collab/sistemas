@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Análisis de VaR{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Análisis de VaR</h2>
+<p class="descripcion">Histórico de cálculos de VaR con pérdida esperada, pérdida no esperada e índice de concentración.</p>
+
+{% if not historico %}
+  <div class="aviso info">Aún no hay cálculos de VaR. Ejecute uno en <a href="/procesos/var">Cálculo de VaR</a>.</div>
+{% else %}
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Fecha (UTC)</th>
+      <th>Periodo</th>
+      <th class="num">Confianza</th>
+      <th class="num">Simulaciones</th>
+      <th class="num">Pérdida Esperada</th>
+      <th class="num">VaR</th>
+      <th class="num">Pérdida No Esperada</th>
+      <th class="num">IHH</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for h in historico %}
+    <tr>
+      <td>{{ h.registro.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>{{ h.registro.periodo }}</td>
+      <td class="num">{{ h.parametros.confianza | pct(1) }}</td>
+      <td class="num">{{ h.parametros.simulaciones | num }}</td>
+      <td class="num">{{ h.base.perdida_esperada | moneda if h.base else '—' }}</td>
+      <td class="num">{{ h.base.var | moneda if h.base else '—' }}</td>
+      <td class="num">{{ h.base.perdida_no_esperada | moneda if h.base else '—' }}</td>
+      <td class="num">{{ h.datos.ihh_acreditados | num }}</td>
+      <td><a class="boton chico secundario" href="/procesos/analisis-var/{{ h.registro.id }}">Ver detalle</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

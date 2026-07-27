@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<h2 class="titulo">{{ titulo }}</h2>
+<p class="descripcion">Distribución de los préstamos otorgados con Saldo Vigente y Saldo Vencido.</p>
+
+<form class="filtros" method="get" action="{{ ruta }}">
+  <div>
+    <label>Periodo</label>
+    <select name="periodo" onchange="this.form.submit()">
+      {% for p in periodos %}<option value="{{ p }}" {% if p == periodo %}selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+</form>
+
+{% if not periodo %}
+  <div class="aviso info">No hay cartera cargada.</div>
+{% else %}
+<table class="datos">
+  <thead>
+    <tr>
+      <th>{{ columna_grupo }}</th>
+      <th class="num">Créditos</th>
+      <th class="num">Monto original</th>
+      <th class="num">Saldo Vigente</th>
+      <th class="num">Saldo Vencido</th>
+      <th class="num">Saldo Total</th>
+      <th class="num">Participación</th>
+      <th class="num">IMOR</th>
+      <th>Distribución</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in filas %}
+    <tr>
+      <td>{{ f.grupo }}</td>
+      <td class="num">{{ f.creditos | num }}</td>
+      <td class="num">{{ f.monto_original | moneda }}</td>
+      <td class="num">{{ f.saldo_vigente | moneda }}</td>
+      <td class="num">{{ f.saldo_vencido | moneda }}</td>
+      <td class="num">{{ f.total | moneda }}</td>
+      <td class="num">{{ f.participacion | pct }}</td>
+      <td class="num">{{ f.imor | pct }}</td>
+      <td><div class="barra-fondo"><div class="barra" style="width: {{ f.participacion }}%"></div></div></td>
+    </tr>
+    {% endfor %}
+    <tr class="total">
+      <td>Total</td>
+      <td class="num">{{ total.creditos | num }}</td>
+      <td class="num"></td>
+      <td class="num">{{ total.saldo_vigente | moneda }}</td>
+      <td class="num">{{ total.saldo_vencido | moneda }}</td>
+      <td class="num">{{ total.total | moneda }}</td>
+      <td class="num">100.00%</td>
+      <td class="num">{{ total.imor | pct }}</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

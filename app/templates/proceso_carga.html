@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}Carga de información{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Carga de información (lay out de cartera)</h2>
+<p class="descripcion">
+  Importe el archivo CSV con el lay out definido en <code>docs/layout_carga.md</code>.
+  Los créditos del mismo periodo y folio se reemplazan (la recarga es segura).
+</p>
+
+{% if resultado %}
+  {% if resultado.estatus == 'Exitosa' %}
+    <div class="aviso exito">Carga exitosa: {{ resultado.registros }} registros aceptados para el periodo {{ resultado.periodo }}.</div>
+  {% elif resultado.estatus == 'Parcial' %}
+    <div class="aviso error">Carga parcial: {{ resultado.registros }} aceptados, {{ resultado.rechazados }} rechazados.</div>
+  {% else %}
+    <div class="aviso error">Carga fallida. {{ resultado.mensaje.splitlines()[0] if resultado.mensaje else '' }}</div>
+  {% endif %}
+  {% if resultado.mensaje and resultado.estatus != 'Fallida' %}
+    <pre class="errores">{{ resultado.mensaje }}</pre>
+  {% endif %}
+{% endif %}
+
+<div class="formulario">
+  <form method="post" enctype="multipart/form-data">
+    <div class="campo">
+      <label>Archivo CSV de cartera *</label>
+      <input type="file" name="archivo" accept=".csv" required>
+    </div>
+    <button class="boton" type="submit">Cargar información</button>
+  </form>
+</div>
+
+<h3>Historial de cargas</h3>
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Fecha (UTC)</th><th>Archivo</th><th>Periodo(s)</th>
+      <th class="num">Aceptados</th><th class="num">Rechazados</th><th>Estatus</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in historial %}
+    <tr>
+      <td>{{ c.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>{{ c.archivo }}</td>
+      <td>{{ c.periodo }}</td>
+      <td class="num">{{ c.registros | num }}</td>
+      <td class="num">{{ c.rechazados | num }}</td>
+      <td>
+        {% if c.estatus == 'Exitosa' %}<span class="pastilla ok">{{ c.estatus }}</span>
+        {% elif c.estatus == 'Parcial' %}<span class="pastilla medio">{{ c.estatus }}</span>
+        {% else %}<span class="pastilla mal">{{ c.estatus }}</span>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Sin cargas registradas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
