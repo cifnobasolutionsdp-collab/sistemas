@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block titulo %}{{ postulacion.nombre }}{% endblock %}
+{% block contenido %}
+<h2 class="titulo">{{ postulacion.nombre }}
+  <span class="pildora estado-{{ postulacion.estado }}">{{ ESTADOS_POSTULACION[postulacion.estado] }}</span>
+</h2>
+<p class="descripcion">Postulación a «{{ postulacion.proceso.posicion }}»
+  · {{ postulacion.telefono or 'sin teléfono' }} · {{ postulacion.correo or 'sin correo' }}</p>
+
+<div class="tarjetas">
+  <div class="tarjeta">
+    <div class="etiqueta">Nivel de adecuación</div>
+    <div class="valor {{ 'verde' if postulacion.adecuacion and postulacion.adecuacion >= 70 }}">
+      {{ postulacion.adecuacion | pct if postulacion.adecuacion is not none else '—' }}</div>
+  </div>
+  <div class="tarjeta">
+    <div class="etiqueta">Rapidez (minutos)</div>
+    <div class="valor">{{ '%.1f' % postulacion.duracion_minutos if postulacion.duracion_minutos is not none else '—' }}</div>
+  </div>
+  <div class="tarjeta">
+    <div class="etiqueta">Puntaje obtenido</div>
+    <div class="valor">{{ postulacion.puntaje | num }}</div>
+  </div>
+</div>
+
+<div class="acciones">
+  <a class="boton" href="/candidatos/{{ postulacion.id }}/cv">Generar CV</a>
+  <form method="post" action="/candidatos/{{ postulacion.id }}/estado" style="display:inline">
+    <input type="hidden" name="estado" value="preseleccionado">
+    <button class="boton secundario" type="submit">Preseleccionar</button>
+  </form>
+  <form method="post" action="/candidatos/{{ postulacion.id }}/estado" style="display:inline">
+    <input type="hidden" name="estado" value="contratado">
+    <button class="boton verde" type="submit">Contratar</button>
+  </form>
+  <form method="post" action="/candidatos/{{ postulacion.id }}/estado" style="display:inline">
+    <input type="hidden" name="estado" value="descartado">
+    <button class="boton peligro" type="submit">Descartar</button>
+  </form>
+  <a class="boton secundario" href="/procesos/{{ postulacion.proceso_id }}">Ir al proceso</a>
+</div>
+
+<div class="dos-columnas">
+  <div>
+    <h3>Respuestas al cuestionario</h3>
+    <table class="datos">
+      <thead><tr><th>Pregunta</th><th>Respuesta</th><th class="num">Peso</th></tr></thead>
+      <tbody>
+        {% for r in cv.respuestas %}
+        <tr>
+          <td>{{ r.pregunta }}</td>
+          <td>{{ r.respuesta }}</td>
+          <td class="num">{% if r.excluyente %}<span class="pildora estado-descartado">Excluyente</span>
+              {% elif r.peso is not none %}{{ r.peso | num }}{% else %}—{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3">Sin respuestas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if postulacion.resumen_cv %}
+    <h3>Experiencia compartida</h3>
+    <div class="panel">{{ postulacion.resumen_cv }}</div>
+    {% endif %}
+  </div>
+
+  <div class="telefono">
+    <div class="telefono-cabecera">Conversación Fast Apply</div>
+    <div class="chat">
+      {% for m in postulacion.mensajes %}
+      <div class="burbuja {{ m.emisor }}">{{ m.texto }}
+        <span class="hora">{{ m.enviado_en.strftime('%H:%M') }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

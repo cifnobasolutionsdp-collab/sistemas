@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Postúlate — {{ proceso.posicion }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="postulacion-cuerpo">
+  <div class="telefono grande">
+    <div class="telefono-cabecera">
+      <div class="avatar">💬</div>
+      <div>
+        <strong>{{ proceso.posicion }}</strong><br>
+        <span class="nota-clara">{{ proceso.sucursal.nombre if proceso.sucursal else 'Bolsa de trabajo' }} · Fast Apply</span>
+      </div>
+    </div>
+
+    <div class="chat" id="chat">
+      {% if postulacion %}
+        {% for m in postulacion.mensajes %}
+        <div class="burbuja {{ m.emisor }}">{{ m.texto }}
+          <span class="hora">{{ m.enviado_en.strftime('%H:%M') }}</span></div>
+        {% endfor %}
+      {% else %}
+        <div class="burbuja bot">¡Hola! 👋 Estás a un paso de postularte a
+          <strong>{{ proceso.posicion }}</strong> ({{ proceso.jornada }}, {{ proceso.modalidad }}).
+          Registro simple, sin formularios largos.</div>
+        {% if proceso.descripcion %}
+        <div class="burbuja bot">{{ proceso.descripcion }}</div>
+        {% endif %}
+        <div class="burbuja bot">Para comenzar, compárteme tu nombre y un medio de contacto.</div>
+      {% endif %}
+    </div>
+
+    <div class="chat-entrada">
+      {% if not postulacion %}
+        <form method="post" action="/postular/{{ proceso.token }}/iniciar" class="entrada-form">
+          <input type="text" name="nombre" placeholder="Tu nombre completo *" required>
+          <input type="tel" name="telefono" placeholder="Teléfono (WhatsApp)">
+          <input type="email" name="correo" placeholder="Correo electrónico">
+          <button class="boton" type="submit">Iniciar postulación</button>
+        </form>
+      {% elif postulacion.paso == 'cv' %}
+        <form method="post" action="/postular/{{ proceso.token }}/responder" class="entrada-form">
+          <input type="hidden" name="p" value="{{ postulacion.id }}">
+          <textarea name="texto" rows="3"
+                    placeholder="Escribe un breve resumen de tu experiencia (opcional)…"></textarea>
+          <div class="entrada-botones">
+            <button class="boton" type="submit">Enviar</button>
+            <button class="boton secundario" type="submit"
+                    onclick="this.form.texto.value=''">Continuar sin CV</button>
+          </div>
+        </form>
+      {% elif pregunta %}
+        <form method="post" action="/postular/{{ proceso.token }}/responder" class="entrada-form">
+          <input type="hidden" name="p" value="{{ postulacion.id }}">
+          {% if pregunta.tipo == 'cerrada' %}
+            <div class="entrada-botones">
+              {% for o in pregunta.opciones %}
+              <button class="boton respuesta" type="submit" name="opcion_id" value="{{ o.id }}">{{ o.texto }}</button>
+              {% endfor %}
+            </div>
+          {% else %}
+            <textarea name="texto" rows="3" required placeholder="Escribe tu respuesta…"></textarea>
+            <button class="boton" type="submit">Enviar</button>
+          {% endif %}
+        </form>
+      {% else %}
+        <div class="entrada-final">
+          {% if postulacion.estado == 'descartado' %}
+            La conversación ha finalizado. ¡Gracias por tu interés!
+          {% else %}
+            ✅ ¡Postulación registrada! Tu CV se generó automáticamente.
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  <script>var c = document.getElementById('chat'); if (c) { c.scrollTop = c.scrollHeight; }</script>
+</body>
+</html>

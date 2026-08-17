@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Reclutamiento{% endblock %} — Talento SOCAPS/SOFIPOS/SOFOMES</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <h1>Reclutamiento y Selección</h1>
+    <div class="subtitulo">SOCAPS · SOFIPOS · SOFOMES · Fast Apply</div>
+    <a href="/">Inicio</a>
+
+    <h2>Procesos</h2>
+    <a href="/procesos">Todos los procesos</a>
+    <a href="/procesos/nuevo">Crear proceso</a>
+
+    <h2>Candidatos</h2>
+    <a href="/candidatos">Todos los candidatos</a>
+    <a href="/candidatos?estado=preseleccionado">Preseleccionados</a>
+    <a href="/candidatos?estado=contratado">Contratados</a>
+
+    <h2>Catálogos</h2>
+    {% for slug, cat in CATALOGOS.items() %}
+      <a href="/catalogos/{{ slug }}">{{ cat.titulo }}</a>
+    {% endfor %}
+  </nav>
+  <main class="contenido">
+    {% block contenido %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

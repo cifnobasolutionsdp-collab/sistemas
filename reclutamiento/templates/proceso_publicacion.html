@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Publicación{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Publica y difunde tu proceso</h2>
+<p class="descripcion">Difunde «{{ proceso.posicion }}» online y offline: selecciona los
+  canales de publicación y establece el período para recibir postulaciones
+  (publicación y desactivación automáticas).</p>
+
+<div class="formulario">
+  <form method="post" action="/procesos/{{ proceso.id }}/publicacion">
+    <h4>Canales de publicación</h4>
+    <div class="lista-canales">
+      {% for canal in canales %}
+      <label class="casilla">
+        <input type="checkbox" name="canales" value="{{ canal.id }}"
+               {% if canal.id in seleccionados %}checked{% endif %}>
+        {{ canal.nombre }} <span class="nota">({{ canal.tipo.replace('_', ' ') }})</span>
+      </label>
+      {% else %}
+      <p class="nota">No hay canales en el catálogo. <a href="/catalogos/canales/nuevo">Agrega el primero</a>.</p>
+      {% endfor %}
+    </div>
+
+    <h4>Período para solicitar el trabajo</h4>
+    <div class="fila">
+      <div class="campo">
+        <label>Fecha de publicación (inicio de aplicaciones)</label>
+        <input type="date" name="fecha_publicacion"
+               value="{{ proceso.fecha_publicacion or '' }}">
+      </div>
+      <div class="campo">
+        <label>Fecha de vencimiento (fin de aplicaciones)</label>
+        <input type="date" name="fecha_fin" value="{{ proceso.fecha_fin or '' }}">
+      </div>
+    </div>
+    <p class="nota">El proceso se publica y desactiva automáticamente según estas fechas.
+      Estado actual: <strong>{{ ETIQUETAS_ESTADO_PROCESO[proceso.estado] }}</strong>.</p>
+
+    <div class="acciones">
+      <button class="boton" type="submit">Guardar publicación</button>
+      <a class="boton secundario" href="/procesos/{{ proceso.id }}">Volver al proceso</a>
+      <a class="boton secundario" href="/procesos/{{ proceso.id }}/poster" target="_blank">Generar póster con QR</a>
+    </div>
+  </form>
+</div>
+
+<h3>Enlace de postulación</h3>
+<div class="panel">
+  Comparte este enlace en portales de empleo, tu micrositio, redes sociales o correo:
+  <br><code>/postular/{{ proceso.token }}</code>
+  {% if proceso.recibe_postulaciones %}
+    — <a href="/postular/{{ proceso.token }}" target="_blank">abrir experiencia del candidato</a>
+  {% endif %}
+</div>
+{% endblock %}

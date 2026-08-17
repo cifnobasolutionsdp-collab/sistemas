@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Póster — {{ proceso.posicion }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="poster-cuerpo">
+  <div class="poster">
+    <div class="poster-encabezado">¡Estamos contratando!</div>
+    <h1>{{ proceso.posicion }}</h1>
+    <p class="poster-sub">
+      {{ proceso.sucursal.nombre if proceso.sucursal else '' }}
+      {% if proceso.sucursal and proceso.sucursal.plaza %} · {{ proceso.sucursal.plaza }}{% endif %}
+      · {{ proceso.jornada }} · {{ proceso.modalidad }}
+    </p>
+    <div class="poster-qr">{{ qr | safe }}</div>
+    <p class="poster-instruccion">Escanea el código QR y postúlate por chat en menos de 5 minutos.</p>
+    <p class="poster-enlace">{{ enlace }}</p>
+    <button class="boton no-imprimir" onclick="window.print()">Imprimir póster</button>
+  </div>
+</body>
+</html>

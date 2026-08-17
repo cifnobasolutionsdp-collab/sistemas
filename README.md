@@ -109,3 +109,34 @@ rutas de la aplicación.
 El plan de etapas (definición del lay out, ambientes de prueba y producción,
 capacitación y validaciones) está documentado en
 `docs/etapas_implementacion.md`.
+
+---
+
+# Sistema de Reclutamiento y Selección — SOCAPS / SOFIPOS / SOFOMES
+
+Segunda aplicación del repositorio: atracción de talento con **postulación
+conversacional exprés («Fast Apply»)** para instituciones financieras
+populares. Incluye:
+
+- Procesos de vacantes: Fast Apply, estándar, **desde plantilla** (puestos
+  del sector: Asesor de Crédito, Cajero, Gerente de Sucursal, Analista de
+  Riesgos, Promotor de Captación) o **copiando otro proceso**.
+- **Preguntas de filtro (killer questions)** cerradas con peso y opción
+  excluyente, o abiertas; **nivel de adecuación** calculado por candidato.
+- **Chatbot configurable** (bienvenida, solicitud de CV, cuestionario y
+  despedida) con vista previa estilo mensajería.
+- Postulación pública por chat en `/postular/{token}`: registro simple,
+  descarte automático y **CV autogenerado** a partir de la conversación.
+- **Publicación multicanal** (portales, micrositio, redes, correo e interno)
+  con fechas de publicación/desactivación automáticas y **póster con código
+  QR** imprimible.
+- Gestión de candidatos (preseleccionar, contratar, descartar) y tablero de
+  indicadores.
+
+```bash
+python scripts/seed_reclutamiento.py     # datos de demostración
+uvicorn reclutamiento.main:app --reload --port 8001
+```
+
+Documentación completa en `docs/reclutamiento.md`; pruebas en
+`tests/test_reclutamiento.py`.
