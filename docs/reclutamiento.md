@@ -80,6 +80,10 @@ mensajería instantánea:
   y fin de aplicaciones.
 - **Póster con código QR** del proceso para colocar en sucursales y
   espacios físicos como punto de atracción de talento.
+- **Google for Jobs**: las páginas de postulación incluyen datos
+  estructurados JSON-LD (`JobPosting` de schema.org) para que Google
+  indexe las vacantes automáticamente. El nombre de la empresa se
+  configura con la variable de entorno `RECLUTAMIENTO_EMPRESA`.
 
 ### 6. Gestión de candidatos
 

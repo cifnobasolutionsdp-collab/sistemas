@@ -1,4 +1,5 @@
 """Configuración compartida de plantillas Jinja2 y filtros de formato."""
+import os
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
@@ -49,3 +50,6 @@ templates.env.globals["JORNADAS"] = JORNADAS
 templates.env.globals["MODALIDADES"] = MODALIDADES
 templates.env.globals["ESTADOS_POSTULACION"] = ESTADOS_POSTULACION
 templates.env.globals["ETIQUETAS_ESTADO_PROCESO"] = ETIQUETAS_ESTADO_PROCESO
+templates.env.globals["config"] = {
+    "NOMBRE_EMPRESA": os.environ.get("RECLUTAMIENTO_EMPRESA", "Institución Financiera"),
+}

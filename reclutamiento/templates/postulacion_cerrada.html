@@ -5,6 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vacante no disponible</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org/",
+    "@type": "JobPosting",
+    "title": "{{ proceso.posicion }}",
+    "description": "{{ proceso.descripcion | replace('\n', ' ') | replace('"', '\\"') }}",
+    "datePosted": "{{ proceso.fecha_publicacion.isoformat() if proceso.fecha_publicacion else proceso.creado_en.strftime('%Y-%m-%d') }}",
+    {% if proceso.fecha_fin %}"validThrough": "{{ proceso.fecha_fin.isoformat() }}T23:59:59-06:00",{% endif %}
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": "{{ config.NOMBRE_EMPRESA | default('Institución Financiera', true) }}"
+    },
+    "jobLocation": {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "MX"
+      }
+    }
+  }
+  </script>
 </head>
 <body class="postulacion-cuerpo">
   <div class="telefono grande">

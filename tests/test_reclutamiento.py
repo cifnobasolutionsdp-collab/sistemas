@@ -233,6 +233,15 @@ def test_generar_descripcion():
     assert "Cajero" in texto and "Operaciones" in texto and "Matriz" in texto
 
 
+def test_google_for_jobs_jsonld(cliente, proceso_id):
+    """La página de postulación incluye datos estructurados JobPosting para Google."""
+    token = _token(proceso_id)
+    pagina = cliente.get(f"/postular/{token}")
+    assert '"@type": "JobPosting"' in pagina.text
+    assert '"directApply": true' in pagina.text
+    assert "Asesor de Cr" in pagina.text
+
+
 def test_mensajes_personalizados(cliente, proceso_id):
     respuesta = cliente.post(
         f"/procesos/{proceso_id}/mensajes",

@@ -5,6 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Postúlate — {{ proceso.posicion }}</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org/",
+    "@type": "JobPosting",
+    "title": "{{ proceso.posicion }}",
+    "description": "{{ proceso.descripcion | replace('\n', ' ') | replace('"', '\\"') }}",
+    "datePosted": "{{ proceso.fecha_publicacion.isoformat() if proceso.fecha_publicacion else proceso.creado_en.strftime('%Y-%m-%d') }}",
+    {% if proceso.fecha_fin %}"validThrough": "{{ proceso.fecha_fin.isoformat() }}T23:59:59-06:00",{% endif %}
+    "employmentType": "{{ 'FULL_TIME' if proceso.jornada == 'Jornada Completa' else 'PART_TIME' }}",
+    "jobLocationType": "{{ 'TELECOMMUTE' if proceso.modalidad == 'Remoto' else '' }}",
+    {% if proceso.salario_min or proceso.salario_max %}
+    "baseSalary": {
+      "@type": "MonetaryAmount",
+      "currency": "MXN",
+      "value": {
+        "@type": "QuantitativeValue",
+        {% if proceso.salario_min %}"minValue": {{ proceso.salario_min }},{% endif %}
+        {% if proceso.salario_max %}"maxValue": {{ proceso.salario_max }},{% endif %}
+        "unitText": "MONTH"
+      }
+    },
+    {% endif %}
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": "{{ config.NOMBRE_EMPRESA | default('Institución Financiera', true) }}"
+    },
+    "jobLocation": {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "{{ proceso.sucursal.plaza if proceso.sucursal and proceso.sucursal.plaza else '' }}",
+        "addressRegion": "{{ proceso.sucursal.estado if proceso.sucursal and proceso.sucursal.estado else '' }}",
+        "addressCountry": "MX"
+      }
+    },
+    "directApply": true
+  }
+  </script>
 </head>
 <body class="postulacion-cuerpo">
   <div class="telefono grande">
