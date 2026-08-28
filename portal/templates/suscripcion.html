@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi suscripción — cifnoba.com</title>
+  <link rel="stylesheet" href="/static/portal.css">
+</head>
+<body>
+
+<div class="panel-layout">
+  <nav class="panel-sidebar">
+    <div class="logo">cifnoba<span>.com</span></div>
+    <div class="org-nombre">{{ org.nombre }}</div>
+    <h3>Principal</h3>
+    <a href="/panel">Inicio</a>
+    <h3>Reclutamiento</h3>
+    <a href="/panel/reclutamiento">Vacantes y procesos</a>
+    <a href="/panel/reclutamiento">Candidatos</a>
+    <h3>Configuración</h3>
+    <a href="/panel/organizacion">Mi institución</a>
+    <a href="/panel/suscripcion" class="activo">Mi suscripción</a>
+    <div class="logout"><a href="/logout">Cerrar sesión</a></div>
+  </nav>
+
+  <main class="panel-content">
+    <div class="panel-header">
+      <h2>Mi suscripción</h2>
+      <p>Gestiona tu plan y facturación.</p>
+    </div>
+
+    {% if suscripcion %}
+    <!-- Plan actual -->
+    <div class="card">
+      <h3>Plan actual</h3>
+      <div class="plan-actual">
+        <div class="plan-info">
+          <h4>{{ suscripcion.plan_info.nombre }}
+            <span class="pildora {{ suscripcion.estado }}">{{ ESTADOS_SUSCRIPCION.get(suscripcion.estado, suscripcion.estado) }}</span>
+          </h4>
+          <p>{{ suscripcion.plan_info.descripcion }}</p>
+          <p style="margin-top:6px;font-size:13px">
+            Desde: {{ suscripcion.fecha_inicio.strftime('%d/%m/%Y') }}
+            {% if suscripcion.estado == 'prueba' %}
+              &middot; Prueba gratuita de {{ suscripcion.dias_prueba }} días
+            {% endif %}
+          </p>
+        </div>
+        <div style="text-align:right">
+          <div class="plan-precio-actual">{{ suscripcion.monto_mensual|moneda }}</div>
+          <div class="plan-periodo-actual">MXN / mes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Características del plan -->
+    <div class="card">
+      <h3>Características incluidas</h3>
+      <ul class="plan-features" style="margin-top:10px">
+        <li>{{ 'Vacantes ilimitadas' if suscripcion.plan_info.max_vacantes == 0 else suscripcion.plan_info.max_vacantes ~ ' vacantes activas' }}</li>
+        <li>{{ 'Usuarios ilimitados' if suscripcion.plan_info.max_usuarios == 0 else suscripcion.plan_info.max_usuarios ~ ' usuario' ~ ('s' if suscripcion.plan_info.max_usuarios > 1 else '') }}</li>
+        <li>Postulación Fast Apply</li>
+        <li class="{{ '' if suscripcion.plan_info.incluye_qr else 'no' }}">Pósters con código QR</li>
+        <li class="{{ '' if suscripcion.plan_info.incluye_ai else 'no' }}">Descripciones con IA</li>
+        <li>Soporte: {{ suscripcion.plan_info.soporte }}</li>
+      </ul>
+    </div>
+
+    <!-- Cambiar plan -->
+    <div class="card">
+      <h3>Cambiar de plan</h3>
+      <p style="margin-bottom:16px">Selecciona un nuevo plan. El cambio se aplica inmediatamente.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+        {% for clave, plan in planes.items() %}
+        <div style="border:{{ '2px solid var(--acento)' if clave == suscripcion.plan else '1px solid var(--borde)' }};border-radius:10px;padding:18px;{{ 'background:#f0faf6' if clave == suscripcion.plan else '' }}">
+          <div style="font-weight:700;color:var(--azul)">{{ plan.nombre }}</div>
+          <div style="font-size:22px;font-weight:700;color:var(--azul);margin:6px 0">{{ plan.precio_mensual|moneda }}</div>
+          <div style="font-size:12px;color:var(--texto-claro);margin-bottom:12px">MXN / mes</div>
+          {% if clave == suscripcion.plan %}
+            <span class="btn btn-secondary btn-chico btn-block" style="cursor:default;opacity:.6">Plan actual</span>
+          {% else %}
+            <form method="post" action="/panel/suscripcion/cambiar" style="margin:0">
+              <input type="hidden" name="nuevo_plan" value="{{ clave }}">
+              <button type="submit" class="btn btn-azul btn-chico btn-block">Cambiar a {{ plan.nombre }}</button>
+            </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="aviso info">No tienes una suscripción activa. <a href="/registro">Registra tu institución</a> para comenzar.</div>
+    {% endif %}
+
+    <div style="margin-top:20px">
+      <a href="/panel" class="btn btn-secondary">&larr; Volver al panel</a>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

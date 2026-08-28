@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi institución — cifnoba.com</title>
+  <link rel="stylesheet" href="/static/portal.css">
+</head>
+<body>
+
+<div class="panel-layout">
+  <nav class="panel-sidebar">
+    <div class="logo">cifnoba<span>.com</span></div>
+    <div class="org-nombre">{{ org.nombre }}</div>
+    <h3>Principal</h3>
+    <a href="/panel">Inicio</a>
+    <h3>Reclutamiento</h3>
+    <a href="/panel/reclutamiento">Vacantes y procesos</a>
+    <a href="/panel/reclutamiento">Candidatos</a>
+    <h3>Configuración</h3>
+    <a href="/panel/organizacion" class="activo">Mi institución</a>
+    <a href="/panel/suscripcion">Mi suscripción</a>
+    <div class="logout"><a href="/logout">Cerrar sesión</a></div>
+  </nav>
+
+  <main class="panel-content">
+    <div class="panel-header">
+      <h2>Datos de mi institución</h2>
+      <p>Actualiza la información de tu organización.</p>
+    </div>
+
+    {% if guardado %}
+    <div class="aviso exito">Los datos se guardaron correctamente.</div>
+    {% endif %}
+
+    <div class="card">
+      <form method="post" action="/panel/organizacion">
+        <div class="campo">
+          <label for="nombre">Nombre de la institución</label>
+          <input type="text" id="nombre" name="nombre" value="{{ org.nombre }}" required>
+        </div>
+
+        <div class="campo">
+          <label>RFC</label>
+          <input type="text" value="{{ org.rfc }}" disabled style="background:#f4f6f9;color:#6b7a8c">
+          <small style="font-size:12px;color:#6b7a8c">El RFC no puede modificarse después del registro.</small>
+        </div>
+
+        <div class="campo">
+          <label>Tipo de institución</label>
+          <input type="text" value="{{ TIPOS_ORGANIZACION.get(org.tipo, org.tipo) }}" disabled style="background:#f4f6f9;color:#6b7a8c">
+        </div>
+
+        <div class="fila">
+          <div class="campo">
+            <label for="telefono">Teléfono</label>
+            <input type="tel" id="telefono" name="telefono" value="{{ org.telefono }}">
+          </div>
+          <div class="campo">
+            <label for="email">Correo institucional</label>
+            <input type="email" id="email" name="email" value="{{ org.email }}">
+          </div>
+        </div>
+
+        <div class="fila">
+          <div class="campo">
+            <label for="sitio_web">Sitio web</label>
+            <input type="url" id="sitio_web" name="sitio_web" value="{{ org.sitio_web }}" placeholder="https://www.miinstitucion.com">
+          </div>
+          <div class="campo">
+            <label for="num_empleados">Número de empleados</label>
+            <select id="num_empleados" name="num_empleados">
+              <option value="">Seleccionar...</option>
+              {% for val in ['1-10', '11-50', '51-200', '201-500', '500+'] %}
+              <option value="{{ val }}" {{ 'selected' if org.num_empleados == val }}>{{ val }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="direccion">Dirección</label>
+          <textarea id="direccion" name="direccion" rows="2">{{ org.direccion }}</textarea>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:8px">
+          <button type="submit" class="btn btn-primary">Guardar cambios</button>
+          <a href="/panel" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

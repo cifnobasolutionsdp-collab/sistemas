@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registrar mi institución — cifnoba.com</title>
+  <link rel="stylesheet" href="/static/portal.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">cifnoba<span>.com</span></a>
+  <div class="nav-links">
+    <a href="/login">Ya tengo cuenta</a>
+  </div>
+</nav>
+
+<div class="form-page">
+  <div class="form-card" style="max-width:640px">
+    <h2>Registra tu institución</h2>
+    <p class="subtitulo">Crea tu cuenta y obtén 14 días de prueba gratuita, sin compromiso.</p>
+
+    {% for error in errores %}
+    <div class="aviso error">{{ error }}</div>
+    {% endfor %}
+
+    <form method="post" action="/registro">
+
+      <div class="form-seccion">Datos de la institución</div>
+
+      <div class="campo">
+        <label for="org_nombre">Nombre de la institución *</label>
+        <input type="text" id="org_nombre" name="org_nombre" required placeholder="Ej. Caja Popular Mexicana">
+      </div>
+
+      <div class="fila">
+        <div class="campo">
+          <label for="org_rfc">RFC *</label>
+          <input type="text" id="org_rfc" name="org_rfc" required maxlength="13" placeholder="XAXX010101000" style="text-transform:uppercase">
+        </div>
+        <div class="campo">
+          <label for="org_tipo">Tipo de institución</label>
+          <select id="org_tipo" name="org_tipo">
+            {% for clave, nombre in TIPOS_ORGANIZACION.items() %}
+            <option value="{{ clave }}">{{ nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="fila">
+        <div class="campo">
+          <label for="org_telefono">Teléfono</label>
+          <input type="tel" id="org_telefono" name="org_telefono" placeholder="(55) 1234-5678">
+        </div>
+        <div class="campo">
+          <label for="org_email">Correo institucional</label>
+          <input type="email" id="org_email" name="org_email" placeholder="contacto@miinstitucion.com">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="org_num_empleados">Número de empleados</label>
+        <select id="org_num_empleados" name="org_num_empleados">
+          <option value="">Seleccionar...</option>
+          <option value="1-10">1 a 10</option>
+          <option value="11-50">11 a 50</option>
+          <option value="51-200">51 a 200</option>
+          <option value="201-500">201 a 500</option>
+          <option value="500+">Más de 500</option>
+        </select>
+      </div>
+
+      <div class="form-seccion">Tu cuenta de administrador</div>
+
+      <div class="campo">
+        <label for="usuario_nombre">Nombre completo *</label>
+        <input type="text" id="usuario_nombre" name="usuario_nombre" required placeholder="Ej. María López García">
+      </div>
+
+      <div class="campo">
+        <label for="usuario_email">Correo electrónico *</label>
+        <input type="email" id="usuario_email" name="usuario_email" required placeholder="tu@correo.com">
+      </div>
+
+      <div class="fila">
+        <div class="campo">
+          <label for="usuario_password">Contraseña *</label>
+          <input type="password" id="usuario_password" name="usuario_password" required minlength="8" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="campo">
+          <label for="usuario_password2">Confirmar contraseña *</label>
+          <input type="password" id="usuario_password2" name="usuario_password2" required minlength="8">
+        </div>
+      </div>
+
+      <div class="form-seccion">Selecciona tu plan</div>
+
+      <div class="plan-selector" id="plan-selector">
+        {% for clave, plan in PLANES.items() %}
+        <label class="plan-option {{ 'selected' if clave == 'profesional' }}" data-plan="{{ clave }}">
+          <input type="radio" name="plan" value="{{ clave }}" {{ 'checked' if clave == 'profesional' }}>
+          <div class="plan-option-inner">
+            <div class="plan-opt-nombre">{{ plan.nombre }}</div>
+            <div class="plan-opt-precio">{{ plan.precio_mensual|moneda }}</div>
+            <div class="plan-opt-periodo">MXN / mes</div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+      <p style="font-size:13px;color:#5a6a7c;margin-bottom:20px;text-align:center">
+        Inicia con 14 días gratis. Puedes cambiar de plan en cualquier momento.
+      </p>
+
+      <button type="submit" class="btn btn-primary btn-grande btn-block">Crear mi cuenta gratis</button>
+
+      <p style="text-align:center;margin-top:16px;font-size:13px;color:#5a6a7c">
+        ¿Ya tienes cuenta? <a href="/login">Iniciar sesión</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.plan-option').forEach(function(el) {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('.plan-option').forEach(function(o) { o.classList.remove('selected'); });
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  });
+});
+</script>
+
+</body>
+</html>

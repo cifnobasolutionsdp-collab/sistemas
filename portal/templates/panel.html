@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel — {{ org.nombre }} — cifnoba.com</title>
+  <link rel="stylesheet" href="/static/portal.css">
+</head>
+<body>
+
+<div class="panel-layout">
+  <nav class="panel-sidebar">
+    <div class="logo">cifnoba<span>.com</span></div>
+    <div class="org-nombre">{{ org.nombre }}</div>
+
+    <h3>Principal</h3>
+    <a href="/panel" class="activo">Inicio</a>
+
+    <h3>Reclutamiento</h3>
+    <a href="/panel/reclutamiento" title="Acceder al sistema de reclutamiento">Vacantes y procesos</a>
+    <a href="/panel/reclutamiento" title="Acceder al sistema de reclutamiento">Candidatos</a>
+
+    <h3>Configuración</h3>
+    <a href="/panel/organizacion">Mi institución</a>
+    <a href="/panel/suscripcion">Mi suscripción</a>
+
+    <div class="logout">
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <main class="panel-content">
+    <div class="panel-header">
+      <h2>Bienvenido, {{ usuario.nombre.split(' ')[0] }}</h2>
+      <p>Panel de administración de {{ org.nombre }}</p>
+    </div>
+
+    <!-- Resumen de suscripción -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-label">Plan actual</div>
+        <div class="stat-value">{{ suscripcion.plan_info.nombre if suscripcion else 'Sin plan' }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Estado</div>
+        <div class="stat-value verde">
+          {% if suscripcion %}
+            <span class="pildora {{ suscripcion.estado }}">{{ ESTADOS_SUSCRIPCION.get(suscripcion.estado, suscripcion.estado) }}</span>
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Vacantes permitidas</div>
+        <div class="stat-value">
+          {% if suscripcion %}
+            {{ 'Ilimitadas' if suscripcion.plan_info.max_vacantes == 0 else suscripcion.plan_info.max_vacantes }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Usuarios</div>
+        <div class="stat-value">{{ otros_usuarios|length }} / {{ 'Ilim.' if suscripcion and suscripcion.plan_info.max_usuarios == 0 else (suscripcion.plan_info.max_usuarios if suscripcion else '—') }}</div>
+      </div>
+    </div>
+
+    <!-- Acceso rápido -->
+    <div class="card">
+      <h3>Acceso rápido al sistema de reclutamiento</h3>
+      <p style="margin-bottom:16px">Administra tus vacantes, revisa candidatos y gestiona tus procesos de contratación.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a href="/panel/reclutamiento" class="btn btn-primary">Ir a Reclutamiento</a>
+        <a href="/panel/reclutamiento" class="btn btn-secondary">Crear nueva vacante</a>
+      </div>
+    </div>
+
+    <!-- Info periodo de prueba -->
+    {% if suscripcion and suscripcion.estado == 'prueba' %}
+    <div class="aviso info" style="margin-top:14px">
+      Estás en tu periodo de prueba gratuita de {{ suscripcion.dias_prueba }} días. Disfruta de todas las funciones de tu plan <strong>{{ suscripcion.plan_info.nombre }}</strong> sin costo.
+      <a href="/panel/suscripcion">Ver detalles de la suscripción</a>
+    </div>
+    {% endif %}
+
+    <!-- Datos de la organización -->
+    <div class="card">
+      <h3>Datos de tu institución</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;font-size:14px;margin-top:10px">
+        <div><strong>RFC:</strong> {{ org.rfc }}</div>
+        <div><strong>Tipo:</strong> {{ TIPOS_ORGANIZACION.get(org.tipo, org.tipo) }}</div>
+        <div><strong>Teléfono:</strong> {{ org.telefono or '—' }}</div>
+        <div><strong>Correo:</strong> {{ org.email or '—' }}</div>
+        <div><strong>Empleados:</strong> {{ org.num_empleados or '—' }}</div>
+        <div><strong>Desde:</strong> {{ org.creada_en.strftime('%d/%m/%Y') }}</div>
+      </div>
+      <div style="margin-top:12px">
+        <a href="/panel/organizacion" class="btn btn-secondary btn-chico">Editar datos</a>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
