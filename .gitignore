@@ -5,3 +5,5 @@ sistemas.db
 .venv/
 venv/
 .env
+reclutamiento.db
+portal.db

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titulo %}Mensajes del chatbot{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Configura y personaliza tus mensajes</h2>
+<p class="descripcion">Edita los mensajes que enviará el chatbot durante la interacción con
+  el candidato en «{{ proceso.posicion }}». Puedes usar las variables
+  <code>{{ '{{nombre}}' }}</code>, <code>{{ '{{empresa}}' }}</code> y <code>{{ '{{posicion}}' }}</code>.
+  Si dejas un mensaje vacío se usará el texto por omisión. Máximo 300 caracteres por mensaje.</p>
+
+<div class="dos-columnas">
+  <div class="formulario">
+    <form method="post" action="/procesos/{{ proceso.id }}/mensajes">
+      <div class="campo">
+        <label>Mensaje de bienvenida</label>
+        <textarea name="msg_bienvenida" rows="3" maxlength="300"
+                  placeholder="{{ omision.msg_bienvenida }}">{{ proceso.msg_bienvenida }}</textarea>
+      </div>
+      <div class="campo">
+        <label class="casilla">
+          <input type="checkbox" name="solicitar_cv" value="1" {% if proceso.solicitar_cv %}checked{% endif %}>
+          Solicitar el currículum / resumen de experiencia del candidato en la conversación
+        </label>
+      </div>
+      <div class="campo">
+        <label>Mensaje para solicitar el currículum del candidato</label>
+        <textarea name="msg_solicitud_cv" rows="3" maxlength="300"
+                  placeholder="{{ omision.msg_solicitud_cv }}">{{ proceso.msg_solicitud_cv }}</textarea>
+      </div>
+      <div class="campo">
+        <label>Mensaje antes de iniciar el cuestionario</label>
+        <textarea name="msg_pre_cuestionario" rows="2" maxlength="300"
+                  placeholder="{{ omision.msg_pre_cuestionario }}">{{ proceso.msg_pre_cuestionario }}</textarea>
+      </div>
+      <div class="campo">
+        <label>Mensaje de despedida</label>
+        <textarea name="msg_despedida" rows="3" maxlength="300"
+                  placeholder="{{ omision.msg_despedida }}">{{ proceso.msg_despedida }}</textarea>
+      </div>
+      <div class="acciones">
+        <button class="boton" type="submit">Guardar mensajes</button>
+        <a class="boton secundario" href="/procesos/{{ proceso.id }}">Volver al proceso</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="telefono">
+    <div class="telefono-cabecera">Fast Apply · vista previa</div>
+    <div class="chat">
+      <div class="burbuja bot">{{ vista_previa.msg_bienvenida }}</div>
+      {% if proceso.solicitar_cv %}
+      <div class="burbuja bot">{{ vista_previa.msg_solicitud_cv }}</div>
+      <div class="burbuja candidato">Hola, ¡gracias! Adjunto un resumen de mi experiencia.</div>
+      {% endif %}
+      <div class="burbuja bot">{{ vista_previa.msg_pre_cuestionario }}</div>
+      {% for pregunta in proceso.preguntas[:2] %}
+      <div class="burbuja bot">{{ pregunta.texto }}</div>
+      <div class="burbuja candidato">Sí</div>
+      {% endfor %}
+      <div class="burbuja bot">{{ vista_previa.msg_despedida }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

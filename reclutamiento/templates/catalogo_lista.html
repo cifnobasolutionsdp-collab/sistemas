@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titulo %}{{ cat.titulo }}{% endblock %}
+{% block contenido %}
+<h2 class="titulo">{{ cat.titulo }}</h2>
+{% if cat.descripcion %}<p class="descripcion">{{ cat.descripcion }}</p>{% endif %}
+
+{% if mensaje %}<div class="aviso exito">{{ mensaje }}</div>{% endif %}
+
+<div class="acciones">
+  <a class="boton" href="/catalogos/{{ cat.slug }}/nuevo">+ Nuevo registro</a>
+</div>
+
+<table class="datos">
+  <thead>
+    <tr>
+      {% for campo in cat.campos %}<th>{{ campo.etiqueta }}</th>{% endfor %}
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in registros %}
+    <tr>
+      {% for campo in cat.campos %}
+        <td>
+          {% set valor = r[campo.nombre] %}
+          {% if campo.tipo == 'select' and campo.fk is not none %}
+            {{ mapa_fk[campo.nombre].get(valor, '—') }}
+          {% elif valor is none %}
+            —
+          {% else %}
+            {{ valor }}
+          {% endif %}
+        </td>
+      {% endfor %}
+      <td>
+        <a class="boton chico secundario" href="/catalogos/{{ cat.slug }}/{{ r.id }}/editar">Editar</a>
+        <form method="post" action="/catalogos/{{ cat.slug }}/{{ r.id }}/eliminar" style="display:inline"
+              onsubmit="return confirm('¿Eliminar este registro?');">
+          <button class="boton chico peligro" type="submit">Eliminar</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="{{ cat.campos | length + 1 }}">Sin registros.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

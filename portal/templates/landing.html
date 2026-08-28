@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cifnoba.com — Reclutamiento para Instituciones Financieras</title>
+  <meta name="description" content="Plataforma de reclutamiento y selección de talento para SOCAPS, SOFIPOS y SOFOMES. Postulación conversacional Fast Apply, filtros inteligentes y panel de control.">
+  <link rel="stylesheet" href="/static/portal.css">
+</head>
+<body>
+
+<!-- Navegación -->
+<nav class="nav">
+  <a href="/" class="nav-logo">cifnoba<span>.com</span></a>
+  <div class="nav-links">
+    <a href="#beneficios">Beneficios</a>
+    <a href="#planes">Planes</a>
+    <a href="#como-funciona">Cómo funciona</a>
+    <a href="/login">Iniciar sesión</a>
+    <a href="/registro" class="btn btn-primary btn-chico">Registrar mi institución</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>Atrae y selecciona el mejor talento para tu institución financiera</h1>
+  <p>La plataforma de reclutamiento diseñada para SOCAPS, SOFIPOS y SOFOMES. Publica vacantes, filtra candidatos y contrata en minutos con nuestra tecnología de postulación conversacional.</p>
+  <div class="hero-btns">
+    <a href="/registro" class="btn btn-primary btn-grande">Comenzar prueba gratuita</a>
+    <a href="#planes" class="btn btn-secondary btn-grande" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)">Ver planes y precios</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="numero">Fast Apply</div>
+      <div class="etiqueta">Postulación en menos de 5 min</div>
+    </div>
+    <div class="hero-stat">
+      <div class="numero">100%</div>
+      <div class="etiqueta">Enfocado en el sector financiero</div>
+    </div>
+    <div class="hero-stat">
+      <div class="numero">14 días</div>
+      <div class="etiqueta">Prueba gratuita sin compromiso</div>
+    </div>
+  </div>
+</section>
+
+<!-- Beneficios -->
+<section class="seccion-gris" id="beneficios">
+  <div class="seccion">
+    <h2 class="seccion-titulo">Todo lo que necesitas para reclutar mejor</h2>
+    <p class="seccion-sub">Herramientas especializadas para que tu equipo de recursos humanos atraiga, filtre y contrate al talento ideal.</p>
+    <div class="beneficios-grid">
+      <div class="beneficio">
+        <div class="beneficio-icono">&#x1F4AC;</div>
+        <h3>Fast Apply Conversacional</h3>
+        <p>Los candidatos se postulan mediante un chat guiado, sin formularios largos. Experiencia ágil que aumenta las postulaciones completadas.</p>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icono">&#x1F50D;</div>
+        <h3>Filtros Inteligentes</h3>
+        <p>Configura preguntas con pesos y opciones excluyentes (killer questions) para identificar automáticamente a los mejores candidatos.</p>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icono">&#x1F4CA;</div>
+        <h3>Panel de Indicadores</h3>
+        <p>Visualiza el estado de tus procesos, nivel de adecuación promedio, tiempos de contratación y más indicadores clave.</p>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icono">&#x1F4F1;</div>
+        <h3>Publicación con QR</h3>
+        <p>Genera pósters con código QR para difundir vacantes en sucursales, redes sociales y eventos de reclutamiento.</p>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icono">&#x1F4DD;</div>
+        <h3>CV Autogenerado</h3>
+        <p>La conversación genera automáticamente un CV estructurado del candidato, listo para revisión de tu equipo.</p>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icono">&#x1F3E6;</div>
+        <h3>Plantillas del Sector</h3>
+        <p>Puestos preconfigurados para el sector financiero: asesor de crédito, cajero, gerente de sucursal, analista de riesgos y más.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Para quién -->
+<section class="seccion" id="instituciones">
+  <h2 class="seccion-titulo">Diseñado para instituciones financieras</h2>
+  <p class="seccion-sub">Entendemos las necesidades de contratación del sector financiero mexicano.</p>
+  <div class="inst-grid">
+    <div class="inst">
+      <div class="inst-icono">&#x1F3E0;</div>
+      <h4>SOCAPS</h4>
+      <p>Sociedades Cooperativas de Ahorro y Préstamo</p>
+    </div>
+    <div class="inst">
+      <div class="inst-icono">&#x1F4B0;</div>
+      <h4>SOFIPOS</h4>
+      <p>Sociedades Financieras Populares</p>
+    </div>
+    <div class="inst">
+      <div class="inst-icono">&#x1F4BC;</div>
+      <h4>SOFOMES</h4>
+      <p>Sociedades Financieras de Objeto Múltiple</p>
+    </div>
+    <div class="inst">
+      <div class="inst-icono">&#x1F310;</div>
+      <h4>Otras</h4>
+      <p>Uniones de crédito, cajas de ahorro y más</p>
+    </div>
+  </div>
+</section>
+
+<!-- Planes -->
+<section class="seccion-gris" id="planes">
+  <div class="seccion">
+    <h2 class="seccion-titulo">Planes que se adaptan a tu institución</h2>
+    <p class="seccion-sub">Comienza con una prueba gratuita de 14 días. Sin tarjeta de crédito, sin compromisos.</p>
+    <div class="planes-grid">
+      {% for clave, plan in PLANES.items() %}
+      <div class="plan-card {{ 'destacado' if clave == 'profesional' }}">
+        {% if clave == 'profesional' %}<div class="plan-badge">Más popular</div>{% endif %}
+        <div class="plan-nombre">{{ plan.nombre }}</div>
+        <div class="plan-precio">
+          <span class="monto">{{ plan.precio_mensual|moneda }}</span>
+          <span class="periodo">MXN / mes</span>
+        </div>
+        <div class="plan-desc">{{ plan.descripcion }}</div>
+        <ul class="plan-features">
+          <li>{{ 'Vacantes ilimitadas' if plan.max_vacantes == 0 else plan.max_vacantes ~ ' vacantes activas' }}</li>
+          <li>{{ 'Usuarios ilimitados' if plan.max_usuarios == 0 else plan.max_usuarios ~ ' usuario' ~ ('s' if plan.max_usuarios > 1 else '') }}</li>
+          <li>Postulación Fast Apply</li>
+          <li class="{{ '' if plan.incluye_qr else 'no' }}">Pósters con código QR</li>
+          <li class="{{ '' if plan.incluye_ai else 'no' }}">Descripciones con IA</li>
+          <li>Soporte: {{ plan.soporte }}</li>
+        </ul>
+        <a href="/registro?plan={{ clave }}" class="btn {{ 'btn-primary' if clave == 'profesional' else 'btn-azul' }} btn-block">
+          Comenzar prueba gratuita
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Cómo funciona -->
+<section class="seccion" id="como-funciona">
+  <h2 class="seccion-titulo">Empieza a reclutar en 3 pasos</h2>
+  <p class="seccion-sub">En menos de 10 minutos puedes tener tu primera vacante publicada y recibiendo candidatos.</p>
+  <div class="pasos">
+    <div class="paso">
+      <h4>Registra tu institución</h4>
+      <p>Crea tu cuenta con los datos de tu organización. Obtén acceso inmediato con 14 días de prueba gratuita.</p>
+    </div>
+    <div class="paso">
+      <h4>Publica tus vacantes</h4>
+      <p>Usa nuestras plantillas del sector financiero o crea procesos personalizados con preguntas de filtro.</p>
+    </div>
+    <div class="paso">
+      <h4>Selecciona al mejor talento</h4>
+      <p>Recibe postulaciones, revisa CV autogenerados, compara puntajes de adecuación y contrata rápidamente.</p>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:36px">
+    <a href="/registro" class="btn btn-primary btn-grande">Crear mi cuenta gratis</a>
+  </div>
+</section>
+
+<!-- CTA Final -->
+<section class="hero" style="padding:50px 40px">
+  <h2 style="font-size:28px;margin-bottom:12px">¿Listo para modernizar tu reclutamiento?</h2>
+  <p style="margin-bottom:24px">Únete a las instituciones financieras que ya usan cifnoba.com para atraer al mejor talento.</p>
+  <a href="/registro" class="btn btn-primary btn-grande">Comenzar ahora — es gratis</a>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <p><strong>cifnoba.com</strong> — Plataforma de reclutamiento para instituciones financieras</p>
+  <p style="margin-top:8px">
+    <a href="#beneficios">Beneficios</a> &middot;
+    <a href="#planes">Planes</a> &middot;
+    <a href="/registro">Registrarse</a> &middot;
+    <a href="/login">Iniciar sesión</a>
+  </p>
+  <p style="margin-top:16px;font-size:12px;color:#6b89a8">&copy; 2026 cifnoba.com. Todos los derechos reservados.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %}{{ cat.titulo }}{% endblock %}
+{% block contenido %}
+<h2 class="titulo">{{ cat.titulo }} — {% if registro and registro.id is defined %}Editar{% else %}Nuevo{% endif %} registro</h2>
+
+{% for e in errores %}<div class="aviso error">{{ e }}</div>{% endfor %}
+
+<div class="formulario">
+  <form method="post">
+    {% for campo in cat.campos %}
+      {% set valor = registro[campo.nombre] if registro else '' %}
+      <div class="campo">
+        <label>{{ campo.etiqueta }}{% if campo.requerido %} *{% endif %}</label>
+        {% if campo.tipo == 'select' and campo.fk is not none %}
+          <select name="{{ campo.nombre }}" {% if campo.requerido %}required{% endif %}>
+            <option value="">— Seleccione —</option>
+            {% for id_opcion, etiqueta in opciones_fk[campo.nombre] %}
+              <option value="{{ id_opcion }}" {% if valor|string == id_opcion|string %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+          </select>
+        {% elif campo.tipo == 'select' %}
+          <select name="{{ campo.nombre }}" {% if campo.requerido %}required{% endif %}>
+            <option value="">— Seleccione —</option>
+            {% for opcion in campo.opciones %}
+              <option value="{{ opcion }}" {% if valor == opcion %}selected{% endif %}>{{ opcion }}</option>
+            {% endfor %}
+          </select>
+        {% elif campo.tipo in ('number', 'entero') %}
+          <input type="number" step="{{ '1' if campo.tipo == 'entero' else 'any' }}" name="{{ campo.nombre }}"
+                 value="{{ valor if valor is not none else '' }}" {% if campo.requerido %}required{% endif %}>
+        {% else %}
+          <input type="text" name="{{ campo.nombre }}" value="{{ valor if valor is not none else '' }}"
+                 {% if campo.requerido %}required{% endif %}>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="acciones">
+      <button class="boton" type="submit">Guardar</button>
+      <a class="boton secundario" href="/catalogos/{{ cat.slug }}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

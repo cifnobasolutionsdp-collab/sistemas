@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Procesos{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Procesos de reclutamiento</h2>
+<p class="descripcion">Crea, gestiona y sigue tus procesos en un solo lugar.</p>
+
+<div class="acciones">
+  <a class="boton" href="/procesos/nuevo">+ Crear proceso</a>
+</div>
+
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Posición</th><th>Tipo</th><th>Área</th><th>Sucursal</th>
+      <th>Publicación</th><th>Fin</th><th>Estado</th><th class="num">Candidatos</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in procesos %}
+    <tr>
+      <td><a href="/procesos/{{ p.id }}">{{ p.posicion }}</a></td>
+      <td>{{ TIPOS_PROCESO.get(p.tipo, p.tipo) }}</td>
+      <td>{{ p.area.nombre if p.area else '—' }}</td>
+      <td>{{ p.sucursal.nombre if p.sucursal else '—' }}</td>
+      <td>{{ p.fecha_publicacion or '—' }}</td>
+      <td>{{ p.fecha_fin or '—' }}</td>
+      <td><span class="pildora estado-{{ p.estado }}">{{ ETIQUETAS_ESTADO_PROCESO[p.estado] }}</span></td>
+      <td class="num">{{ p.postulaciones | length }}</td>
+      <td><a class="boton chico secundario" href="/procesos/{{ p.id }}">Abrir</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Sin procesos registrados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

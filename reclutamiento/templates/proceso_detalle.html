@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block titulo %}{{ proceso.posicion }}{% endblock %}
+{% block contenido %}
+<h2 class="titulo">{{ proceso.posicion }}
+  <span class="pildora estado-{{ proceso.estado }}">{{ ETIQUETAS_ESTADO_PROCESO[proceso.estado] }}</span>
+</h2>
+<p class="descripcion">{{ TIPOS_PROCESO.get(proceso.tipo, proceso.tipo) }}
+  · {{ proceso.area.nombre if proceso.area else 'Sin área' }}
+  · {{ proceso.sucursal.nombre if proceso.sucursal else 'Sin sucursal' }}
+  · {{ proceso.jornada }} · {{ proceso.modalidad }}</p>
+
+{% if mensaje %}<div class="aviso exito">{{ mensaje }}</div>{% endif %}
+
+<div class="acciones">
+  <a class="boton secundario" href="/procesos/{{ proceso.id }}/editar">Editar datos</a>
+  <a class="boton secundario" href="/procesos/{{ proceso.id }}/mensajes">Mensajes del chatbot</a>
+  <a class="boton secundario" href="/procesos/{{ proceso.id }}/publicacion">Publicación y difusión</a>
+  <a class="boton secundario" href="/procesos/{{ proceso.id }}/poster" target="_blank">Póster con QR</a>
+  {% if proceso.estado != 'cerrado' %}
+  <form method="post" action="/procesos/{{ proceso.id }}/cerrar" style="display:inline"
+        onsubmit="return confirm('¿Cerrar este proceso? Dejará de recibir postulaciones.');">
+    <button class="boton peligro" type="submit">Cerrar proceso</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if proceso.recibe_postulaciones %}
+<div class="aviso exito">
+  Enlace público de postulación: <a href="/postular/{{ proceso.token }}" target="_blank">/postular/{{ proceso.token }}</a>
+</div>
+{% else %}
+<div class="aviso">El proceso no recibe postulaciones en este momento
+  (estado: {{ ETIQUETAS_ESTADO_PROCESO[proceso.estado] }}). Configura las fechas en
+  «Publicación y difusión».</div>
+{% endif %}
+
+<h3>Descripción de la oferta</h3>
+<div class="panel">{{ proceso.descripcion or 'Sin descripción.' }}</div>
+
+<h3 id="preguntas">Preguntas de filtro (Killer Questions)</h3>
+<p class="descripcion">El chatbot las enviará durante la conversación para avanzar o
+  descartar candidatos automáticamente. Si no configuras preguntas, el proceso sigue
+  funcionando: los candidatos podrán postularse sin filtros automáticos.</p>
+
+<table class="datos">
+  <thead><tr><th>#</th><th>Pregunta</th><th>Tipo</th><th>Respuestas y pesos</th><th></th></tr></thead>
+  <tbody>
+    {% for pregunta in proceso.preguntas %}
+    <tr>
+      <td>{{ pregunta.orden }}</td>
+      <td>{{ pregunta.texto }}</td>
+      <td>{{ 'Cerrada' if pregunta.tipo == 'cerrada' else 'Abierta' }}</td>
+      <td>
+        {% if pregunta.tipo == 'cerrada' %}
+          {% for o in pregunta.opciones %}
+            <span class="pildora {{ 'estado-descartado' if o.excluyente else 'estado-postulado' }}">
+              {{ o.texto }}: {{ 'Excluyente' if o.excluyente else o.peso | num }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="nota">Respuesta libre del candidato</span>
+        {% endif %}
+      </td>
+      <td>
+        <form method="post" action="/procesos/{{ proceso.id }}/preguntas/{{ pregunta.id }}/eliminar"
+              onsubmit="return confirm('¿Eliminar esta pregunta?');">
+          <button class="boton chico peligro" type="submit">Eliminar</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Sin preguntas de filtro configuradas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="panel">
+  <h4>Agregar pregunta de filtro</h4>
+  <form method="post" action="/procesos/{{ proceso.id }}/preguntas/nueva">
+    <div class="campo">
+      <label>Pregunta (máx. 300 caracteres) *</label>
+      <input type="text" name="texto" maxlength="300" required
+             placeholder="p. ej. ¿Cuentas con experiencia en colocación de crédito?">
+    </div>
+    <div class="fila">
+      <div class="campo">
+        <label>Tipo</label>
+        <select name="tipo">
+          <option value="cerrada">Cerrada (Sí / No)</option>
+          <option value="abierta">Abierta (respuesta libre)</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Peso si responde «Sí»</label>
+        <input type="number" name="peso_si" step="any" min="0" value="10">
+      </div>
+      <div class="campo">
+        <label>Si responde «No»</label>
+        <select name="tratamiento_no">
+          <option value="sin_puntos">Continúa sin puntos</option>
+          <option value="excluyente">Excluyente (descarta al candidato)</option>
+        </select>
+      </div>
+    </div>
+    <button class="boton" type="submit">Agregar pregunta</button>
+  </form>
+</div>
+
+<h3>Candidatos ({{ postulaciones | length }})</h3>
+<table class="datos">
+  <thead>
+    <tr><th>Candidato</th><th>Contacto</th><th>Estatus</th><th class="num">Adecuación</th>
+        <th class="num">Minutos</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for c in postulaciones %}
+    <tr>
+      <td><a href="/candidatos/{{ c.id }}">{{ c.nombre }}</a></td>
+      <td>{{ c.telefono or c.correo or '—' }}</td>
+      <td><span class="pildora estado-{{ c.estado }}">{{ ESTADOS_POSTULACION[c.estado] }}</span></td>
+      <td class="num">
+        {% if c.adecuacion is not none %}
+        <div class="adecuacion"><div class="barra-fondo"><div class="barra verde" style="width: {{ c.adecuacion }}%"></div></div>
+        {{ c.adecuacion | pct }}</div>
+        {% else %}—{% endif %}
+      </td>
+      <td class="num">{{ '%.1f' % c.duracion_minutos if c.duracion_minutos is not none else '—' }}</td>
+      <td><a class="boton chico secundario" href="/candidatos/{{ c.id }}/cv">Ver CV</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Aún no hay candidatos en este proceso.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

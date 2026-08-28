@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block titulo %}{{ 'Editar proceso' if proceso is defined and proceso else 'Nuevo proceso' }}{% endblock %}
+{% block contenido %}
+<h2 class="titulo">{{ 'Editar proceso' if proceso is defined and proceso else 'Rellena la descripción de la oferta' }}</h2>
+<p class="descripcion">
+  Completar la información en este punto es crucial: formará parte de la
+  conversación con el candidato. Redacta la descripción de forma clara y
+  concisa, o marca la casilla para generarla automáticamente con el asistente.
+</p>
+{% if origen %}<div class="aviso exito">Precargado desde — {{ origen }}</div>{% endif %}
+
+<div class="formulario">
+  <form method="post" action="{{ '/procesos/' ~ proceso.id ~ '/editar' if proceso is defined and proceso else '/procesos/crear' }}">
+    <input type="hidden" name="plantilla" value="{{ plantilla or '' }}">
+    <input type="hidden" name="copiar" value="{{ copiar or '' }}">
+    <input type="hidden" name="tipo" value="{{ datos.get('tipo', 'fast_apply') }}">
+
+    <div class="campo">
+      <label>Posición de la oferta *</label>
+      <input type="text" name="posicion" required value="{{ datos.get('posicion', '') }}"
+             placeholder="p. ej. Asesor de Crédito">
+    </div>
+    <div class="fila">
+      <div class="campo">
+        <label>Área</label>
+        <select name="area_id">
+          <option value="">— Seleccione —</option>
+          {% for a in areas %}
+          <option value="{{ a.id }}" {% if datos.get('area_id') == a.id %}selected{% endif %}>{{ a.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label>Sucursal</label>
+        <select name="sucursal_id">
+          <option value="">— Seleccione —</option>
+          {% for s in sucursales %}
+          <option value="{{ s.id }}" {% if datos.get('sucursal_id') == s.id %}selected{% endif %}>{{ s.nombre }}{% if s.plaza %} ({{ s.plaza }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="fila">
+      <div class="campo">
+        <label>Jornada laboral</label>
+        <select name="jornada">
+          {% for j in JORNADAS %}
+          <option value="{{ j }}" {% if datos.get('jornada', 'Jornada Completa') == j %}selected{% endif %}>{{ j }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label>Modalidad de trabajo</label>
+        <select name="modalidad">
+          {% for m in MODALIDADES %}
+          <option value="{{ m }}" {% if datos.get('modalidad', 'Presencial') == m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label>Vacantes</label>
+        <input type="number" name="vacantes" min="1" step="1" value="{{ datos.get('vacantes', 1) }}">
+      </div>
+    </div>
+    <div class="fila">
+      <div class="campo">
+        <label>Salario mínimo (mensual)</label>
+        <input type="number" name="salario_min" step="any" value="{{ datos.get('salario_min') if datos.get('salario_min') is not none else '' }}">
+      </div>
+      <div class="campo">
+        <label>Salario máximo (mensual)</label>
+        <input type="number" name="salario_max" step="any" value="{{ datos.get('salario_max') if datos.get('salario_max') is not none else '' }}">
+      </div>
+    </div>
+    <div class="campo">
+      <label>Descripción</label>
+      <textarea name="descripcion" rows="7"
+                placeholder="Describe responsabilidades, requisitos y beneficios…">{{ datos.get('descripcion', '') }}</textarea>
+      <label class="casilla">
+        <input type="checkbox" name="generar_ia" value="1">
+        Si dejo la descripción vacía, generarla automáticamente con el asistente de redacción (IA)
+      </label>
+    </div>
+    <div class="acciones">
+      <button class="boton" type="submit">Guardar proceso</button>
+      <a class="boton secundario" href="{{ '/procesos/' ~ proceso.id if proceso is defined and proceso else '/procesos/nuevo' }}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

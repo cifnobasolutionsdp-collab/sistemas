@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titulo %}Candidatos{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Candidatos</h2>
+<p class="descripcion">Todas las postulaciones recibidas a través de Fast Apply.</p>
+
+<form method="get" class="acciones">
+  <select name="proceso_id">
+    <option value="">Todos los procesos</option>
+    {% for p in procesos %}
+    <option value="{{ p.id }}" {% if proceso_id == p.id %}selected{% endif %}>{{ p.posicion }}</option>
+    {% endfor %}
+  </select>
+  <select name="estado">
+    <option value="">Todos los estatus</option>
+    {% for clave, etiqueta in ESTADOS_POSTULACION.items() %}
+    <option value="{{ clave }}" {% if estado == clave %}selected{% endif %}>{{ etiqueta }}</option>
+    {% endfor %}
+  </select>
+  <button class="boton secundario" type="submit">Filtrar</button>
+</form>
+
+<table class="datos">
+  <thead>
+    <tr><th>Candidato</th><th>Proceso</th><th>Contacto</th><th>Estatus</th>
+        <th class="num">Adecuación</th><th>Inicio</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for c in postulaciones %}
+    <tr>
+      <td><a href="/candidatos/{{ c.id }}">{{ c.nombre }}</a></td>
+      <td>{{ c.proceso.posicion }}</td>
+      <td>{{ c.telefono or c.correo or '—' }}</td>
+      <td><span class="pildora estado-{{ c.estado }}">{{ ESTADOS_POSTULACION[c.estado] }}</span></td>
+      <td class="num">{{ c.adecuacion | pct if c.adecuacion is not none else '—' }}</td>
+      <td>{{ c.iniciada_en.strftime('%d/%m/%Y %H:%M') }}</td>
+      <td><a class="boton chico secundario" href="/candidatos/{{ c.id }}/cv">Ver CV</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">Sin candidatos con los filtros seleccionados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

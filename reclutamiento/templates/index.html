@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Tablero de reclutamiento</h2>
+<p class="descripcion">Contrata en tiempo récord con postulación conversacional Fast Apply.</p>
+
+<div class="tarjetas">
+  <div class="tarjeta">
+    <div class="etiqueta">Procesos publicados</div>
+    <div class="valor">{{ indicadores.procesos_activos | num }}</div>
+  </div>
+  <div class="tarjeta">
+    <div class="etiqueta">Postulaciones</div>
+    <div class="valor">{{ indicadores.postulaciones | num }}</div>
+  </div>
+  <div class="tarjeta">
+    <div class="etiqueta">Preseleccionados</div>
+    <div class="valor">{{ indicadores.preseleccionados | num }}</div>
+  </div>
+  <div class="tarjeta">
+    <div class="etiqueta">Contratados</div>
+    <div class="valor verde">{{ indicadores.contratados | num }}</div>
+  </div>
+  <div class="tarjeta">
+    <div class="etiqueta">Adecuación promedio</div>
+    <div class="valor">{{ indicadores.adecuacion_promedio | pct if indicadores.adecuacion_promedio is not none else '—' }}</div>
+  </div>
+  <div class="tarjeta">
+    <div class="etiqueta">Minutos por postulación</div>
+    <div class="valor">{{ '%.1f' % indicadores.minutos_promedio if indicadores.minutos_promedio is not none else '—' }}</div>
+  </div>
+</div>
+
+<h3>Procesos</h3>
+<table class="datos">
+  <thead>
+    <tr><th>Posición</th><th>Tipo</th><th>Sucursal</th><th>Estado</th><th class="num">Candidatos</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for p in procesos %}
+    <tr>
+      <td><a href="/procesos/{{ p.id }}">{{ p.posicion }}</a></td>
+      <td>{{ TIPOS_PROCESO.get(p.tipo, p.tipo) }}</td>
+      <td>{{ p.sucursal.nombre if p.sucursal else '—' }}</td>
+      <td><span class="pildora estado-{{ p.estado }}">{{ ETIQUETAS_ESTADO_PROCESO[p.estado] }}</span></td>
+      <td class="num">{{ p.postulaciones | length }}</td>
+      <td><a class="boton chico secundario" href="/procesos/{{ p.id }}">Abrir</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Aún no hay procesos. <a href="/procesos/nuevo">Crea el primero</a>.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>Postulaciones recientes</h3>
+<table class="datos">
+  <thead>
+    <tr><th>Candidato</th><th>Proceso</th><th>Estatus</th><th class="num">Adecuación</th></tr>
+  </thead>
+  <tbody>
+    {% for c in recientes %}
+    <tr>
+      <td><a href="/candidatos/{{ c.id }}">{{ c.nombre }}</a></td>
+      <td>{{ c.proceso.posicion }}</td>
+      <td><span class="pildora estado-{{ c.estado }}">{{ ESTADOS_POSTULACION[c.estado] }}</span></td>
+      <td class="num">{{ c.adecuacion | pct if c.adecuacion is not none else '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Sin postulaciones todavía.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>CV — {{ cv.nombre }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="cv-cuerpo">
+  <div class="cv">
+    <div class="cv-encabezado">
+      <h1>{{ cv.nombre }}</h1>
+      <p>{{ cv.telefono or '' }}{% if cv.telefono and cv.correo %} · {% endif %}{{ cv.correo or '' }}</p>
+      <p class="nota">CV autogenerado por Fast Apply a partir de la conversación
+        · {{ cv.fecha.strftime('%d/%m/%Y') }}</p>
+    </div>
+
+    <h2>Posición a la que aplica</h2>
+    <p>{{ cv.posicion }}</p>
+
+    {% if cv.adecuacion is not none %}
+    <h2>Nivel de adecuación</h2>
+    <div class="adecuacion">
+      <div class="barra-fondo"><div class="barra verde" style="width: {{ cv.adecuacion }}%"></div></div>
+      <strong>{{ '%.1f' % cv.adecuacion }}%</strong>
+    </div>
+    {% endif %}
+
+    {% if cv.resumen %}
+    <h2>Resumen de experiencia</h2>
+    <p>{{ cv.resumen }}</p>
+    {% endif %}
+
+    <h2>Respuestas del cuestionario</h2>
+    <table class="datos">
+      <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
+      <tbody>
+        {% for r in cv.respuestas %}
+        <tr><td>{{ r.pregunta }}</td><td>{{ r.respuesta }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="acciones no-imprimir">
+      <button class="boton" onclick="window.print()">Imprimir / PDF</button>
+      <a class="boton secundario" href="/candidatos/{{ postulacion.id }}">Volver al candidato</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Crear proceso{% endblock %}
+{% block contenido %}
+<h2 class="titulo">¿Cómo quieres crear tu proceso?</h2>
+<p class="descripcion">Elige una alternativa para dar de alta la vacante.</p>
+
+<div class="tarjetas opciones-crear">
+  <div class="tarjeta">
+    <h4>Proceso Fast Apply</h4>
+    <p>Ofrece una experiencia de postulación más rápida y accesible vía chat
+       conversacional: preguntas de filtro automáticas y CV autogenerado.</p>
+    <a class="boton" href="/procesos/crear?tipo=fast_apply">Crear Fast Apply</a>
+  </div>
+  <div class="tarjeta">
+    <h4>Proceso estándar</h4>
+    <p>Crea tu proceso estándar y simplifica la gestión de tus vacantes.</p>
+    <a class="boton secundario" href="/procesos/crear?tipo=estandar">Crear estándar</a>
+  </div>
+</div>
+
+<h3>Usar una plantilla</h3>
+<p class="descripcion">Acelera la creación con plantillas de puestos del sector financiero
+   (descripción y preguntas de filtro precargadas).</p>
+<div class="tarjetas opciones-crear">
+  {% for slug, plantilla in plantillas.items() %}
+  <div class="tarjeta">
+    <h4>{{ plantilla.nombre }}</h4>
+    <p>{{ plantilla.descripcion[:140] }}…</p>
+    <p class="nota">{{ plantilla.preguntas | length }} preguntas de filtro incluidas</p>
+    <a class="boton secundario" href="/procesos/crear?tipo=fast_apply&plantilla={{ slug }}">Usar plantilla</a>
+  </div>
+  {% endfor %}
+</div>
+
+<h3>Copiar de otro proceso</h3>
+<p class="descripcion">Optimiza tu tiempo creando un proceso a partir de los datos de otro ya creado.</p>
+<table class="datos">
+  <thead><tr><th>Posición</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+  <tbody>
+    {% for p in procesos %}
+    <tr>
+      <td>{{ p.posicion }}</td>
+      <td>{{ TIPOS_PROCESO.get(p.tipo, p.tipo) }}</td>
+      <td><span class="pildora estado-{{ p.estado }}">{{ ETIQUETAS_ESTADO_PROCESO[p.estado] }}</span></td>
+      <td><a class="boton chico secundario" href="/procesos/crear?copiar={{ p.id }}">Copiar</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Aún no hay procesos para copiar.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
