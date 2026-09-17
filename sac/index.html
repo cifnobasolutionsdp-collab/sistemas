@@ -262,7 +262,24 @@ const APP={
       ref[parts[parts.length-1]]=value;
       return c;
     });
-    this.persist();this.render();
+    this.persist();
+  },
+
+  _scheduleRender(){clearTimeout(this._rt);this._rt=setTimeout(()=>this._renderSafe(),600)},
+  _renderSafe(){
+    const ae=document.activeElement;
+    const path=ae?.getAttribute('data-path');
+    const key=ae?.getAttribute('data-key');
+    const mes=ae?.getAttribute('data-mes');
+    const action=ae?.getAttribute('data-action');
+    const pos=ae?.selectionStart;
+    const tag=ae?.tagName;
+    this.render();
+    let el=null;
+    if(path&&action)el=document.querySelector('[data-path="'+path+'"][data-action="'+action+'"]');
+    else if(key&&mes)el=document.querySelector('[data-key="'+key+'"][data-mes="'+mes+'"]');
+    else if(key&&action)el=document.querySelector('[data-key="'+key+'"][data-action="'+action+'"]');
+    if(el){el.focus();if(pos!=null&&el.setSelectionRange&&(tag==='INPUT'||tag==='TEXTAREA')){try{el.setSelectionRange(pos,pos)}catch(e){}}}
   },
 
   plan(datos,montoOv,plazoOv){
@@ -1275,13 +1292,32 @@ const APP={
     app.onclick=e=>{
       const btn=e.target.closest('[data-action]');
       if(!btn)return;
-      const action=btn.dataset.action;
-      this.handleAction(action,btn,e);
+      const tag=btn.tagName;
+      if(tag==='SELECT'||tag==='TEXTAREA'||(tag==='INPUT'&&btn.type!=='radio'))return;
+      this.handleAction(btn.dataset.action,btn,e);
+    };
+    app.oninput=e=>{
+      const el=e.target.closest('[data-action]');
+      if(!el)return;
+      const a=el.dataset.action;
+      if(a==='updText')this.upd(el.dataset.path,el.value);
+      else if(a==='updNum')this.upd(el.dataset.path,num(el.value));
+      else if(a==='updFlujo'){const s=this.actual();if(!s)return;const arr=(s.flujo[el.dataset.key]||[]).slice();arr[parseInt(el.dataset.mes)]=num(el.value);this.upd('flujo.'+el.dataset.key,arr)}
+      else if(a==='updCanvasNota')this.upd('canvas.'+el.dataset.key+'.nota',el.value);
+      else if(a==='updNivelPlazo'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.nivelesOperacion[parseInt(el.dataset.idx)].plazoMax=num(el.value);this.state.config=cfg;this.persist()}
+      else if(a==='updParam'){const p=JSON.parse(JSON.stringify(this.state.params));const parts=el.dataset.path.split('.');let ref=p;for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];ref[parts[parts.length-1]]=num(el.value);this.state.params=p}
+      else return;
+      this._scheduleRender();
     };
     app.onchange=e=>{
       const el=e.target.closest('[data-action]');
-      if(!el)return;
-      this.handleAction(el.dataset.action,el,e);
+      if(!el||el.tagName!=='SELECT')return;
+      const a=el.dataset.action;
+      if(a==='updText')this.upd(el.dataset.path,el.value);
+      else if(a==='updNum')this.upd(el.dataset.path,num(el.value));
+      else if(a==='updBool')this.upd(el.dataset.path,el.value==='true');
+      else if(a==='updFlujoProp')this.upd(el.dataset.prop,num(el.value));
+      this.render();
     };
   },
 
@@ -1328,7 +1364,7 @@ const APP={
       case 'updText':this.upd(el.dataset.path,el.value);break;
       case 'updNum':this.upd(el.dataset.path,num(el.value));break;
       case 'updBool':this.upd(el.dataset.path,el.value==='true');break;
-      case 'updRadio':this.upd(el.dataset.path,parseInt(el.dataset.val));break;
+      case 'updRadio':this.upd(el.dataset.path,parseInt(el.dataset.val));this.render();break;
       case 'updFlujo':{
         const s=this.actual();if(!s)return;
         const arr=(s.flujo[el.dataset.key]||[]).slice();
@@ -1338,7 +1374,7 @@ const APP={
       }
       case 'updFlujoProp':this.upd(el.dataset.prop,num(el.value));break;
       case 'updCanvasP':{
-        this.upd('canvas.'+el.dataset.key+'.p',parseInt(el.dataset.val));break;
+        this.upd('canvas.'+el.dataset.key+'.p',parseInt(el.dataset.val));this.render();break;
       }
       case 'updCanvasNota':this.upd('canvas.'+el.dataset.key+'.nota',el.value);break;
       case 'updParam':{
@@ -1349,7 +1385,7 @@ const APP={
         this.set({params:p});
         break;
       }
-      case 'guardar':this.persist();this.log('Avance guardado',this.actual()?.folio);break;
+      case 'guardar':this.persist();this.log('Avance guardado',this.actual()?.folio);this.render();break;
       case 'irDictamen':this.set({tab:'dictamen'});break;
       case 'guardarParams':this.persist();this.log('Parámetros modificados','');break;
       case 'resetParams':this.state.params=defaultParams();this.persist();this.log('Parámetros restaurados','');this.render();break;
