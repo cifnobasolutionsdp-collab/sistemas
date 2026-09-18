@@ -84,11 +84,30 @@ const PERIODICIDADES=[
   ['pago_unico','Un solo pago de capital e intereses',0],
   ['pago_unico_periodico','Un solo pago de capital con intereses periódicos',0]
 ];
-const OCUPACIONES=[
+const OCUPACIONES_DEFAULT=[
   ['ama_casa','Ama de casa'],['empleado_informal','Empleado informal'],
   ['empleado_formal','Empleado formal'],['negocio_rural','Dueño de un negocio rural'],
   ['negocio_urbano','Dueño de un negocio urbano']
 ];
+const CLASIFICACION_IFRS9=[
+  ['consumo','Consumo'],['comercial','Comercial'],['vivienda','Vivienda'],
+  ['microempresa','Microempresa'],['pyme','Pequeña y mediana empresa'],
+  ['agropecuario','Agropecuario'],['gobierno','Gobierno']
+];
+const MOP_VALORES=[
+  [0,'MOP 0 — Al corriente'],[1,'MOP 1 — 1 a 29 días'],
+  [2,'MOP 2 — 30 a 59 días'],[3,'MOP 3 — 60 a 89 días'],
+  [4,'MOP 4 — 90 a 119 días'],[5,'MOP 5 — 120 a 149 días'],
+  [6,'MOP 6 — 150+ días'],[7,'MOP 7 — Quita o castigo'],
+  [9,'MOP 9 — Sin información']
+];
+const ACTIVOS_FIJOS=[
+  ['terreno','Terreno'],['inmueble','Inmueble (casa, local, bodega)'],
+  ['vehiculo','Vehículo'],['maquinaria','Maquinaria y equipo'],
+  ['ganado','Ganado'],['mobiliario','Mobiliario y equipo de oficina'],
+  ['otroFijo','Otros activos fijos']
+];
+const COMPROBANTES_ACTIVO=[['ninguno','Sin comprobante'],['escritura','Escritura a nombre del solicitante'],['factura','Factura a nombre del solicitante']];
 const OPC={
   vivienda:[['Propia, libre de gravamen',10],['Propia con hipoteca vigente',7],['De un familiar o cedida',9],['Rentada',3]],
   actividad:[['Negocio propio establecido',10],['Actividad agrícola o ganadera propia',10],['Empleado formal de planta',10],['Profesionista independiente',10],['Comerciante con local fijo',10],['Empleo temporal o eventual',5],['Comercio ambulante sin establecimiento',2],['Ama de casa',8]],
@@ -105,7 +124,8 @@ const OPC={
 const GARANTIAS=[
   ['garantes','Garantía personal — dos garantes'],['aval','Aval o codeudor u obligado solidario'],
   ['prenda','Prenda'],['hipoteca','Hipoteca'],
-  ['ahorro_garantia','Ahorros o inversiones depositadas como garantía en la Institución'],['ninguna','Sin garantía']
+  ['ahorro_garantia','Ahorros o inversiones depositadas como garantía en la Institución'],
+  ['sin_aval_garantia_liquida','Sin aval pero con garantía líquida'],['ninguna','Sin garantía']
 ];
 const CANVAS_BLOQUES=[
   ['aliados','Aliados Clave','¿Quiénes son los proveedores, acopiadores, cooperativas e intermediarios clave?'],
@@ -158,6 +178,7 @@ function defaultParams(){
 function defaultConfig(){
   return {
     nombreInstitucion:'Mi Sociedad Financiera',
+    ocupaciones:[...OCUPACIONES_DEFAULT],
     productos:[
       {nombre:'Crédito Personal',plazoMax:48,tasaAnual:24},
       {nombre:'Crédito Grupal',plazoMax:12,tasaAnual:36},
@@ -193,14 +214,15 @@ function nuevaSolicitud(folio,user){
     datos:{nombre:'',socio:'',ocupacion:'empleado_formal',destino:'',dependientes:4,
       monto:50000,plazo:24,tasaPct:24,periodicidad:'mensual',plan:'fijo',
       producto:'',genero:'',esUnicoSosten:false,tieneDiscapacidad:false,
-      fuenteIngresos:'',proveedorIngresos:'',actividadSecundaria:''},
+      fuenteIngresos:'',proveedorIngresos:'',actividadSecundaria:'',
+      clasificacionIFRS9:'',esPrimerEmpleo:false,nombreNegocio:''},
     caracter:{vivienda:0,resAnios:2,resMeses:0,resPrevAnios:0,resPrevMeses:0,
       actividad:0,labAnios:2,labMeses:0,labPrevAnios:0,labPrevMeses:0,
-      historial:0,atrasos:0,comportamiento:0,referencias:0,antigSocio:0,ahorro:0},
+      historial:0,mopMaximo:0,comprobantePagoMOP:false,comportamiento:0,referencias:0,antigSocio:0,ahorro:0},
     capacidad:{ingTrabajo:0,ingArrendamiento:0,ingIntereses:0,ingTransferencias:0,ingOtros:0,
       gAlimentos:0,gTransporte:0,gEducacion:0,gVivienda:0,gPersonal:0,gLimpieza:0,gVestido:0,gSalud:0,gOtrosGastos:0,
       dCajas:0,dBancos:0,dArrendamiento:0,dPrestamistas:0},
-    capital:{activoCirculante:0,activoFijo:0,pasivoCorto:0,pasivoLargo:0},
+    capital:{activoCirculante:0,activosFijos:{terreno:{monto:0,comprobante:'ninguno'},inmueble:{monto:0,comprobante:'ninguno'},vehiculo:{monto:0,comprobante:'ninguno'},maquinaria:{monto:0,comprobante:'ninguno'},ganado:{monto:0,comprobante:'ninguno'},mobiliario:{monto:0,comprobante:'ninguno'},otroFijo:{monto:0,comprobante:'ninguno'}},pasivoCorto:0,pasivoLargo:0},
     condiciones:{fuente:0,sector:0,entorno:0,antigNegocio:0},
     colateral:{tipo:'garantes',ingGarante1:0,ingGarante2:0,avaluo:0,ingAval:0},
     flujo,flujoAnios:2,flujoMesPago:11,
@@ -366,21 +388,31 @@ const APP={
     const dom=clamp10(pVi*P.arraigoDom.vivienda+pRe*P.arraigoDom.residencia);
 
     const pAc=OPC.actividad[c.actividad]?OPC.actividad[c.actividad][1]:OPC.actividad[0][1];
-    const totalLabMeses=num(c.labAnios)*12+num(c.labMeses);
     let pAn;
-    if(totalLabMeses>=6){
-      pAn=this.calcArraigo(c.labAnios,c.labMeses);
+    if(esPrimerEmpleo){
+      pAn=10;
     }else{
-      pAn=this.calcArraigo(c.labPrevAnios,c.labPrevMeses);
+      const totalLabMeses=num(c.labAnios)*12+num(c.labMeses);
+      if(totalLabMeses>=6){
+        pAn=this.calcArraigo(c.labAnios,c.labMeses);
+      }else{
+        pAn=this.calcArraigo(c.labPrevAnios,c.labPrevMeses);
+      }
     }
     const lab=clamp10(pAc*P.arraigoLab.actividad+pAn*P.arraigoLab.antiguedad);
 
+    const esPrimerEmpleo=!!s.datos.esPrimerEmpleo;
     const sinHist=c.historial!==0;
     const pHi=OPC.historial[c.historial]?OPC.historial[c.historial][1]:OPC.historial[0][1];
     let pAt=10;
     if(!sinHist){
-      if(c.atrasos>P.u.atrasosVeto){pAt=0;vetos.push('Experiencia crediticia: '+c.atrasos+' créditos con atraso, por encima del máximo tolerado de '+P.u.atrasosVeto+'.')}
-      else if(c.atrasos>P.u.atrasosPenal)pAt=-3;
+      const mop=num(c.mopMaximo);
+      if(mop>=5){pAt=0;vetos.push('Experiencia crediticia: MOP '+mop+', la deuda se considera irrecuperable.')}
+      else if(mop>=3){
+        if(c.comprobantePagoMOP)pAt=3;
+        else{pAt=0;vetos.push('Experiencia crediticia: MOP '+mop+' sin comprobante de pago presentado.')}
+      }else if(mop===2)pAt=5;
+      else pAt=10;
     }
     const pCo=sinHist?10:(OPC.comportamiento[c.comportamiento]?OPC.comportamiento[c.comportamiento][1]:10);
     const pRf=OPC.referencias[c.referencias]?OPC.referencias[c.referencias][1]:OPC.referencias[0][1];
@@ -410,7 +442,10 @@ const APP={
 
     // CAPITAL
     const cp=s.capital;
-    const activos=num(cp.activoCirculante)+num(cp.activoFijo);
+    const af=cp.activosFijos||{};
+    let activoFijoComprobado=0,activoFijoTotal=0;
+    ACTIVOS_FIJOS.forEach(a=>{const it=af[a[0]];if(it){activoFijoTotal+=num(it.monto);if(it.comprobante&&it.comprobante!=='ninguno')activoFijoComprobado+=num(it.monto)}});
+    const activos=num(cp.activoCirculante)+activoFijoComprobado;
     const pasivos=num(cp.pasivoCorto)+num(cp.pasivoLargo);
     const endAct=activos>0?pasivos/activos:1;
     let q1=0;
@@ -427,11 +462,17 @@ const APP={
     // CONDICIONES
     const cd=s.condiciones;
     const pFu=OPC.fuente[cd.fuente]?OPC.fuente[cd.fuente][1]:10;
-    const pSe=OPC.sector[cd.sector]?OPC.sector[cd.sector][1]:10;
-    const pEn=OPC.entorno[cd.entorno]?OPC.entorno[cd.entorno][1]:10;
-    const pAN=OPC.antigNegocio[cd.antigNegocio]?OPC.antigNegocio[cd.antigNegocio][1]:10;
-    const neg2=pSe*P.negocio.sector+pEn*P.negocio.entorno+pAN*P.negocio.antiguedad;
-    const condiciones=(pFu*P.condiciones.fuente+neg2*P.condiciones.negocio)/10;
+    const tieneOVaEmprender=(s.datos.ocupacion==='negocio_rural'||s.datos.ocupacion==='negocio_urbano')||(c.actividad===0||c.actividad===4);
+    let condiciones;
+    if(tieneOVaEmprender){
+      const pSe=OPC.sector[cd.sector]?OPC.sector[cd.sector][1]:10;
+      const pEn=OPC.entorno[cd.entorno]?OPC.entorno[cd.entorno][1]:10;
+      const pAN=OPC.antigNegocio[cd.antigNegocio]?OPC.antigNegocio[cd.antigNegocio][1]:10;
+      const neg2=pSe*P.negocio.sector+pEn*P.negocio.entorno+pAN*P.negocio.antiguedad;
+      condiciones=(pFu*P.condiciones.fuente+neg2*P.condiciones.negocio)/10;
+    }else{
+      condiciones=pFu/10;
+    }
 
     // COLATERAL
     const g=s.colateral;let colateral=0;let colTxt='';
@@ -446,6 +487,10 @@ const APP={
       const cAval=pl.cuotaMensual>0?num(g.ingAval)/pl.cuotaMensual:0;
       colateral=cAval>=2?1:cAval>=1?0.7:0;
       colTxt='Aval/codeudor: cobertura de cuota '+cAval.toFixed(2)+(colateral>=0.7?' — aceptable':' — insuficiente');
+    }else if(g.tipo==='sin_aval_garantia_liquida'){
+      const cov=pl.monto>0?num(g.avaluo)/pl.monto:0;
+      colateral=cov>=P.u.covAhorro?1:0;
+      colTxt='Garantía líquida sin aval: cobertura '+cov.toFixed(2)+' veces el crédito; se requiere '+P.u.covAhorro.toFixed(2)+(colateral?' — adecuada':' — insuficiente');
     }else if(g.tipo==='ninguna'){
       colateral=0;colTxt='Sin garantía';
     }else{
@@ -510,7 +555,8 @@ const APP={
       ingresos,egresosTot,disponible,cobCuota,ratioGI,ratioGCI,alertaGastos,gastoRef,
       bonusDiscapacidad,bonusGenero,
       flujo:{ing,egr,res,acum,ratio:ratioFlujo,cobertura:cobFlujo,mesesNeg,mesesFlujo,ingMesPago,compromisoMes,f1,f2,f3},
-      sinHist,tieneNegocio,flujoRequerido,pesos:{cincoC:wC,flujo:wF,canvas:wV}
+      sinHist,tieneNegocio,tieneOVaEmprender,flujoRequerido,pesos:{cincoC:wC,flujo:wF,canvas:wV},
+      activoFijoTotal,activoFijoComprobado
     };
   },
 
@@ -773,7 +819,15 @@ const APP={
         <option value="true" ${d.tieneDiscapacidad?'selected':''}>Sí</option>
       </select>`,E.bonusDiscapacidad)+
       this.renderField('Ocupación','Actividad principal del solicitante',`<select class="input" data-action="updText" data-path="datos.ocupacion">
-        ${OCUPACIONES.map(o=>`<option value="${o[0]}" ${d.ocupacion===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+        ${(cfg.ocupaciones||OCUPACIONES_DEFAULT).map(o=>`<option value="${o[0]}" ${d.ocupacion===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+      </select>`)+
+      this.renderField('Clasificación IFRS9','Tipo de crédito según las Normas Internacionales de Información Financiera',`<select class="input" data-action="updText" data-path="datos.clasificacionIFRS9">
+        <option value="" ${!d.clasificacionIFRS9?'selected':''}>Seleccione...</option>
+        ${CLASIFICACION_IFRS9.map(c2=>`<option value="${c2[0]}" ${d.clasificacionIFRS9===c2[0]?'selected':''}>${c2[1]}</option>`).join('')}
+      </select>`)+
+      this.renderField('¿Es su primer empleo?','Si es su primer empleo se desactivará el arraigo laboral',`<select class="input" data-action="updBool" data-path="datos.esPrimerEmpleo">
+        <option value="false" ${!d.esPrimerEmpleo?'selected':''}>No</option>
+        <option value="true" ${d.esPrimerEmpleo?'selected':''}>Sí</option>
       </select>`)+
       this.renderField('Destino del crédito','Capital de trabajo, activo fijo, ciclo agrícola...',`<input class="input" type="text" value="${esc(d.destino)}" data-action="updText" data-path="datos.destino">`)+
       this.renderField('Dependientes económicos','Se usa para el gasto familiar de referencia',`<input class="input" type="number" value="${d.dependientes}" data-action="updNum" data-path="datos.dependientes" min="0">`)
@@ -806,7 +860,15 @@ const APP={
 
     let expFields=this.renderField('Experiencia crediticia','Determina si se evalúa el comportamiento de pago',this.renderRadio('historial',OPC.historial,c.historial,'caracter.historial'),E.sub.pHi);
     if(!E.sinHist){
-      expFields+=this.renderField('Créditos con atraso en 24 meses','Más de '+P.u.atrasosVeto+' es causal de rechazo',`<input class="input" type="number" value="${c.atrasos}" data-action="updNum" data-path="caracter.atrasos" min="0">`,E.sub.pAt.toFixed(0));
+      expFields+=this.renderField('MOP Máximo','Modo de Pago máximo registrado en Buró de Crédito en los últimos 24 meses',`<select class="input" data-action="updNum" data-path="caracter.mopMaximo">
+        ${MOP_VALORES.map(m=>`<option value="${m[0]}" ${num(c.mopMaximo)===m[0]?'selected':''}>${m[1]}</option>`).join('')}
+      </select>`,E.sub.pAt.toFixed(0));
+      if(num(c.mopMaximo)>=3){
+        expFields+=this.renderField('Comprobante de pago de la deuda','MOP 3 o mayor: se requiere que el solicitante presente comprobante de pago',`<select class="input" data-action="updBool" data-path="caracter.comprobantePagoMOP">
+          <option value="false" ${!c.comprobantePagoMOP?'selected':''}>No presentado</option>
+          <option value="true" ${c.comprobantePagoMOP?'selected':''}>Sí, comprobante presentado</option>
+        </select>`);
+      }
       expFields+=this.renderField('Comportamiento de pago','Atraso máximo registrado',this.renderRadio('comportamiento',OPC.comportamiento,c.comportamiento,'caracter.comportamiento'),E.sub.pCo);
     }else{
       expFields+=this.renderField('Atrasos y comportamiento','Sin historial: se califica con el puntaje máximo',`<strong>No aplica</strong>`,'10');
@@ -826,15 +888,19 @@ const APP={
     }
 
     let labFields=this.renderField('Actividad o fuente de ingresos','Principal fuente de ingresos del solicitante',this.renderRadio('actividad',OPC.actividad,c.actividad,'caracter.actividad'),E.sub.pAc);
-    labFields+=this.renderField('Tiempo en la actividad actual','Capture en años y meses',`<div style="display:flex;gap:10px">
-      <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.labAnios}" data-action="updNum" data-path="caracter.labAnios" min="0"></div>
-      <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.labMeses}" data-action="updNum" data-path="caracter.labMeses" min="0" max="11"></div>
-    </div>`,E.sub.pAn.toFixed(0));
-    if(totalLabMeses<6){
-      labFields+=this.renderField('Tiempo en actividad anterior','Menos de 6 meses: se evalúa la anterior. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts',`<div style="display:flex;gap:10px">
-        <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.labPrevAnios}" data-action="updNum" data-path="caracter.labPrevAnios" min="0"></div>
-        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.labPrevMeses}" data-action="updNum" data-path="caracter.labPrevMeses" min="0" max="11"></div>
-      </div>`);
+    if(d.esPrimerEmpleo){
+      labFields+=this.renderField('Tiempo en la actividad actual','<strong>Primer empleo:</strong> no se evalúa antigüedad laboral',`<strong>No aplica (primer empleo)</strong>`,'10');
+    }else{
+      labFields+=this.renderField('Tiempo en la actividad actual','Capture en años y meses',`<div style="display:flex;gap:10px">
+        <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.labAnios}" data-action="updNum" data-path="caracter.labAnios" min="0"></div>
+        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.labMeses}" data-action="updNum" data-path="caracter.labMeses" min="0" max="11"></div>
+      </div>`,E.sub.pAn.toFixed(0));
+      if(totalLabMeses<6){
+        labFields+=this.renderField('Tiempo en actividad anterior','Menos de 6 meses: se evalúa la anterior. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts',`<div style="display:flex;gap:10px">
+          <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.labPrevAnios}" data-action="updNum" data-path="caracter.labPrevAnios" min="0"></div>
+          <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.labPrevMeses}" data-action="updNum" data-path="caracter.labPrevMeses" min="0" max="11"></div>
+        </div>`);
+      }
     }
     if(d.ocupacion==='ama_casa'){
       labFields+=this.renderField('¿De quién recibe sus ingresos?','Persona que aporta al ingreso familiar',`<input class="input" type="text" value="${esc(d.proveedorIngresos||'')}" data-action="updText" data-path="datos.proveedorIngresos">`);
@@ -888,31 +954,47 @@ const APP={
 
   renderTabCapital(s,E){
     const cp=s.capital,P=this.state.params;
-    return this.renderSection('Activos totales — lo que tiene',mx(num(cp.activoCirculante)+num(cp.activoFijo)),
-      this.renderField('Activo circulante','Efectivo, inventarios, cuentas por cobrar',`<input class="input" type="number" value="${cp.activoCirculante}" data-action="updNum" data-path="capital.activoCirculante" min="0">`)+
-      this.renderField('Activo fijo','Terrenos, maquinaria, vehículos, ganado',`<input class="input" type="number" value="${cp.activoFijo}" data-action="updNum" data-path="capital.activoFijo" min="0">`)
+    const af=cp.activosFijos||{};
+    let activoFijoFields='';
+    ACTIVOS_FIJOS.forEach(a=>{
+      const it=af[a[0]]||{monto:0,comprobante:'ninguno'};
+      activoFijoFields+=this.renderField(a[1],'',`<div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="field" style="flex:1"><label>Monto declarado</label><input class="input" type="number" value="${it.monto}" data-action="updActivoFijo" data-key="${a[0]}" data-prop="monto" min="0"></div>
+        <div class="field" style="flex:1.5"><label>Comprobante</label><select class="input" data-action="updActivoFijo" data-key="${a[0]}" data-prop="comprobante">
+          ${COMPROBANTES_ACTIVO.map(c2=>`<option value="${c2[0]}" ${it.comprobante===c2[0]?'selected':''}>${c2[1]}</option>`).join('')}
+        </select></div>
+      </div>`);
+    });
+    return this.renderSection('Activos totales — lo que tiene','Comprobado: '+mx(E.activoFijoComprobado)+' de '+mx(E.activoFijoTotal)+' declarado',
+      this.renderField('Activo circulante','Efectivo, inventarios, cuentas por cobrar',`<input class="input" type="number" value="${cp.activoCirculante}" data-action="updNum" data-path="capital.activoCirculante" min="0">`)
     )+
+    this.renderSection('Activo fijo desglosado','Solo se toman en cuenta montos con escritura o factura a nombre del solicitante',activoFijoFields)+
     this.renderSection('Pasivos totales — lo que debe',mx(num(cp.pasivoCorto)+num(cp.pasivoLargo)),
       this.renderField('Pasivo de corto plazo','Vencimientos dentro de doce meses',`<input class="input" type="number" value="${cp.pasivoCorto}" data-action="updNum" data-path="capital.pasivoCorto" min="0">`)+
       this.renderField('Pasivo de largo plazo','Vencimientos a más de doce meses',`<input class="input" type="number" value="${cp.pasivoLargo}" data-action="updNum" data-path="capital.pasivoLargo" min="0">`)
     )+
     this.renderSection('Indicadores de capital',pct(P.bloques.capital)+' del score 5C · '+pct(E.capital),
-      this.renderField('Capital contable','Activos menos pasivos',`<strong>${mx(num(cp.activoCirculante)+num(cp.activoFijo)-num(cp.pasivoCorto)-num(cp.pasivoLargo))}</strong>`)+
-      this.renderField('Endeudamiento actual','Arriba de '+pct(P.u.endActVeto)+' es rechazo',`<strong>${pct((num(cp.activoCirculante)+num(cp.activoFijo))>0?(num(cp.pasivoCorto)+num(cp.pasivoLargo))/(num(cp.activoCirculante)+num(cp.activoFijo)):1)}</strong>`,E.sub.q1.toFixed(0))+
-      this.renderField('Endeudamiento con el crédito','Arriba de '+pct(P.u.endProyVeto)+' es rechazo',`<strong>${pct((E.pl.monto+num(cp.activoCirculante)+num(cp.activoFijo))>0?(num(cp.pasivoCorto)+num(cp.pasivoLargo)+E.pl.monto)/(num(cp.activoCirculante)+num(cp.activoFijo)+E.pl.monto):1)}</strong>`,E.sub.q2.toFixed(0))
+      this.renderField('Capital contable','Activos comprobados menos pasivos',`<strong>${mx(num(cp.activoCirculante)+E.activoFijoComprobado-num(cp.pasivoCorto)-num(cp.pasivoLargo))}</strong>`)+
+      this.renderField('Endeudamiento actual','Arriba de '+pct(P.u.endActVeto)+' es rechazo',`<strong>${pct((num(cp.activoCirculante)+E.activoFijoComprobado)>0?(num(cp.pasivoCorto)+num(cp.pasivoLargo))/(num(cp.activoCirculante)+E.activoFijoComprobado):1)}</strong>`,E.sub.q1.toFixed(0))+
+      this.renderField('Endeudamiento con el crédito','Arriba de '+pct(P.u.endProyVeto)+' es rechazo',`<strong>${pct((E.pl.monto+num(cp.activoCirculante)+E.activoFijoComprobado)>0?(num(cp.pasivoCorto)+num(cp.pasivoLargo)+E.pl.monto)/(num(cp.activoCirculante)+E.activoFijoComprobado+E.pl.monto):1)}</strong>`,E.sub.q2.toFixed(0))
     );
   },
 
   renderTabCondiciones(s,E){
     const cd=s.condiciones,P=this.state.params;
-    return this.renderSection('Fuente principal de ingresos',pct(P.condiciones.fuente)+' de las condiciones',
+    let html=this.renderSection('Fuente principal de ingresos',pct(P.condiciones.fuente)+' de las condiciones',
       this.renderField('Estabilidad de la fuente','Cómo se comporta el ingreso a lo largo del año',this.renderRadio('fuente',OPC.fuente,cd.fuente,'condiciones.fuente'))
-    )+
-    this.renderSection('Del negocio',pct(P.condiciones.negocio)+' de las condiciones',
-      this.renderField('Sector y mercado','Demanda del producto o servicio',this.renderRadio('sector',OPC.sector,cd.sector,'condiciones.sector'))+
-      this.renderField('Ubicación y entorno','Riesgo climático, social y de acceso',this.renderRadio('entorno',OPC.entorno,cd.entorno,'condiciones.entorno'))+
-      this.renderField('Antigüedad del negocio','',this.renderRadio('antigNegocio',OPC.antigNegocio,cd.antigNegocio,'condiciones.antigNegocio'))
     );
+    if(E.tieneOVaEmprender){
+      html+=this.renderSection('Del negocio',pct(P.condiciones.negocio)+' de las condiciones',
+        this.renderField('Sector y mercado','Demanda del producto o servicio',this.renderRadio('sector',OPC.sector,cd.sector,'condiciones.sector'))+
+        this.renderField('Ubicación y entorno','Riesgo climático, social y de acceso',this.renderRadio('entorno',OPC.entorno,cd.entorno,'condiciones.entorno'))+
+        this.renderField('Antigüedad del negocio','',this.renderRadio('antigNegocio',OPC.antigNegocio,cd.antigNegocio,'condiciones.antigNegocio'))
+      );
+    }else{
+      html+=`<div style="background:var(--n200);border:1px solid var(--div);padding:14px 18px;margin-bottom:20px;border-radius:3px;font:400 13.5px/1.5 var(--font);color:var(--n700)">El apartado "Del negocio" no aplica porque el solicitante no tiene un negocio ni va a emprender uno (según la ocupación y actividad seleccionadas). Se evalúa únicamente la fuente de ingresos.</div>`;
+    }
+    return html;
   },
 
   renderTabColateral(s,E){
@@ -925,6 +1007,8 @@ const APP={
       campos+=this.renderField('Ingresos mensuales del segundo garante','Se compara contra la cuota mensual',`<input class="input" type="number" value="${g.ingGarante2}" data-action="updNum" data-path="colateral.ingGarante2" min="0">`);
     }else if(g.tipo==='aval'){
       campos+=this.renderField('Ingresos mensuales del aval/codeudor','Debe cubrir al menos 2 veces la cuota',`<input class="input" type="number" value="${g.ingAval}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
+    }else if(g.tipo==='sin_aval_garantia_liquida'){
+      campos+=this.renderField('Monto de la garantía líquida','Cobertura exigida: '+P.u.covAhorro+' veces el crédito',`<input class="input" type="number" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
     }else if(g.tipo!=='ninguna'){
       const req=g.tipo==='prenda'?P.u.covPrenda:g.tipo==='hipoteca'?P.u.covHipoteca:P.u.covAhorro;
       campos+=this.renderField('Valor del avalúo o del colateral','Cobertura exigida: '+req+' veces el crédito',`<input class="input" type="number" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
@@ -1021,7 +1105,12 @@ const APP={
     <h2 style="font:600 19px/1.2 var(--fonth);margin:0 0 16px;border-bottom:2px solid var(--text);padding-bottom:6px">Modelo CANVAS del Negocio</h2>
     <p style="font:400 13.5px/1.5 var(--font);color:var(--n700);margin:0 0 16px">El analista de crédito debe llenar cada bloque con las observaciones y evidencias recopiladas durante la visita y la investigación de crédito. Califique cada bloque de 1 a 5.</p>
 
-    <div style="margin-bottom:8px;font:600 20px/1.2 var(--fonth);text-transform:uppercase;letter-spacing:.02em">EMPRESA: ${esc(s.datos.nombre||'(sin nombre)')}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px">
+      <div style="flex:1 1 300px"><label style="display:block;font:400 13px/1.4 var(--font);margin-bottom:4px">Nombre del negocio o empresa</label>
+        <input class="input" type="text" value="${esc(s.datos.nombreNegocio||'')}" data-action="updText" data-path="datos.nombreNegocio" placeholder="Capture el nombre del negocio" style="font-size:16px;font-weight:600">
+      </div>
+    </div>
+    <div style="margin-bottom:8px;font:600 20px/1.2 var(--fonth);text-transform:uppercase;letter-spacing:.02em">EMPRESA: ${esc(s.datos.nombreNegocio||s.datos.nombre||'(sin nombre)')}</div>
 
     <div class="canvas-header">
       ${hdrFields.map(f=>`<div><label>${f.l}:</label><input type="text" value="${esc(f.v)}" readonly></div>`).join('')}
@@ -1041,21 +1130,6 @@ const APP={
       ${this.renderCanvasBlock('dictamenCanvas',cv,0,0,0,0,true)}
     </div>
 
-    <h2 style="font:600 19px/1.2 var(--fonth);margin:30px 0 10px;border-bottom:2px solid var(--text);padding-bottom:6px">Evaluación por componente</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
-      ${CANVAS_BLOQUES.map((b,i)=>{
-        const val=cv[b[0]]||{p:3,nota:''};
-        return `<div style="border:1px solid var(--div);padding:14px;border-radius:3px">
-          <div style="font:600 14px/1.3 var(--font);margin-bottom:4px">${i+1}. ${b[1]}</div>
-          <div style="font:400 12px/1.4 var(--font);color:var(--n700);margin-bottom:8px">${b[2]}</div>
-          <div style="display:flex;gap:4px;margin-bottom:8px">
-            ${[1,2,3,4,5].map(n=>`<button class="btn ${val.p===n?'btn-p':'btn-s'}" data-action="updCanvasP" data-key="${b[0]}" data-val="${n}" style="padding:4px 10px;font-size:12px;min-width:30px">${n}</button>`).join('')}
-            <span style="font:400 11px/1.4 var(--font);color:var(--n600);margin-left:4px;align-self:center">${['Muy débil','Débil','Suficiente','Sólido','Fortaleza'][val.p-1]||''}</span>
-          </div>
-          <textarea class="input" rows="2" data-action="updCanvasNota" data-key="${b[0]}" placeholder="Observaciones del analista..." style="font-size:12.5px">${esc(val.nota)}</textarea>
-        </div>`;
-      }).join('')}
-    </div>
     <div style="margin-top:20px;font:600 16px/1.3 var(--fonth)">Score CANVAS: ${pct(E.scoreCanvas)} · Pesa ${pct(E.pesos.canvas)} del score global</div>
     <div class="no-print" style="margin-top:16px"><button class="btn btn-s" data-action="imprimirCanvas">Imprimir CANVAS</button></div>`;
   },
@@ -1068,6 +1142,10 @@ const APP={
     return `<div class="canvas-cell" style="${style}">
       <h4>${bloque[1]}</h4>
       <textarea data-action="updCanvasNota" data-key="${key}" placeholder="${bloque[2]}">${esc(val.nota)}</textarea>
+      <div style="display:flex;gap:3px;margin-top:6px;align-items:center;flex-wrap:wrap">
+        ${[1,2,3,4,5].map(n=>`<button class="btn ${val.p===n?'btn-p':'btn-s'}" data-action="updCanvasP" data-key="${key}" data-val="${n}" style="padding:3px 8px;font-size:11px;min-width:24px">${n}</button>`).join('')}
+        <span style="font:400 10px/1.3 var(--font);color:var(--n600);margin-left:3px">${['Muy débil','Débil','Suficiente','Sólido','Fortaleza'][val.p-1]||''}</span>
+      </div>
     </div>`;
   },
 
@@ -1075,7 +1153,7 @@ const APP={
     const st=this.state,u=st.sesion,P=st.params,cfg=st.config;
     const esSuper=u.rol==='superadmin',esGer=u.rol==='gerente';
     const dentroTope=num(s.datos.monto)<=num(u.tope);
-    const ocupacion=OCUPACIONES.find(o=>o[0]===s.datos.ocupacion);
+    const ocupacion=(cfg.ocupaciones||OCUPACIONES_DEFAULT).find(o=>o[0]===s.datos.ocupacion);
 
     let acciones='';
     if(u.rol==='analista')acciones=`<button class="btn btn-p" data-action="resolver" data-estado="ENVIADA" data-etiqueta="Expediente enviado a resolución">Enviar a resolución del gerente</button>`;
@@ -1147,9 +1225,9 @@ const APP={
 
   renderDictamenImprimible(s,E){
     const P=this.state.params,cfg=this.state.config;
-    const ocu=OCUPACIONES.find(o=>o[0]===s.datos.ocupacion);
+    const ocu=(cfg.ocupaciones||OCUPACIONES_DEFAULT).find(o=>o[0]===s.datos.ocupacion);
     const cp=s.capital,cd=s.condiciones,g=s.colateral;
-    const activos=num(cp.activoCirculante)+num(cp.activoFijo);
+    const activos=num(cp.activoCirculante)+E.activoFijoComprobado;
     const pasivos=num(cp.pasivoCorto)+num(cp.pasivoLargo);
     const garantia=GARANTIAS.find(x=>x[0]===g.tipo);
     const per=PERIODICIDADES.find(p=>p[0]===s.datos.periodicidad);
@@ -1237,8 +1315,8 @@ const APP={
     <h1 style="margin:0 0 4px">Configuración</h1>
     <p style="font:400 15px/1.5 var(--font);color:var(--n700);margin:0 0 30px">Solo el superadministrador puede modificar la configuración del sistema.</p>
 
-    <div style="display:flex;gap:3px;border-bottom:1px solid var(--text);margin-bottom:26px">
-      ${[['institucion','Institución'],['productos','Productos de crédito'],['niveles','Niveles de operación']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
+    <div style="display:flex;gap:3px;border-bottom:1px solid var(--text);margin-bottom:26px;flex-wrap:wrap">
+      ${[['institucion','Institución'],['productos','Productos de crédito'],['niveles','Niveles de operación'],['ocupaciones','Catálogo de ocupaciones']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
     </div>
 
     ${st.configTab==='institucion'?`
@@ -1293,7 +1371,31 @@ const APP={
         <div class="field"><label>Plazo máximo (meses)</label><input class="input" type="number" id="nuevoNivelPlazo" value="${st.nuevoNivel.plazoMax}" min="1"></div>
         <button class="btn btn-p" data-action="agregarNivel">Agregar</button>
       </div>
+    </div>`:''}
+
+    ${st.configTab==='ocupaciones'?`
+    <div class="config-card">
+      <h3>Catálogo de ocupaciones</h3>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Personalice las ocupaciones disponibles para seleccionar en la solicitud. Las claves <code>negocio_rural</code> y <code>negocio_urbano</code> activan el modelo CANVAS.</p>
+      <table class="table" style="margin-bottom:20px">
+        <thead><tr><th>Clave</th><th>Nombre</th><th></th></tr></thead>
+        <tbody>
+          ${(cfg.ocupaciones||OCUPACIONES_DEFAULT).map((o,i)=>`<tr>
+            <td><code>${esc(o[0])}</code></td>
+            <td>${esc(o[1])}</td>
+            <td style="text-align:right"><button class="btn btn-g" data-action="borrarOcupacion" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <h4 style="font:600 15px/1.3 var(--font);margin:0 0 10px">Agregar ocupación</h4>
+      <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:12px;align-items:end;max-width:600px">
+        <div class="field"><label>Clave (sin espacios)</label><input class="input" type="text" id="nuevaOcupacionClave" value=""></div>
+        <div class="field"><label>Nombre de la ocupación</label><input class="input" type="text" id="nuevaOcupacionNombre" value=""></div>
+        <button class="btn btn-p" data-action="agregarOcupacion">Agregar</button>
+      </div>
+      <div style="margin-top:16px"><button class="btn btn-s" data-action="resetOcupaciones">Restaurar catálogo por defecto</button></div>
     </div>`:''}`;
+
   },
 
   renderParams(){
@@ -1426,6 +1528,7 @@ const APP={
       }
       else if(a==='updFlujo'){const s=this.actual();if(!s)return;const arr=(s.flujo[el.dataset.key]||[]).slice();arr[parseInt(el.dataset.mes)]=num(el.value);this.upd('flujo.'+el.dataset.key,arr)}
       else if(a==='updCanvasNota')this.upd('canvas.'+el.dataset.key+'.nota',el.value);
+      else if(a==='updActivoFijo'){const sol=this.actual();if(!sol)return;const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};if(el.dataset.prop==='monto')af[el.dataset.key].monto=num(el.value);else af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}
       else if(a==='updNivelPlazo'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.nivelesOperacion[parseInt(el.dataset.idx)].plazoMax=num(el.value);this.state.config=cfg;this.persist()}
       else if(a==='updParam'){const p=JSON.parse(JSON.stringify(this.state.params));const parts=el.dataset.path.split('.');let ref=p;for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];ref[parts[parts.length-1]]=num(el.value);this.state.params=p}
       else return;
@@ -1451,6 +1554,7 @@ const APP={
       else if(a==='updNum')this.upd(el.dataset.path,num(el.value));
       else if(a==='updBool')this.upd(el.dataset.path,el.value==='true');
       else if(a==='updFlujoProp')this.upd(el.dataset.prop,num(el.value));
+      else if(a==='updActivoFijo'){const sol=this.actual();if(sol){const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}}
       this.render();
     };
   },
@@ -1644,6 +1748,38 @@ const APP={
         const cfg=JSON.parse(JSON.stringify(st.config));
         cfg.nivelesOperacion[parseInt(el.dataset.idx)].plazoMax=num(el.value);
         this.state.config=cfg;this.persist();
+        break;
+      }
+      case 'updActivoFijo':{
+        const sol=this.actual();if(!sol)return;
+        const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));
+        if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};
+        if(el.dataset.prop==='monto')af[el.dataset.key].monto=num(el.value);
+        else af[el.dataset.key].comprobante=el.value;
+        this.upd('capital.activosFijos',af);
+        this.render();break;
+      }
+      case 'agregarOcupacion':{
+        const clave=document.getElementById('nuevaOcupacionClave')?.value?.trim().replace(/\s+/g,'_');
+        const nombre=document.getElementById('nuevaOcupacionNombre')?.value?.trim();
+        if(!clave||!nombre)return;
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        if(!cfg.ocupaciones)cfg.ocupaciones=[...OCUPACIONES_DEFAULT];
+        cfg.ocupaciones.push([clave,nombre]);
+        this.state.config=cfg;this.persist();this.log('Ocupación agregada',nombre);this.render();
+        break;
+      }
+      case 'borrarOcupacion':{
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        if(!cfg.ocupaciones)cfg.ocupaciones=[...OCUPACIONES_DEFAULT];
+        cfg.ocupaciones.splice(parseInt(el.dataset.idx),1);
+        this.state.config=cfg;this.persist();this.log('Ocupación eliminada','');this.render();
+        break;
+      }
+      case 'resetOcupaciones':{
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        cfg.ocupaciones=[...OCUPACIONES_DEFAULT];
+        this.state.config=cfg;this.persist();this.log('Catálogo de ocupaciones restaurado','');this.render();
         break;
       }
       case 'altaUsuario':{
