@@ -387,6 +387,7 @@ const APP={
     }
     const dom=clamp10(pVi*P.arraigoDom.vivienda+pRe*P.arraigoDom.residencia);
 
+    const esPrimerEmpleo=!!s.datos.esPrimerEmpleo;
     const pAc=OPC.actividad[c.actividad]?OPC.actividad[c.actividad][1]:OPC.actividad[0][1];
     let pAn;
     if(esPrimerEmpleo){
@@ -401,7 +402,6 @@ const APP={
     }
     const lab=clamp10(pAc*P.arraigoLab.actividad+pAn*P.arraigoLab.antiguedad);
 
-    const esPrimerEmpleo=!!s.datos.esPrimerEmpleo;
     const sinHist=c.historial!==0;
     const pHi=OPC.historial[c.historial]?OPC.historial[c.historial][1]:OPC.historial[0][1];
     let pAt=10;
