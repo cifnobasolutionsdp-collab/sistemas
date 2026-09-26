@@ -431,20 +431,23 @@ function defaultParams(){
 function defaultConfig(){
   return {
     nombreInstitucion:'Mi Sociedad Financiera',
+    logotipo:'',
     ocupaciones:[...OCUPACIONES_DEFAULT],
     productos:[
-      {nombre:'Crédito Personal',plazoMax:48,tasaAnual:24},
-      {nombre:'Crédito Grupal',plazoMax:12,tasaAnual:36},
-      {nombre:'Crédito PYME',plazoMax:60,tasaAnual:18},
-      {nombre:'Crédito Agropecuario',plazoMax:36,tasaAnual:20},
-      {nombre:'Crédito de Vivienda',plazoMax:96,tasaAnual:14}
+      {nombre:'Crédito Personal',plazoMax:48,tasaAnual:24,montoMin:5000,montoMax:150000},
+      {nombre:'Crédito Grupal',plazoMax:12,tasaAnual:36,montoMin:1000,montoMax:50000},
+      {nombre:'Crédito PYME',plazoMax:60,tasaAnual:18,montoMin:50000,montoMax:2000000},
+      {nombre:'Crédito Agropecuario',plazoMax:36,tasaAnual:20,montoMin:10000,montoMax:500000},
+      {nombre:'Crédito de Vivienda',plazoMax:96,tasaAnual:14,montoMin:100000,montoMax:5000000}
     ],
     nivelesOperacion:[
       {nombre:'Nivel I - Básico',plazoMax:24},
       {nombre:'Nivel II - Intermedio',plazoMax:48},
       {nombre:'Nivel III - Avanzado',plazoMax:72},
       {nombre:'Nivel IV - Especial',plazoMax:96}
-    ]
+    ],
+    personal:[],
+    regulatorio:{rfc:'',registroCNBV:'',representanteLegal:'',domicilioFiscal:'',telefonoOficina:'',correoOficial:'',clabe:'',razonSocial:''}
   };
 }
 
@@ -494,8 +497,9 @@ const APP={
     pegarAbierto:false,pegarTexto:'',pegarAviso:'',
     nuevoU:{usuario:'',nombre:'',rol:'analista',sucursal:'Sucursal Matriz',pass:'',tope:0},
     nuevaSucursal:'',esc:null,folioSeq:1001,
-    configTab:'institucion',nuevoProducto:{nombre:'',plazoMax:24,tasaAnual:18},
-    nuevoNivel:{nombre:'',plazoMax:24}
+    configTab:'institucion',nuevoProducto:{nombre:'',plazoMax:24,tasaAnual:18,montoMin:0,montoMax:0},
+    nuevoNivel:{nombre:'',plazoMax:24},
+    nuevoPersonal:{nombre:'',cargo:'',tipo:'analista'}
   },
 
   init(){
@@ -881,6 +885,7 @@ const APP={
     return `
     <div style="min-height:100vh;background:var(--bg)">
       <div class="no-print" style="display:flex;align-items:center;gap:15px;padding:12px 24px;border-bottom:1px solid var(--text);background:var(--bg);position:sticky;top:0;z-index:20">
+        ${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:28px;max-width:120px;object-fit:contain">`:''}
         <span style="font:600 13px/1 var(--font);letter-spacing:.16em;text-transform:uppercase">SAC <span style="color:var(--a700)">2.0</span></span>
         <span style="width:1px;height:20px;background:var(--div)"></span>
         <span style="font:400 13px/1 var(--font);color:var(--n700)">${esc(cfg.nombreInstitucion)}</span>
@@ -1486,6 +1491,7 @@ const APP={
     const per=PERIODICIDADES.find(p=>p[0]===s.datos.periodicidad);
     return `<div style="font:400 10px/1.3 Arial,sans-serif;color:#000;padding:8px 15px;max-width:800px;margin:0 auto">
       <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
+        ${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:40px;max-width:180px;object-fit:contain;margin-bottom:3px">`:''}
         <div style="font:700 13px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div>
         <div style="font:700 11px/1.2 Arial,sans-serif">DICTAMEN DE CRÉDITO</div>
         <div style="font:400 8.5px/1.2 Arial,sans-serif">Folio: ${esc(s.folio)} · ${new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})} · ${esc(s.sucursal)}</div>
@@ -1537,7 +1543,7 @@ const APP={
     const mkRow=(key,label)=>{const arr=s.flujo[key]||[];let cells='';for(let m=0;m<meses;m++)cells+='<td style="border:1px solid #ddd;padding:1px 3px;text-align:right;font-size:7.5px">'+(arr[m]?mx(arr[m]):'—')+'</td>';return '<tr><td style="border:1px solid #999;padding:2px 4px;font-size:8px;white-space:nowrap;background:#f8f8f8">'+label+'</td>'+cells+'</tr>'};
     const totRow=(label,arr)=>'<tr><td style="border:1px solid #999;padding:2px 4px;font:700 8px/1.1 Arial,sans-serif;white-space:nowrap;background:#e0e0e0">'+label+'</td>'+arr.slice(0,meses).map(x=>'<td style="border:1px solid #999;padding:1px 3px;text-align:right;font:700 7.5px/1.1 Arial,sans-serif;background:#e0e0e0">'+mx(x)+'</td>').join('')+'</tr>';
     return `<div style="font:400 9px/1.2 Arial,sans-serif;color:#000;padding:8px 10px">
-      <div style="text-align:center;margin-bottom:6px"><div style="font:700 12px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div><div style="font:700 10px/1.2 Arial,sans-serif">FLUJO DE EFECTIVO — ${esc(s.datos.nombre||'—')} · Folio ${esc(s.folio)}</div></div>
+      <div style="text-align:center;margin-bottom:6px">${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:35px;max-width:160px;object-fit:contain;margin-bottom:2px">`:''}<div style="font:700 12px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div><div style="font:700 10px/1.2 Arial,sans-serif">FLUJO DE EFECTIVO — ${esc(s.datos.nombre||'—')} · Folio ${esc(s.folio)}</div></div>
       <table style="width:100%;border-collapse:collapse"><thead><tr><th style="border:1px solid #999;padding:2px 4px;text-align:left;font:700 8px/1.1 Arial,sans-serif;background:#eee;min-width:120px">Concepto</th>${cols}</tr></thead><tbody>
         ${FILAS_ING.map(f=>mkRow(f[0],f[1])).join('')}
         ${totRow('Total ingresos',E.flujo.ing)}
@@ -1553,7 +1559,7 @@ const APP={
   renderCanvasImprimible(s,E){
     const cv=s.canvas,cfg=this.state.config;
     return `<div style="font:400 9px/1.2 Arial,sans-serif;color:#000;padding:8px 15px;max-width:800px;margin:0 auto">
-      <div style="text-align:center;margin-bottom:6px"><div style="font:700 12px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div><div style="font:700 10px/1.2 Arial,sans-serif">MODELO CANVAS — ${esc(s.datos.nombre||'—')} · Folio ${esc(s.folio)}</div></div>
+      <div style="text-align:center;margin-bottom:6px">${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:35px;max-width:160px;object-fit:contain;margin-bottom:2px">`:''}<div style="font:700 12px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div><div style="font:700 10px/1.2 Arial,sans-serif">MODELO CANVAS — ${esc(s.datos.nombre||'—')} · Folio ${esc(s.folio)}</div></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
         ${CANVAS_BLOQUES.map(b=>{const val=cv[b[0]]||{p:3,nota:''};return '<div style="border:1px solid #999;padding:4px 6px"><div style="font:700 8.5px/1.2 Arial,sans-serif;margin-bottom:2px">'+esc(b[1])+' — '+val.p+'/5</div><div style="font:400 8px/1.35 Arial,sans-serif;color:#333">'+esc(val.nota||'Sin observaciones')+'</div></div>'}).join('')}
       </div>
@@ -1569,7 +1575,7 @@ const APP={
     <p style="font:400 15px/1.5 var(--font);color:var(--n700);margin:0 0 30px">Solo el superadministrador puede modificar la configuración del sistema.</p>
 
     <div style="display:flex;gap:3px;border-bottom:1px solid var(--text);margin-bottom:26px;flex-wrap:wrap">
-      ${[['institucion','Institución'],['productos','Productos de crédito'],['niveles','Niveles de operación'],['ocupaciones','Catálogo de ocupaciones']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
+      ${[['institucion','Institución'],['logotipo','Logotipo'],['productos','Productos de crédito'],['niveles','Niveles de operación'],['ocupaciones','Catálogo de ocupaciones'],['personal','Personal'],['regulatorio','Regulatorio']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
     </div>
 
     ${st.configTab==='institucion'?`
@@ -1583,23 +1589,28 @@ const APP={
     ${st.configTab==='productos'?`
     <div class="config-card">
       <h3>Catálogo de productos de crédito</h3>
-      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Defina los productos disponibles con sus plazos máximos y tasas de interés.</p>
-      <table class="table" style="margin-bottom:20px">
-        <thead><tr><th>Producto</th><th style="text-align:right">Plazo máximo (meses)</th><th style="text-align:right">Tasa anual (%)</th><th></th></tr></thead>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Defina los productos disponibles con sus tasas, plazos y montos mínimos y máximos.</p>
+      <div style="overflow-x:auto">
+      <table class="table" style="margin-bottom:20px;min-width:700px">
+        <thead><tr><th>Producto</th><th style="text-align:right">Plazo máx. (meses)</th><th style="text-align:right">Tasa anual (%)</th><th style="text-align:right">Monto mínimo</th><th style="text-align:right">Monto máximo</th><th></th></tr></thead>
         <tbody>
           ${cfg.productos.map((p,i)=>`<tr>
             <td>${esc(p.nombre)}</td>
             <td style="text-align:right">${p.plazoMax}</td>
             <td style="text-align:right">${p.tasaAnual}%</td>
+            <td style="text-align:right">${mx(p.montoMin||0)}</td>
+            <td style="text-align:right">${mx(p.montoMax||0)}</td>
             <td style="text-align:right"><button class="btn btn-g" data-action="borrarProducto" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
           </tr>`).join('')}
         </tbody>
-      </table>
+      </table></div>
       <h4 style="font:600 15px/1.3 var(--font);margin:0 0 10px">Agregar producto</h4>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end;max-width:700px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;max-width:900px">
         <div class="field"><label>Nombre del producto</label><input class="input" type="text" id="nuevoProductoNombre" value="${esc(st.nuevoProducto.nombre)}"></div>
         <div class="field"><label>Plazo máximo (meses)</label><input class="input" type="number" id="nuevoProductoPlazo" value="${st.nuevoProducto.plazoMax}" min="1"></div>
         <div class="field"><label>Tasa anual (%)</label><input class="input" type="number" id="nuevoProductoTasa" value="${st.nuevoProducto.tasaAnual}" min="0" step="0.1"></div>
+        <div class="field"><label>Monto mínimo</label><input class="input" type="number" id="nuevoProductoMontoMin" value="${st.nuevoProducto.montoMin}" min="0"></div>
+        <div class="field"><label>Monto máximo</label><input class="input" type="number" id="nuevoProductoMontoMax" value="${st.nuevoProducto.montoMax}" min="0"></div>
         <button class="btn btn-p" data-action="agregarProducto">Agregar</button>
       </div>
     </div>`:''}
@@ -1647,6 +1658,71 @@ const APP={
         <button class="btn btn-p" data-action="agregarOcupacion">Agregar</button>
       </div>
       <div style="margin-top:16px"><button class="btn btn-s" data-action="resetOcupaciones">Restaurar catálogo por defecto</button></div>
+    </div>`:''}
+
+    ${st.configTab==='logotipo'?`
+    <div class="config-card">
+      <h3>Logotipo de la institución</h3>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Cargue el logotipo que aparecerá en la barra superior, los dictámenes y reportes impresos. Formatos: PNG, JPG, SVG. Tamaño recomendado: 200×60 px.</p>
+      ${cfg.logotipo?`
+        <div style="margin-bottom:16px;padding:20px;background:var(--n100);border-radius:8px;text-align:center">
+          <img src="${cfg.logotipo}" alt="Logotipo" style="max-height:80px;max-width:300px;object-fit:contain">
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-p" data-action="cargarLogotipo">Cambiar logotipo</button>
+          <button class="btn btn-d" data-action="quitarLogotipo">Quitar logotipo</button>
+        </div>
+      `:`
+        <div style="margin-bottom:16px;padding:30px;background:var(--n100);border:2px dashed var(--n400);border-radius:8px;text-align:center;color:var(--n600)">
+          <div style="font:400 14px/1.5 var(--font)">No se ha cargado ningún logotipo</div>
+        </div>
+        <button class="btn btn-p" data-action="cargarLogotipo">Cargar logotipo</button>
+      `}
+    </div>`:''}
+
+    ${st.configTab==='personal'?`
+    <div class="config-card">
+      <h3>Directorio de personal</h3>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Registre los nombres y cargos de analistas y administradores de la institución. Esta información se usa en los dictámenes y firmas.</p>
+      <table class="table" style="margin-bottom:20px">
+        <thead><tr><th>Nombre completo</th><th>Cargo</th><th>Tipo</th><th></th></tr></thead>
+        <tbody>
+          ${(cfg.personal||[]).map((p,i)=>`<tr>
+            <td>${esc(p.nombre)}</td>
+            <td>${esc(p.cargo)}</td>
+            <td>${p.tipo==='administrador'?'Administrador':'Analista'}</td>
+            <td style="text-align:right"><button class="btn btn-g" data-action="borrarPersonal" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
+          </tr>`).join('')}
+          ${(cfg.personal||[]).length===0?'<tr><td colspan="4" style="color:var(--n600);text-align:center;padding:14px">No hay personal registrado</td></tr>':''}
+        </tbody>
+      </table>
+      <h4 style="font:600 15px/1.3 var(--font);margin:0 0 10px">Agregar personal</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end;max-width:700px">
+        <div class="field"><label>Nombre completo</label><input class="input" type="text" id="nuevoPersonalNombre" value="${esc(st.nuevoPersonal.nombre)}"></div>
+        <div class="field"><label>Cargo</label><input class="input" type="text" id="nuevoPersonalCargo" value="${esc(st.nuevoPersonal.cargo)}" placeholder="Ej: Gerente de crédito"></div>
+        <div class="field"><label>Tipo</label><select class="input" id="nuevoPersonalTipo">
+          <option value="analista"${st.nuevoPersonal.tipo==='analista'?' selected':''}>Analista</option>
+          <option value="administrador"${st.nuevoPersonal.tipo==='administrador'?' selected':''}>Administrador</option>
+        </select></div>
+        <button class="btn btn-p" data-action="agregarPersonal">Agregar</button>
+      </div>
+    </div>`:''}
+
+    ${st.configTab==='regulatorio'?`
+    <div class="config-card">
+      <h3>Información regulatoria</h3>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Datos legales y regulatorios de la institución. Se usan en reportes oficiales y documentos de cumplimiento.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;max-width:800px">
+        <div class="field"><label>Razón social</label><input class="input" type="text" id="cfgRazonSocial" value="${esc((cfg.regulatorio||{}).razonSocial||'')}"></div>
+        <div class="field"><label>RFC</label><input class="input" type="text" id="cfgRFC" value="${esc((cfg.regulatorio||{}).rfc||'')}" placeholder="Ej: XYZ010101ABC" maxlength="13"></div>
+        <div class="field"><label>Registro CNBV / CONDUSEF</label><input class="input" type="text" id="cfgCNBV" value="${esc((cfg.regulatorio||{}).registroCNBV||'')}"></div>
+        <div class="field"><label>Representante legal</label><input class="input" type="text" id="cfgRepLegal" value="${esc((cfg.regulatorio||{}).representanteLegal||'')}"></div>
+        <div class="field"><label>Domicilio fiscal</label><input class="input" type="text" id="cfgDomicilio" value="${esc((cfg.regulatorio||{}).domicilioFiscal||'')}"></div>
+        <div class="field"><label>Teléfono de oficina</label><input class="input" type="text" id="cfgTelefono" value="${esc((cfg.regulatorio||{}).telefonoOficina||'')}"></div>
+        <div class="field"><label>Correo electrónico oficial</label><input class="input" type="email" id="cfgCorreo" value="${esc((cfg.regulatorio||{}).correoOficial||'')}"></div>
+        <div class="field"><label>CLABE interbancaria</label><input class="input" type="text" id="cfgCLABE" value="${esc((cfg.regulatorio||{}).clabe||'')}" maxlength="18"></div>
+      </div>
+      <button class="btn btn-p" data-action="guardarRegulatorio" style="margin-top:16px">Guardar información regulatoria</button>
     </div>`:''}`;
 
   },
@@ -1968,11 +2044,13 @@ const APP={
         const nombre=document.getElementById('nuevoProductoNombre')?.value?.trim();
         const plazo=num(document.getElementById('nuevoProductoPlazo')?.value);
         const tasa=num(document.getElementById('nuevoProductoTasa')?.value);
+        const montoMin=num(document.getElementById('nuevoProductoMontoMin')?.value);
+        const montoMax=num(document.getElementById('nuevoProductoMontoMax')?.value);
         if(!nombre)return;
         const cfg=JSON.parse(JSON.stringify(st.config));
-        cfg.productos.push({nombre,plazoMax:plazo,tasaAnual:tasa});
+        cfg.productos.push({nombre,plazoMax:plazo,tasaAnual:tasa,montoMin,montoMax});
         this.state.config=cfg;this.persist();this.log('Producto agregado',nombre);
-        this.set({nuevoProducto:{nombre:'',plazoMax:24,tasaAnual:18}});
+        this.set({nuevoProducto:{nombre:'',plazoMax:24,tasaAnual:18,montoMin:0,montoMax:0}});
         break;
       }
       case 'borrarProducto':{
@@ -2033,6 +2111,62 @@ const APP={
         const cfg=JSON.parse(JSON.stringify(st.config));
         cfg.ocupaciones=[...OCUPACIONES_DEFAULT];
         this.state.config=cfg;this.persist();this.log('Catálogo de ocupaciones restaurado','');this.render();
+        break;
+      }
+      case 'cargarLogotipo':{
+        const inp=document.createElement('input');inp.type='file';inp.accept='image/png,image/jpeg,image/svg+xml';
+        inp.onchange=()=>{
+          const file=inp.files?.[0];if(!file)return;
+          if(file.size>512000){alert('El archivo es demasiado grande. Máximo 500 KB.');return}
+          const fr=new FileReader();
+          fr.onload=()=>{
+            const cfg=JSON.parse(JSON.stringify(st.config));
+            cfg.logotipo=fr.result;
+            this.state.config=cfg;this.persist();this.log('Logotipo cargado',file.name);this.render();
+          };
+          fr.readAsDataURL(file);
+        };
+        inp.click();
+        break;
+      }
+      case 'quitarLogotipo':{
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        cfg.logotipo='';
+        this.state.config=cfg;this.persist();this.log('Logotipo eliminado','');this.render();
+        break;
+      }
+      case 'agregarPersonal':{
+        const nombre=document.getElementById('nuevoPersonalNombre')?.value?.trim();
+        const cargo=document.getElementById('nuevoPersonalCargo')?.value?.trim();
+        const tipo=document.getElementById('nuevoPersonalTipo')?.value||'analista';
+        if(!nombre||!cargo)return;
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        if(!cfg.personal)cfg.personal=[];
+        cfg.personal.push({nombre,cargo,tipo});
+        this.state.config=cfg;this.persist();this.log('Personal agregado',nombre+' — '+cargo);
+        this.set({nuevoPersonal:{nombre:'',cargo:'',tipo:'analista'}});
+        break;
+      }
+      case 'borrarPersonal':{
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        if(!cfg.personal)cfg.personal=[];
+        cfg.personal.splice(parseInt(el.dataset.idx),1);
+        this.state.config=cfg;this.persist();this.log('Personal eliminado','');this.render();
+        break;
+      }
+      case 'guardarRegulatorio':{
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        cfg.regulatorio={
+          razonSocial:document.getElementById('cfgRazonSocial')?.value?.trim()||'',
+          rfc:document.getElementById('cfgRFC')?.value?.trim()||'',
+          registroCNBV:document.getElementById('cfgCNBV')?.value?.trim()||'',
+          representanteLegal:document.getElementById('cfgRepLegal')?.value?.trim()||'',
+          domicilioFiscal:document.getElementById('cfgDomicilio')?.value?.trim()||'',
+          telefonoOficina:document.getElementById('cfgTelefono')?.value?.trim()||'',
+          correoOficial:document.getElementById('cfgCorreo')?.value?.trim()||'',
+          clabe:document.getElementById('cfgCLABE')?.value?.trim()||''
+        };
+        this.state.config=cfg;this.persist();this.log('Información regulatoria actualizada','');this.render();
         break;
       }
       case 'altaUsuario':{
