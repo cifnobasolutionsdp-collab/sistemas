@@ -1,0 +1,2571 @@
+{
+ "version": "2026.1",
+ "components": [
+  {
+   "code": "GC",
+   "name": "Gobierno y Cultura",
+   "peso": 0.25,
+   "principles": [
+    {
+     "n": 1,
+     "t": "Los órganos directivos ejercen supervisión sobre los riesgos",
+     "q": [
+      {
+       "id": "1.1.1",
+       "t": "¿Los miembros del Consejo de Administración y otros órganos directivos comprenden y aplican los marcos de referencia para la evaluación de riesgos y control interno (COSO ERM 2017, COSO Control Interno 2013, Modelo de las Tres Líneas del IIA 2020, ISO 31000:2018 y COBIT 2019) en sus procesos de toma de decisiones?",
+       "orig": "1.1.1",
+       "actualizado": true
+      },
+      {
+       "id": "1.1.2",
+       "t": "¿Existe un Comité de Riesgos o un Comité de Auditoría en la Institución Financiera, formalmente establecido y con un mandato claro para supervisar y evaluar los riesgos críticos, así como para informar periódicamente al Consejo de Administración?",
+       "orig": "1.1.2"
+      },
+      {
+       "id": "1.1.3",
+       "t": "¿Los órganos directivos revisan y aprueban anualmente el plan de auditoría interna, asegurando que esté alineado con los objetivos estratégicos y cubra las áreas de mayor riesgo en la Institución Financiera?",
+       "orig": "1.1.3"
+      },
+      {
+       "id": "1.1.4",
+       "t": "¿Se reciben y analizan en el Consejo de Administración reportes regulares sobre el estado de los riesgos y los controles implementados, incluyendo resultados de auditorías y revisiones de control interno?",
+       "orig": "1.1.4"
+      },
+      {
+       "id": "1.1.5",
+       "t": "¿Se han establecido procedimientos para garantizar que las decisiones estratégicas tomadas por los órganos directivos consideren los riesgos identificados y las posibles medidas de mitigación? MANUAL DE RIESGOS",
+       "orig": "1.1.5"
+      },
+      {
+       "id": "1.1.6",
+       "t": "¿El Consejo de Administración ha implementado un programa de capacitación continua para sus miembros, con el fin de asegurar que posean las competencias necesarias para identificar, evaluar y gestionar los riesgos de la Institución Financiera?",
+       "orig": "1.1.6"
+      },
+      {
+       "id": "1.1.7",
+       "t": "¿Existen políticas y protocolos claros para la rendición de cuentas de los órganos directivos en el cumplimiento de su responsabilidad de supervisar los riesgos, y se evalúa periódicamente su desempeño en esta área?",
+       "orig": "1.1.7"
+      },
+      {
+       "id": "1.1.8",
+       "t": "¿El Consejo de Administración tiene un proceso establecido para revisar la efectividad de los comités que supervisan los riesgos (como el Comité de Auditoría y el Comité de Riesgos) y asegurar que estos cuenten con los recursos necesarios para cumplir sus funciones?",
+       "orig": "1.1.8"
+      },
+      {
+       "id": "1.1.9",
+       "t": "¿El Consejo de Administración supervisa expresamente los riesgos de ciberseguridad, tecnológicos y de uso de inteligencia artificial, recibiendo reportes al menos semestrales sobre incidentes, vulnerabilidades y planes de remediación?",
+       "tema": "Ciberseguridad",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 2,
+     "t": "Establece estructuras operativas",
+     "q": [
+      {
+       "id": "1.2.1",
+       "t": "¿La Institución Financiera ha definido y documentado una estructura organizacional clara que delimita las funciones y responsabilidades de cada área y asegura una adecuada supervisión de los riesgos?",
+       "orig": "1.2.1"
+      },
+      {
+       "id": "1.2.2",
+       "t": "¿Existe un manual de organización y funciones actualizado que especifica las responsabilidades y tareas de cada puesto, asegurando que todos los empleados conozcan sus roles en el sistema de control interno y de gestión de riesgos?",
+       "orig": "1.2.2"
+      },
+      {
+       "id": "1.2.3",
+       "t": "¿Se cuenta con políticas y procedimientos formales para la toma de decisiones en temas de riesgo, de manera que las estructuras operativas de la Institución Financiera actúen de forma alineada y coherente?",
+       "orig": "1.2.3"
+      },
+      {
+       "id": "1.2.4",
+       "t": "¿La Institución Financiera lleva a cabo evaluaciones periódicas de la efectividad de sus estructuras operativas para identificar y corregir debilidades que puedan afectar el gobierno de riesgos y control?",
+       "orig": "1.2.4"
+      },
+      {
+       "id": "1.2.5",
+       "t": "¿El Consejo de Administración y la alta gerencia revisan y ajustan las estructuras organizacionales y los procedimientos internos de manera proactiva, en respuesta a cambios en el entorno o a nuevos riesgos emergentes?",
+       "orig": "1.2.5"
+      },
+      {
+       "id": "1.2.6",
+       "t": "¿Se han implementado sistemas de comunicación efectivos para asegurar que la información relevante sobre riesgos y control fluya de manera adecuada entre los diferentes niveles jerárquicos y áreas de la Institución Financiera?",
+       "orig": "1.2.6"
+      },
+      {
+       "id": "1.2.7",
+       "t": "¿La Institución Financiera cuenta con un sistema de control de personal y recursos adecuado que evita conflictos de interés y garantiza la segregación de funciones clave, especialmente en áreas críticas como finanzas, auditoría, y cumplimiento?",
+       "orig": "1.2.7"
+      }
+     ]
+    },
+    {
+     "n": 3,
+     "t": "Define la cultura deseada",
+     "q": [
+      {
+       "id": "1.3.1",
+       "t": "¿El Consejo de Administración y la Gerencia conocen y promueven activamente la importancia de una cultura de riesgos y de control interno en toda la Institución Financiera?",
+       "orig": "1.3.1"
+      },
+      {
+       "id": "1.3.2",
+       "t": "¿Todos los niveles de personal entienden y asumen sus responsabilidades en cuanto a la gestión de riesgos y el control interno, según sus respectivos niveles de autoridad?",
+       "orig": "1.3.2"
+      },
+      {
+       "id": "1.3.3",
+       "t": "¿La Institución Financiera cuenta con un plan para integrar la cultura de riesgos en las actividades diarias y de cumplimiento de sus empleados?",
+       "orig": "1.3.3"
+      },
+      {
+       "id": "1.3.4",
+       "t": "¿Existen procedimientos claros para evaluar y cumplir los objetivos y metas de control interno, incluyendo indicadores de desempeño específicos?",
+       "orig": "1.3.4"
+      },
+      {
+       "id": "1.3.5",
+       "t": "¿Se han establecido métricas claras para evaluar el cumplimiento y la eficacia del control interno y la gestión de riesgos?",
+       "orig": "1.3.5"
+      },
+      {
+       "id": "1.3.6",
+       "t": "¿El Consejo de Administración aprueba y supervisa los incentivos de desempeño de manera que refuercen una conducta alineada con los valores de la Institución Financiera y la cultura de riesgos?",
+       "orig": "1.3.6"
+      },
+      {
+       "id": "1.3.7",
+       "t": "¿Existen políticas de reconocimiento y recompensa que fomenten una cultura de cumplimiento y de control de riesgos en todas las áreas?",
+       "orig": "1.3.7"
+      },
+      {
+       "id": "1.3.8",
+       "t": "¿La Institución Financiera realiza revisiones periódicas para evaluar si los comportamientos y actitudes de su personal están alineados con la cultura de riesgos y control establecida?",
+       "orig": "1.3.8"
+      }
+     ]
+    },
+    {
+     "n": 4,
+     "t": "Demuestra compromiso con los valores éticos",
+     "q": [
+      {
+       "id": "1.4.1",
+       "t": "¿La Institución Financiera ha establecido políticas, normas y procedimientos de control interno y ética que son obligatorios para todos los empleados, independientemente de su nivel jerárquico?",
+       "orig": "1.4.1"
+      },
+      {
+       "id": "1.4.2",
+       "t": "¿Existe un Código de Ética formalizado que esté alineado con los valores de control interno y gestión de riesgos de la Institución Financiera?",
+       "orig": "1.4.2"
+      },
+      {
+       "id": "1.4.3",
+       "t": "¿El Código de Ética se comunica a todos los niveles de la Institución Financiera y a terceros relevantes, como proveedores y socios de negocio?",
+       "orig": "1.4.3"
+      },
+      {
+       "id": "1.4.4",
+       "t": "¿La Institución Financiera requiere una declaración formal, de manera periódica, para que el personal exprese su compromiso de cumplir con el Código de Ética?",
+       "orig": "1.4.4"
+      },
+      {
+       "id": "1.4.5",
+       "t": "¿El Código de Ética incluye lineamientos específicos sobre la conducta esperada en relación con el control de riesgos y el respeto a las normas de control interno?",
+       "orig": "1.4.5"
+      },
+      {
+       "id": "1.4.6",
+       "t": "¿El Código de Ética forma parte del plan de capacitación anual para asegurar que todos los empleados estén al tanto de sus responsabilidades en control interno y gestión de riesgos?",
+       "orig": "1.4.6"
+      },
+      {
+       "id": "1.4.7",
+       "t": "¿Existen procedimientos específicos para investigar, documentar y actuar ante posibles violaciones a los valores éticos o las normas de control interno? REGLAMENTO INTERNO DE TRABAJO",
+       "orig": "1.4.7"
+      },
+      {
+       "id": "1.4.8",
+       "t": "¿Se asegura la Institución Financiera de que todos los empleados renueven periódicamente su compromiso con el Código de Ética, reforzando la importancia de la ética y el control interno?",
+       "orig": "1.4.8"
+      },
+      {
+       "id": "1.4.9",
+       "t": "¿La Institución Financiera cuenta con un canal de denuncia claro y accesible para reportar violaciones a los valores éticos y de control interno, garantizando la confidencialidad y protección del denunciante?",
+       "orig": "1.4.9"
+      },
+      {
+       "id": "1.4.10",
+       "t": "¿Se realizan revisiones periódicas del Código de Ética para asegurar que se mantenga alineado con las mejores prácticas de control interno y gestión de riesgos?",
+       "orig": "1.4.10"
+      },
+      {
+       "id": "1.4.11",
+       "t": "¿La Institución Financiera ha establecido un Comité de Ética que supervise el cumplimiento del Código de Ética y dé seguimiento a los incidentes de control interno?",
+       "orig": "1.4.11"
+      },
+      {
+       "id": "1.4.12",
+       "t": "¿Se identifican, aprueban y revelan los conflictos de interés y las operaciones con personas relacionadas (consejeros, funcionarios y sus familiares), incluidos los créditos relacionados, dentro de los límites regulatorios?",
+       "tema": "Crédito",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 5,
+     "t": "Atrae, desarrolla y retiene individuos competentes",
+     "q": [
+      {
+       "id": "1.5.1",
+       "t": "¿La Institución Financiera tiene un proceso formal para la administración de recursos humanos que incluya el reclutamiento, selección, capacitación y retención de personal con competencias en control interno y gestión de riesgos?",
+       "orig": "1.5.1"
+      },
+      {
+       "id": "1.5.2",
+       "t": "¿Se han identificado claramente las competencias necesarias para cada cargo, especialmente en roles críticos para el control interno y la gestión de riesgos?",
+       "orig": "1.5.2"
+      },
+      {
+       "id": "1.5.3",
+       "t": "¿La Institución Financiera evalúa periódicamente la carga laboral de sus empleados en áreas críticas para evitar exceso o carencia de personal que pueda afectar la gestión de riesgos?",
+       "orig": "1.5.3"
+      },
+      {
+       "id": "1.5.4",
+       "t": "¿Existen evaluaciones regulares del desempeño del personal para asegurar que sus competencias en control interno y gestión de riesgos se mantengan actualizadas?",
+       "orig": "1.5.4"
+      },
+      {
+       "id": "1.5.5",
+       "t": "¿La Institución Financiera ha formalizado un Reglamento Interno de Trabajo (RIT) que incluye políticas específicas sobre control interno y gestión de riesgos?",
+       "orig": "1.5.5"
+      },
+      {
+       "id": "1.5.6",
+       "t": "¿Se cuenta con un programa de capacitación que incluya aspectos de control interno y riesgos, asegurando que todos los empleados reciban formación en estas áreas críticas?",
+       "orig": "1.5.6"
+      },
+      {
+       "id": "1.5.7",
+       "t": "¿La Institución Financiera evalúa el cumplimiento de su programa de capacitación para asegurarse de que las competencias en control interno y riesgos estén alineadas con las mejores prácticas?",
+       "orig": "1.5.7"
+      },
+      {
+       "id": "1.5.8",
+       "t": "¿Existen programas de inducción y desarrollo profesional para nuevos empleados que incluyan la capacitación en control interno y riesgos desde el inicio de sus funciones?",
+       "orig": "1.5.8"
+      },
+      {
+       "id": "1.5.9",
+       "t": "¿La Institución Financiera revisa regularmente sus políticas de rotación de personal para evitar la acumulación de poder en funciones críticas y reducir riesgos operativos?",
+       "orig": "1.5.9"
+      },
+      {
+       "id": "1.5.10",
+       "t": "¿Se realizan evaluaciones de desempeño basadas en competencias antes de considerar promociones o movimientos dentro de áreas clave?",
+       "orig": "1.5.10"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "code": "EST",
+   "name": "Estrategia y Establecimiento de Objetivos",
+   "peso": 0.2,
+   "principles": [
+    {
+     "n": 6,
+     "t": "Analiza el contexto empresarial",
+     "q": [
+      {
+       "id": "2.6.1",
+       "t": "¿La Institución realiza análisis internos regulares sobre su capacidad competitiva y recursos disponibles (talento humano, financiero, tecnológico, y de gobierno corporativo) para asegurar su adaptación y desempeño en el mercado?",
+       "orig": "2.6.1"
+      },
+      {
+       "id": "2.6.2",
+       "t": "¿Se efectúan análisis externos detallados que incluyan factores económicos, políticos, sociales, y tecnológicos en los países o regiones donde opera la Institución?",
+       "orig": "2.6.2"
+      },
+      {
+       "id": "2.6.3",
+       "t": "¿Existen mecanismos para evaluar factores de riesgo específicos como el lavado de dinero y financiamiento al terrorismo en el contexto empresarial externo?",
+       "orig": "2.6.3"
+      },
+      {
+       "id": "2.6.4",
+       "t": "¿Los resultados de estos análisis se traducen en planes de acción concretos que se monitorean y actualizan regularmente?",
+       "orig": "2.6.4"
+      },
+      {
+       "id": "2.6.5",
+       "t": "¿El análisis de contexto incorpora riesgos ambientales, sociales y de gobierno corporativo (ASG), incluidos fenómenos climáticos que afecten a socios, garantías o regiones atendidas?",
+       "tema": "ASG",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 7,
+     "t": "Define el apetito al riesgo",
+     "q": [
+      {
+       "id": "2.7.1",
+       "t": "¿El Consejo de Administración y la alta gerencia han establecido y aprobado un marco claro que define el apetito y tolerancia al riesgo, tomando en cuenta los diferentes niveles de la organización?",
+       "orig": "2.7.1"
+      },
+      {
+       "id": "2.7.2",
+       "t": "¿Se comunican y aplican adecuadamente los límites de riesgo establecidos a todas las unidades de negocio y se aseguran de que los empleados estén informados y capacitados sobre estos límites?",
+       "orig": "2.7.2"
+      },
+      {
+       "id": "2.7.3",
+       "t": "¿El apetito al riesgo se expresa en límites cuantitativos medibles para el riesgo de crédito (IMOR, ICOR, concentración por acreditado y sector, cobertura de reservas) con alertas tempranas y responsables de escalamiento?",
+       "tema": "Crédito",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 8,
+     "t": "Evalúa estrategias alternativas",
+     "q": [
+      {
+       "id": "2.8.1",
+       "t": "¿La Institución realiza estudios de viabilidad sobre la adopción de tecnologías avanzadas (como IA, Machine Learning, y análisis de Big Data) en sus procesos y servicios?",
+       "orig": "2.9.1"
+      },
+      {
+       "id": "2.8.2",
+       "t": "¿Existe un proceso formal para la selección de alternativas estratégicas que aseguren la alineación con los objetivos generales de la Institución y la gestión de riesgos?",
+       "orig": "2.9.2"
+      },
+      {
+       "id": "2.8.3",
+       "t": "¿La Institución considera los posibles impactos de sus decisiones estratégicas en la satisfacción de clientes, cumplimiento regulatorio, y adaptación a las tendencias del mercado?",
+       "orig": "2.9.3"
+      },
+      {
+       "id": "2.8.4",
+       "t": "¿Existen planes de contingencia establecidos para mitigar riesgos asociados con la implementación de nuevas estrategias y tecnologías?",
+       "orig": "2.9.4"
+      },
+      {
+       "id": "2.8.5",
+       "t": "¿La Institución consulta regularmente con expertos en áreas clave para asegurar la viabilidad de sus alternativas estratégicas?",
+       "orig": "2.9.5"
+      },
+      {
+       "id": "2.8.6",
+       "t": "¿Se realiza una evaluación de los costos y beneficios de cada alternativa estratégica, incluyendo los potenciales riesgos operativos y financieros?",
+       "orig": "2.9.6"
+      },
+      {
+       "id": "2.8.7",
+       "t": "¿Existen indicadores de desempeño que permitan medir la eficacia de las alternativas estratégicas implementadas?",
+       "orig": "2.9.7"
+      },
+      {
+       "id": "2.8.8",
+       "t": "¿Se revisan periódicamente las estrategias implementadas para garantizar que sigan alineadas con los objetivos organizacionales y el entorno cambiante?",
+       "orig": "2.9.8"
+      }
+     ]
+    },
+    {
+     "n": 9,
+     "t": "Formula los objetivos empresariales",
+     "q": [
+      {
+       "id": "2.9.1",
+       "t": "¿Los objetivos de negocio (colocación, captación, rentabilidad, morosidad, liquidez y solvencia) se derivan formalmente del plan estratégico y son aprobados por el Consejo de Administración?",
+       "tema": "Objetivos",
+       "nuevo": true
+      },
+      {
+       "id": "2.9.2",
+       "t": "¿Cada objetivo de negocio tiene métricas, metas y tolerancias definidas (variación aceptable del desempeño) congruentes con el apetito al riesgo?",
+       "tema": "Objetivos",
+       "nuevo": true
+      },
+      {
+       "id": "2.9.3",
+       "t": "¿Los objetivos se despliegan en cascada a sucursales, áreas y puestos clave, con responsables y fechas de cumplimiento?",
+       "tema": "Objetivos",
+       "nuevo": true
+      },
+      {
+       "id": "2.9.4",
+       "t": "¿Se verifica que los objetivos de crecimiento de cartera no excedan los límites de concentración, capacidad de originación y control de la mesa de control?",
+       "tema": "Objetivos",
+       "nuevo": true
+      },
+      {
+       "id": "2.9.5",
+       "t": "¿Los objetivos consideran requerimientos regulatorios (capitalización, liquidez, reservas preventivas) y su cumplimiento se monitorea al menos mensualmente?",
+       "tema": "Objetivos",
+       "nuevo": true
+      },
+      {
+       "id": "2.9.6",
+       "t": "¿Se revisan y, en su caso, ajustan los objetivos de negocio cuando cambian el contexto o el perfil de riesgo de la Institución?",
+       "tema": "Objetivos",
+       "nuevo": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "code": "DES",
+   "name": "Desempeño",
+   "peso": 0.15,
+   "principles": [
+    {
+     "n": 10,
+     "t": "Identificar riesgos clave",
+     "q": [
+      {
+       "id": "3.10.1",
+       "t": "¿La empresa ha definido claramente una metodología para evaluar los riesgos basada en un enfoque integral, incluyendo aspectos de PLD (Prevención de Lavado de Dinero)? ¿El manual de administración de riesgos está actualizado, y el personal lo conoce y recibe capacitación al respecto?",
+       "orig": "3.10.1"
+      },
+      {
+       "id": "3.10.2",
+       "t": "¿Se identifican y valoran los riesgos crediticios, incluyendo su impacto y las estrategias de respuesta? ¿Con qué frecuencia se realiza esta evaluación? (análisis BIA)",
+       "orig": "3.10.2"
+      },
+      {
+       "id": "3.10.3",
+       "t": "¿Se identifican y valoran los riesgos de liquidez, evaluando su impacto y las estrategias de respuesta? ¿Con qué frecuencia se realiza esta evaluación?",
+       "orig": "3.10.3"
+      },
+      {
+       "id": "3.10.4",
+       "t": "¿Se identifican y valoran los riesgos de mercado, evaluando su impacto y las estrategias de respuesta? ¿Con qué frecuencia se realiza esta evaluación?",
+       "orig": "3.10.4"
+      },
+      {
+       "id": "3.10.5",
+       "t": "¿Se identifican y valoran los riesgos operacionales y tecnológicos, evaluando su impacto y las estrategias de respuesta? ¿Con qué frecuencia se realiza esta evaluación?",
+       "orig": "3.10.5"
+      },
+      {
+       "id": "3.10.6",
+       "t": "¿Se identifican y valoran los riesgos legales, evaluando su impacto y las estrategias de respuesta? ¿Con qué frecuencia se realiza esta evaluación?",
+       "orig": "3.10.6"
+      },
+      {
+       "id": "3.10.7",
+       "t": "¿Se identifican y valoran los riesgos reputacionales, evaluando su impacto y las estrategias de respuesta? ¿Con qué frecuencia se realiza esta evaluación?",
+       "orig": "3.10.7"
+      },
+      {
+       "id": "3.10.8",
+       "t": "¿Se identifican y valoran los riesgos relacionados con PLD/FT (Lavado de Dinero y Financiamiento al Terrorismo), evaluando su impacto y las estrategias de respuesta? ¿Con qué frecuencia se realiza esta evaluación?",
+       "orig": "3.10.8"
+      },
+      {
+       "id": "3.10.9",
+       "t": "¿Se identifican y evalúan los riesgos derivados de terceros y proveedores críticos (core bancario, nube, corresponsales, cobranza externa) con debida diligencia y cláusulas de auditoría?",
+       "tema": "Terceros",
+       "nuevo": true
+      },
+      {
+       "id": "3.10.10",
+       "t": "¿Se identifican y valoran los riesgos de fraude interno y externo, incluido el fraude digital (suplantación de identidad, ingeniería social, robo de cuentas)?",
+       "tema": "Fraude",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 11,
+     "t": "Evalúa la severidad de los riesgos",
+     "q": [
+      {
+       "id": "3.11.1",
+       "t": "¿La gerencia selecciona y desarrolla evaluaciones continuas para determinar la severidad o impacto de los riesgos?",
+       "orig": "3.11.1"
+      },
+      {
+       "id": "3.11.2",
+       "t": "¿La empresa cuenta con pólizas de seguros para proteger sus diferentes activos?",
+       "orig": "3.11.2"
+      },
+      {
+       "id": "3.11.3",
+       "t": "¿El Consejo de Administración conoce y aprueba la selección de la aseguradora antes de formalizar los contratos de seguros?",
+       "orig": "3.11.3"
+      },
+      {
+       "id": "3.11.4",
+       "t": "¿Se ha designado a una persona responsable de controlar la vigencia de los seguros contratados?",
+       "orig": "3.11.4"
+      },
+      {
+       "id": "3.11.5",
+       "t": "¿Las pólizas y la documentación de los seguros están adecuadamente custodiadas y almacenadas en una caja de seguridad?",
+       "orig": "3.11.5"
+      },
+      {
+       "id": "3.11.6",
+       "t": "¿Están asegurados los valores en efectivo que permanecen en la empresa?",
+       "orig": "3.11.6"
+      },
+      {
+       "id": "3.11.7",
+       "t": "¿Están asegurados los valores y las garantías recibidas por la empresa?",
+       "orig": "3.11.7"
+      },
+      {
+       "id": "3.11.8",
+       "t": "¿Se han afianzado mediante pólizas de seguro a los funcionarios responsables de manejar efectivo y a los ejecutivos principales de la empresa? También se puede utilizar pagaré.",
+       "orig": "3.11.8"
+      },
+      {
+       "id": "3.11.9",
+       "t": "¿Se realizan pruebas de estrés y análisis de escenarios sobre la cartera de crédito (pérdida esperada, pérdida no esperada / VaR de crédito, concentración) y sus resultados se presentan al Comité de Riesgos?",
+       "tema": "Crédito",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 12,
+     "t": "Prioriza los riesgos",
+     "q": [
+      {
+       "id": "3.12.1",
+       "t": "¿La empresa cuenta con un catálogo de riesgos debidamente documentado?",
+       "orig": "3.12.1"
+      },
+      {
+       "id": "3.12.2",
+       "t": "¿Existe una metodología clara para la valoración de riesgos?",
+       "orig": "3.12.2"
+      },
+      {
+       "id": "3.12.3",
+       "t": "¿Se ha definido un valor porcentual o numérico para la probabilidad de ocurrencia de cada riesgo, en relación con la totalidad de los riesgos identificados? (Análisis BIA)",
+       "orig": "3.12.3"
+      }
+     ]
+    },
+    {
+     "n": 13,
+     "t": "Implementa las respuestas a los riesgos",
+     "q": [
+      {
+       "id": "3.13.1",
+       "t": "¿La empresa ha definido claramente los tratamientos mitigantes en función del nivel de riesgo, considerando el nivel de tolerancia establecido?",
+       "orig": "3.13.1"
+      },
+      {
+       "id": "3.13.2",
+       "t": "¿Están identificados los controles, estructuras internas, medidas, criterios, políticas y procedimientos que contribuyen a administrar, controlar y disminuir la exposición a los riesgos?",
+       "orig": "3.13.2"
+      },
+      {
+       "id": "3.13.3",
+       "t": "¿El funcionamiento del mapa y matriz de riesgos está claramente definido?",
+       "orig": "3.13.3"
+      },
+      {
+       "id": "3.13.4",
+       "t": "¿Se ha determinado si es necesario implementar medidas mitigantes adicionales o realizar mejoras para mantener el grado de riesgo en niveles tolerables de acuerdo al perfil de la empresa?",
+       "orig": "3.13.4"
+      },
+      {
+       "id": "3.13.5",
+       "t": "¿Se documentan las modificaciones y actualizaciones a manuales, instructivos, políticas, reglamentos y formatos?",
+       "orig": "3.13.5"
+      },
+      {
+       "id": "3.13.6",
+       "t": "¿Se evalúa periódicamente (al menos cada 12 meses) la eficacia y eficiencia de la metodología de gestión de riesgos?",
+       "orig": "3.13.6"
+      },
+      {
+       "id": "3.13.7",
+       "t": "¿Se elabora un programa de acciones para abordar las problemáticas detectadas en la evaluación de objetivos y metas?",
+       "orig": "3.13.7"
+      },
+      {
+       "id": "3.13.8",
+       "t": "¿Se da seguimiento a la implementación de las mejoras propuestas y a las deficiencias identificadas en auditorías externas?",
+       "orig": "3.13.8"
+      },
+      {
+       "id": "3.13.9",
+       "t": "¿La empresa implementa las recomendaciones derivadas de auditorías internas?",
+       "orig": "3.13.9"
+      },
+      {
+       "id": "3.13.10",
+       "t": "¿Se realizan autoevaluaciones de control interno en los procesos críticos identificados, y se desarrollan programas de trabajo para atender las deficiencias detectadas?",
+       "orig": "3.13.10"
+      },
+      {
+       "id": "3.13.11",
+       "t": "¿La empresa cuenta con un procedimiento formal que establece las políticas y mecanismos necesarios para que los responsables de procesos comuniquen los resultados de sus evaluaciones de control interno y las deficiencias identificadas al coordinador de actividades de control interno?",
+       "orig": "3.13.11"
+      },
+      {
+       "id": "3.13.12",
+       "t": "¿La gerencia da seguimiento a la implementación de acciones correctivas para corregir las deficiencias identificadas en el sistema de control interno, asegurándose de que se cumplan en el tiempo establecido?",
+       "orig": "3.13.12"
+      },
+      {
+       "id": "3.13.13",
+       "t": "¿La mesa de control verifica, antes de la disposición del crédito, la integración completa del expediente, las autorizaciones por nivel facultado, las garantías y la consulta a sociedades de información crediticia, registrando las excepciones?",
+       "tema": "Mesa de control",
+       "nuevo": true
+      },
+      {
+       "id": "3.13.14",
+       "t": "¿La contraloría de crédito revisa de forma independiente y periódica la originación, seguimiento y recuperación de la cartera, el cumplimiento de políticas y la atención de excepciones?",
+       "tema": "Contraloría de crédito",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 14,
+     "t": "Desarrolla un portafolio de riesgos",
+     "q": [
+      {
+       "id": "3.14.1",
+       "t": "¿Se realizan ejercicios periódicos para identificar, valorar y responder a riesgos derivados de acontecimientos económicos, políticos, sociales, tecnológicos, geográficos y globales? ¿Con qué frecuencia?",
+       "orig": "3.14.1"
+      },
+      {
+       "id": "3.14.2",
+       "t": "¿El catálogo de riesgos, el mapa de riesgos, la matriz de riesgos y los informes están debidamente documentados, y son conocidos por los consejeros?",
+       "orig": "3.14.2"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "code": "REV",
+   "name": "Revisión y Ajuste",
+   "peso": 0.15,
+   "principles": [
+    {
+     "n": 15,
+     "t": "Evalúa los cambios sustanciales",
+     "q": [
+      {
+       "id": "4.15.1",
+       "t": "¿Las amenazas y oportunidades derivadas de los cambios son gestionadas a nivel estratégico por los altos mandos de la organización?",
+       "orig": "4.15.1"
+      },
+      {
+       "id": "4.15.2",
+       "t": "¿Existe un mecanismo para identificar y responder oportunamente a los cambios que afectan los objetivos institucionales?",
+       "orig": "4.15.2"
+      },
+      {
+       "id": "4.15.3",
+       "t": "¿La empresa cuenta con una fuente confiable de información sobre cambios en la legislación aplicable?",
+       "orig": "4.15.3"
+      },
+      {
+       "id": "4.15.4",
+       "t": "¿La organización tiene la capacidad de responder de manera oportuna y positiva a los cambios?",
+       "orig": "4.15.4"
+      },
+      {
+       "id": "4.15.5",
+       "t": "¿Los directivos adoptan una actitud constructiva y sin prejuicios para abordar cambios inevitables, como modificaciones legislativas o nuevas exigencias regulatorias, en beneficio de la empresa?",
+       "orig": "4.15.5"
+      },
+      {
+       "id": "4.15.6",
+       "t": "¿Se toman acciones para asegurar que el personal nuevo comprenda la cultura organizacional y adopte una actitud positiva hacia los cambios?",
+       "orig": "4.15.6"
+      },
+      {
+       "id": "4.15.7",
+       "t": "¿Se han implementado mecanismos para acceder a nuevos sistemas de información?",
+       "orig": "4.15.7"
+      },
+      {
+       "id": "4.15.8",
+       "t": "¿La empresa conserva el sistema de información anterior durante un período de transición prudente al adoptar uno nuevo, asegurándose de su correcto funcionamiento antes de la implementación completa?",
+       "orig": "4.15.8"
+      },
+      {
+       "id": "4.15.9",
+       "t": "¿Se han desarrollado acciones para reducir o eliminar la resistencia natural al cambio entre los empleados?",
+       "orig": "4.15.9"
+      },
+      {
+       "id": "4.15.10",
+       "t": "¿Se cuenta con acceso a información confiable sobre avances tecnológicos que podrían beneficiar a la empresa?",
+       "orig": "4.15.10"
+      }
+     ]
+    },
+    {
+     "n": 16,
+     "t": "Revisa los riesgos y el desempeño",
+     "q": [
+      {
+       "id": "4.16.1",
+       "t": "¿La organización realiza evaluaciones periódicas de los Indicadores Clave de Riesgo (KRI), Indicadores Clave de Desempeño (KPI) y los indicadores de la CNBV? ¿Con qué frecuencia se llevan a cabo?",
+       "orig": "4.16.1"
+      },
+      {
+       "id": "4.16.2",
+       "t": "¿Existe un documento formal que establezca los planes de recuperación ante desastres y de continuidad operativa para los sistemas informáticos (incluyendo datos, hardware, software críticos, personal y espacios físicos) asociados a los procesos críticos de la empresa?",
+       "orig": "4.16.2"
+      },
+      {
+       "id": "4.16.3",
+       "t": "¿Los procedimientos de control especifican claramente las responsabilidades del personal involucrado y establecen la rendición de cuentas dentro de la organización?",
+       "orig": "4.16.3"
+      },
+      {
+       "id": "4.16.4",
+       "t": "¿Los procedimientos incluyen la frecuencia y fechas de las actividades de control y las acciones de seguimiento, considerando el nivel de exposición al riesgo?",
+       "orig": "4.16.4"
+      },
+      {
+       "id": "4.16.5",
+       "t": "¿La asignación de controles toma en cuenta el nivel de competencia y autoridad del personal, así como la complejidad de las actividades y el volumen de operaciones?",
+       "orig": "4.16.5"
+      },
+      {
+       "id": "4.16.6",
+       "t": "¿La Gerencia General u órgano equivalente revisa periódicamente las políticas, procedimientos y actividades de control para asegurar su relevancia y las actualiza cuando es necesario, considerando cambios en personas, procesos o tecnología que puedan afectar su eficacia?",
+       "orig": "4.16.6"
+      },
+      {
+       "id": "4.16.7",
+       "t": "¿Los planes de continuidad del negocio y de recuperación ante desastres se prueban al menos una vez al año y los resultados se documentan con acciones de mejora?",
+       "tema": "Continuidad",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 17,
+     "t": "Propone mejoras en la gestión de riesgos empresariales",
+     "q": [
+      {
+       "id": "4.17.1",
+       "t": "¿La empresa cuenta con mecanismos que promuevan una cultura de innovación y recepción de sugerencias para mejoras propuestas por empleados y directivos?",
+       "orig": "4.17.1"
+      },
+      {
+       "id": "4.17.2",
+       "t": "¿Se consideran las sugerencias o propuestas de mejora presentadas por empleados y directivos? ¿Se evalúa su viabilidad en conjunto con el Comité de Riesgos y/o el Comité de Auditoría?",
+       "orig": "4.17.2"
+      },
+      {
+       "id": "4.17.3",
+       "t": "¿Se evalúa si es necesario implementar mejoras o medidas mitigantes adicionales para mantener los niveles de riesgo dentro de los límites tolerables para la empresa?",
+       "orig": "4.17.3"
+      },
+      {
+       "id": "4.17.4",
+       "t": "¿Las propuestas de mejora y/o medidas mitigantes adicionales son evaluadas formalmente?",
+       "orig": "4.17.4"
+      },
+      {
+       "id": "4.17.5",
+       "t": "¿La empresa cuenta con indicadores de desempeño e indicadores de riesgo específicos para los procesos de cambio?",
+       "orig": "4.17.5"
+      },
+      {
+       "id": "4.17.6",
+       "t": "¿Existen actividades de supervisión operativa para asegurar que los cambios o mejoras se realicen de manera planeada y controlada?",
+       "orig": "4.17.6"
+      },
+      {
+       "id": "4.17.7",
+       "t": "¿Los supervisores inmediatos cumplen con su responsabilidad de monitorear las actividades con la frecuencia necesaria?",
+       "orig": "4.17.7"
+      },
+      {
+       "id": "4.17.8",
+       "t": "¿Los responsables de cada proceso y procedimiento están al tanto de sus responsabilidades en cuanto a la autorización y aprobación de actividades? (Firmas de responsabilidad)",
+       "orig": "4.17.8"
+      },
+      {
+       "id": "4.17.9",
+       "t": "¿La empresa dispone de una política, manual o documento similar que establezca la obligación de mejorar y/o actualizar periódicamente políticas y procedimientos, especialmente en procesos clave para cumplir con los objetivos organizacionales?",
+       "orig": "4.17.9"
+      },
+      {
+       "id": "4.17.10",
+       "t": "¿Se evalúa si el diseño de los controles es adecuado como respuesta a la mitigación de riesgos en la matriz de riesgos, y si estos controles han sido implementados conforme a su diseño?",
+       "orig": "4.17.10"
+      },
+      {
+       "id": "4.17.11",
+       "t": "¿La función de auditoría interna cuenta con un programa de aseguramiento y mejora de la calidad, incluyendo una evaluación externa al menos cada cinco años, conforme a las Normas Globales de Auditoría Interna (IIA, 2024)?",
+       "tema": "Auditoría interna",
+       "nuevo": true
+      },
+      {
+       "id": "4.17.12",
+       "t": "¿Se da seguimiento formal a las observaciones de la autoridad supervisora (CNBV y, en su caso, Comité de Supervisión Auxiliar) hasta su solventación?",
+       "tema": "Regulatorio",
+       "nuevo": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "code": "ICR",
+   "name": "Información, Comunicación y Reporte",
+   "peso": 0.25,
+   "principles": [
+    {
+     "n": 18,
+     "t": "Aprovecha la información y la tecnología",
+     "q": [
+      {
+       "id": "5.18.1",
+       "t": "¿Cuenta la Institución Financiera con sistemas informáticos que respalden sus actividades misionales, financieras o administrativas? En caso afirmativo, indique los nombres de dichos sistemas y los procesos que apoyan.",
+       "orig": "5.18.1"
+      },
+      {
+       "id": "5.18.2",
+       "t": "¿La Institución Financiera dispone de un Comité de Tecnología de la Información y Comunicaciones (o su equivalente) en el cual participen los principales directivos, el personal de tecnología y representantes de las áreas usuarias? (Gobierno de TI, COBIT 5 ISACA = COSO)",
+       "orig": "5.18.2"
+      },
+      {
+       "id": "5.18.3",
+       "t": "¿Existe un Plan Operativo Anual Informático?",
+       "orig": "5.18.3"
+      },
+      {
+       "id": "5.18.4",
+       "t": "¿Dispone la Institución Financiera de laboratorios de pruebas para habilitar tecnologías antes de su implementación en operaciones?",
+       "orig": "5.18.4"
+      },
+      {
+       "id": "5.18.5",
+       "t": "¿Existe un inventario, programa de adquisiciones o plan de renovación de equipos y/o software?",
+       "orig": "5.18.5"
+      },
+      {
+       "id": "5.18.6",
+       "t": "¿La Institución Financiera cuenta con licencias y contratos para el funcionamiento y mantenimiento de los equipos TIC?",
+       "orig": "5.18.6"
+      },
+      {
+       "id": "5.18.7",
+       "t": "¿Existen políticas y lineamientos de seguridad para los sistemas informáticos y de comunicación (como claves de acceso, programas de seguridad contra accesos no autorizados, antivirus, y respaldo de información)?",
+       "orig": "5.18.7"
+      },
+      {
+       "id": "5.18.8",
+       "t": "¿Se implementan controles para asegurar que las solicitudes de acceso a las aplicaciones se ajusten a las listas de personal autorizado?",
+       "orig": "5.18.8"
+      },
+      {
+       "id": "5.18.9",
+       "t": "¿La Institución Financiera realiza actualizaciones en los accesos de los empleados cuando cambian de función o dejan de formar parte de la organización?",
+       "orig": "5.18.9"
+      },
+      {
+       "id": "5.18.10",
+       "t": "¿Se efectúan revisiones periódicas de los accesos otorgados en los sistemas?",
+       "orig": "5.18.10"
+      },
+      {
+       "id": "5.18.11",
+       "t": "¿Cuenta la Institución Financiera con una metodología para el desarrollo de sus sistemas informáticos?",
+       "orig": "5.18.11"
+      },
+      {
+       "id": "5.18.12",
+       "t": "¿La metodología de desarrollo incluye controles sobre los cambios en la tecnología?",
+       "orig": "5.18.12"
+      },
+      {
+       "id": "5.18.13",
+       "t": "¿Se seleccionan y ejecutan controles sobre los servicios de outsourcing para asegurar la integridad, exactitud y validez de la información proporcionada y recibida de los proveedores?",
+       "orig": "5.18.13"
+      },
+      {
+       "id": "5.18.14",
+       "t": "¿Existe un Plan de Sistemas de Información formalmente implementado que esté alineado con el Plan Estratégico u Operativo y que apoye los objetivos de la Institución Financiera?",
+       "orig": "5.18.14"
+      },
+      {
+       "id": "5.18.15",
+       "t": "¿Se ha definido la información requerida en cada nivel de la Institución Financiera para soportar el funcionamiento del sistema informático?",
+       "orig": "5.18.15"
+      },
+      {
+       "id": "5.18.16",
+       "t": "¿Cuenta la Institución Financiera con políticas y/o procedimientos autorizados que establezcan las fuentes y características de los datos, así como los elementos necesarios para su procesamiento y generación de información?",
+       "orig": "5.18.16"
+      },
+      {
+       "id": "5.18.17",
+       "t": "¿Se han diseñado sistemas de información para capturar, procesar datos y transformarlos en información útil que cumpla con los requisitos definidos?",
+       "orig": "5.18.17"
+      },
+      {
+       "id": "5.18.18",
+       "t": "¿Se evalúa el balance entre los beneficios y los costos de enviar, obtener y administrar la información según las necesidades de la Institución Financiera?",
+       "orig": "5.18.18"
+      },
+      {
+       "id": "5.18.19",
+       "t": "¿Se realiza una auditoría anual de los procesos que incluyen inteligencia artificial (IA) para asegurar su confiabilidad y cumplimiento con normativas?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.1"
+      },
+      {
+       "id": "5.18.20",
+       "t": "¿La Institución cuenta con expertos en IA dentro del área de auditoría interna para supervisar la implementación y operación de procesos basados en IA?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.2"
+      },
+      {
+       "id": "5.18.21",
+       "t": "¿Los procesos de IA están documentados y su implementación es revisada periódicamente por el área de auditoría?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.3"
+      },
+      {
+       "id": "5.18.22",
+       "t": "¿Existen controles de acceso y protección de datos específicos para sistemas que utilizan IA, incluyendo políticas de privacidad de clientes?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.4"
+      },
+      {
+       "id": "5.18.23",
+       "t": "¿La IA en la Institución es utilizada únicamente con fines alineados a los objetivos estratégicos, y se evitan usos que puedan representar riesgos no controlados?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.5"
+      },
+      {
+       "id": "5.18.24",
+       "t": "¿Se implementan medidas de seguridad adicionales para datos procesados por IA, como encriptación y autenticación avanzada?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.6"
+      },
+      {
+       "id": "5.18.25",
+       "t": "¿La Institución tiene un proceso para evaluar los posibles sesgos en la IA, y realiza ajustes para asegurar que los resultados sean objetivos y justos?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.7"
+      },
+      {
+       "id": "5.18.26",
+       "t": "¿Se dispone de mecanismos de monitoreo en tiempo real para evaluar el desempeño y resultados de los procesos basados en IA?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.8"
+      },
+      {
+       "id": "5.18.27",
+       "t": "¿Se realiza una revisión anual de los proveedores de servicios de IA para asegurar que cumplen con las políticas de seguridad y calidad de la Institución?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.9"
+      },
+      {
+       "id": "5.18.28",
+       "t": "¿Existen políticas claras para la eliminación segura de los datos utilizados por sistemas de IA una vez que han cumplido su propósito?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.10"
+      },
+      {
+       "id": "5.18.29",
+       "t": "¿La Institución tiene procedimientos para hacer frente a incidentes de seguridad que involucren sistemas de IA?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.11"
+      },
+      {
+       "id": "5.18.30",
+       "t": "¿Se realizan simulacros de respuesta a incidentes para procesos que dependen de IA y tecnologías avanzadas?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.12"
+      },
+      {
+       "id": "5.18.31",
+       "t": "¿Se cuenta con un comité o equipo que supervise el uso ético de IA en todas las áreas de la Institución?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.13"
+      },
+      {
+       "id": "5.18.32",
+       "t": "¿Existen controles para limitar la toma de decisiones automáticas de la IA en áreas de alto riesgo, requiriendo intervención humana?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.14"
+      },
+      {
+       "id": "5.18.33",
+       "t": "¿La Institución verifica regularmente la exactitud de los datos procesados por IA para prevenir decisiones incorrectas basadas en información errónea?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.15"
+      },
+      {
+       "id": "5.18.34",
+       "t": "¿Se tiene una política de transparencia respecto al uso de IA, informando a los clientes sobre cómo se utilizan sus datos y el alcance de la IA?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.16"
+      },
+      {
+       "id": "5.18.35",
+       "t": "¿Se realizan evaluaciones periódicas de ciberseguridad para identificar y mitigar vulnerabilidades en sistemas de IA?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.17"
+      },
+      {
+       "id": "5.18.36",
+       "t": "¿La Institución establece pruebas y validaciones antes de implementar IA en procesos críticos para asegurar que funcione según lo previsto?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.18"
+      },
+      {
+       "id": "5.18.37",
+       "t": "¿Se evalúa la rentabilidad y efectividad de la IA y otras tecnologías después de su implementación para justificar su permanencia?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.19"
+      },
+      {
+       "id": "5.18.38",
+       "t": "¿La Institución cuenta con una política de actualización y mejora continua de sus sistemas de IA en respuesta a avances tecnológicos y cambios en el mercado?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.21"
+      },
+      {
+       "id": "5.18.39",
+       "t": "¿Se supervisan los resultados generados por la IA para detectar posibles errores o inconsistencias en los datos?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.22"
+      },
+      {
+       "id": "5.18.40",
+       "t": "¿La Institución tiene una política para descontinuar o actualizar procesos de IA que ya no sean útiles o presenten riesgos?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.23"
+      },
+      {
+       "id": "5.18.41",
+       "t": "¿Existen métricas para evaluar el impacto de la IA en la eficiencia operativa y satisfacción del cliente?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.24"
+      },
+      {
+       "id": "5.18.42",
+       "t": "¿La Institución consulta regularmente con expertos en ética y tecnología para evaluar el impacto de la IA en la privacidad y los derechos de los clientes?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.26"
+      },
+      {
+       "id": "5.18.43",
+       "t": "¿Se llevan a cabo revisiones para asegurar que los procesos de IA no se vean comprometidos por errores de software o fallos en los datos?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.27"
+      },
+      {
+       "id": "5.18.44",
+       "t": "¿La Institución tiene un plan de contingencia para reemplazar procesos basados en IA en caso de falla crítica o incidente de seguridad?",
+       "tema": "Inteligencia artificial",
+       "orig": "2.8.28"
+      },
+      {
+       "id": "5.18.45",
+       "t": "¿El tratamiento de datos personales de socios y clientes cumple con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares vigente (2025), incluyendo avisos de privacidad, derechos ARCO y medidas de seguridad?",
+       "tema": "Datos personales",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 19,
+     "t": "Comunica los riesgos de información",
+     "q": [
+      {
+       "id": "5.19.1",
+       "t": "¿Existen responsables designados para generar información sobre el cumplimiento de los objetivos y metas establecidos en el Plan Estratégico u Operativo de la Institución Financiera?",
+       "orig": "5.19.1"
+      },
+      {
+       "id": "5.19.2",
+       "t": "¿Se ha asignado personal responsable de elaborar la información de gestión para cumplir con las obligaciones presupuestarias de la Institución Financiera?",
+       "orig": "5.19.2"
+      },
+      {
+       "id": "5.19.3",
+       "t": "¿Se ha asignado personal responsable de generar información para el cumplimiento de las obligaciones de rendición de cuentas?",
+       "orig": "5.19.3"
+      },
+      {
+       "id": "5.19.4",
+       "t": "¿Cuenta la Institución Financiera con un documento que establezca las responsabilidades del personal en materia de control interno en sus respectivas áreas de autoridad?",
+       "orig": "5.19.4"
+      },
+      {
+       "id": "5.19.5",
+       "t": "¿Se elabora formalmente un informe periódico para el Consejo de Administración y Vigilancia, la Gerencia General u órgano equivalente, sobre el estado de los sistemas informáticos y la seguridad de la información (COBIT 2019 / ISO/IEC 27001:2022)?",
+       "orig": "5.19.5",
+       "actualizado": true
+      },
+      {
+       "id": "5.19.6",
+       "t": "¿Cumple la Institución Financiera con el registro contable de sus operaciones y su reflejo en la información financiera?",
+       "orig": "5.19.6"
+      },
+      {
+       "id": "5.19.7",
+       "t": "¿La Institución Financiera cumple con la generación de la información presupuestal del año en curso?",
+       "orig": "5.19.7"
+      },
+      {
+       "id": "5.19.8",
+       "t": "Para los sistemas informáticos mencionados en la pregunta 5.18.1, ¿se les ha realizado una auditoría de TI, de control interno y/o de riesgos en el último ejercicio?",
+       "orig": "5.19.8"
+      },
+      {
+       "id": "5.19.9",
+       "t": "En relación con la pregunta anterior, ¿ha establecido la Institución Financiera actividades de control para mitigar los riesgos identificados que podrían afectar su operación?",
+       "orig": "5.19.9"
+      },
+      {
+       "id": "5.19.10",
+       "t": "¿Dispone la Institución Financiera de una metodología para evaluar el control interno y los riesgos en el entorno de tecnologías de la información y comunicaciones (TIC)? (COBIT - ISO 27001)",
+       "orig": "5.19.10"
+      },
+      {
+       "id": "5.19.11",
+       "t": "¿Se implementan controles que faciliten la comunicación externa, incluyendo políticas y procedimientos para recibir información de partes externas y compartirla?",
+       "orig": "5.19.11"
+      },
+      {
+       "id": "5.19.12",
+       "t": "¿Comparte la Institución Financiera su código de ética con los proveedores para promover su cumplimiento interno?",
+       "orig": "5.19.12"
+      },
+      {
+       "id": "5.19.13",
+       "t": "¿Cuenta la Institución Financiera con canales de comunicación para recibir información de clientes, proveedores y auditores externos, y verifica la relevancia de dicha información para el sistema de control interno?",
+       "orig": "5.19.13"
+      },
+      {
+       "id": "5.19.14",
+       "t": "¿La gerencia evalúa la información resultante de evaluaciones externas sobre el control interno y la comunica al Consejo de Administración y Vigilancia o al Comité de Auditoría cuando corresponde?",
+       "orig": "5.19.14"
+      },
+      {
+       "id": "5.19.15",
+       "t": "¿La Institución Financiera selecciona métodos para responder a la información entrante, asegurando que los mensajes clave recibidos se atiendan y se dirijan adecuadamente?",
+       "orig": "5.19.15"
+      },
+      {
+       "id": "5.19.16",
+       "t": "¿Los reportes regulatorios se envían en tiempo y forma a la autoridad, con controles de calidad de datos, conciliación contable y evidencia de revisión previa?",
+       "tema": "Regulatorio",
+       "nuevo": true
+      }
+     ]
+    },
+    {
+     "n": 20,
+     "t": "Informes sobre riesgos, cultura y desempeño",
+     "q": [
+      {
+       "id": "5.20.1",
+       "t": "¿Se elabora formalmente un informe periódico para la Asamblea General, el Consejo de Administración y Vigilancia, o la Gerencia General u órgano equivalente, sobre el estatus de los riesgos?",
+       "orig": "5.20.1"
+      },
+      {
+       "id": "5.20.2",
+       "t": "¿Existe un informe periódico que se comunique formalmente a la Asamblea General, el Consejo de Administración y Vigilancia, o la Gerencia General u órgano equivalente, sobre la cultura organizacional y el gobierno?",
+       "orig": "5.20.2"
+      },
+      {
+       "id": "5.20.3",
+       "t": "¿Se elabora formalmente un informe periódico para la Asamblea General, el Consejo de Administración y Vigilancia, o la Gerencia General u órgano equivalente, sobre el desempeño general de la Institución Financiera?",
+       "orig": "5.20.3"
+      },
+      {
+       "id": "5.20.4",
+       "t": "¿Se presenta al Consejo un tablero integrado con los resultados de auditoría interna, contraloría interna, contraloría de crédito / mesa de control y administración de riesgos, con el estatus de los planes de acción?",
+       "tema": "Integración",
+       "nuevo": true
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "atributos": [
+  {
+   "k": "a",
+   "n": "Existe",
+   "ciclo": "Definir",
+   "ev": "Nombre del documento (política, procedimiento, actividad)."
+  },
+  {
+   "k": "b",
+   "n": "Diseñada",
+   "ciclo": "Definir",
+   "ev": "La evidencia corresponde a lo solicitado y está alineada con lineamientos de la Empresa, sector, reguladores o prácticas internacionales."
+  },
+  {
+   "k": "c",
+   "n": "Aprobado",
+   "ciclo": "Aprobar",
+   "ev": "Resolución, acta u otro acto administrativo de aprobación por la autoridad facultada (número, quién, cargo, fecha)."
+  },
+  {
+   "k": "d",
+   "n": "Difundido",
+   "ciclo": "Difundir",
+   "ev": "Cursos, reuniones, boletines, correo, intranet u otros medios de difusión en el periodo evaluado."
+  },
+  {
+   "k": "e",
+   "n": "Implementado",
+   "ciclo": "Documentar y medir",
+   "ev": "Políticas, procedimientos y actividades que evidencian la implementación conforme a la documentación vigente."
+  },
+  {
+   "k": "f",
+   "n": "Responsable",
+   "ciclo": "Documentar y medir",
+   "ev": "Acto administrativo o función (MOF) que designa al responsable."
+  },
+  {
+   "k": "g",
+   "n": "Funcionamiento",
+   "ciclo": "Documentar y medir",
+   "ev": "Registros que evidencian la operación con la frecuencia y cuidado debidos (al menos tres meses)."
+  },
+  {
+   "k": "h",
+   "n": "Mejora continua",
+   "ciclo": "Revisar y mejorar",
+   "ev": "Actualización o mejora documentada dentro de los últimos dos años (resolución, fecha de última actualización, automatización)."
+  }
+ ],
+ "niveles": [
+  {
+   "nivel": 0,
+   "requiere": 0,
+   "t": "No existen actividades diseñadas para cubrir el requerimiento."
+  },
+  {
+   "nivel": 1,
+   "requiere": 2,
+   "t": "Existen actividades diseñadas pero no están documentadas en políticas y/o procedimientos ni aprobadas."
+  },
+  {
+   "nivel": 2,
+   "requiere": 4,
+   "t": "Las actividades están diseñadas, documentadas, aprobadas y difundidas; en proceso de implementación."
+  },
+  {
+   "nivel": 3,
+   "requiere": 5,
+   "t": "Además, el control se implementó recientemente conforme a la documentación vigente."
+  },
+  {
+   "nivel": 4,
+   "requiere": 7,
+   "t": "Además, existe responsable asignado y registros que evidencian su funcionamiento (al menos tres meses)."
+  },
+  {
+   "nivel": 5,
+   "requiere": 8,
+   "t": "Además, el control fue mejorado o la documentación se actualizó en los últimos dos años (mejora continua)."
+  }
+ ],
+ "madurez": [
+  {
+   "n": "Inexistente",
+   "rango": "0.00 – 0.99",
+   "t": "Carencia completa de cualquier proceso reconocible. La empresa no ha reconocido siquiera que existe un problema a resolver."
+  },
+  {
+   "n": "Inicial",
+   "rango": "1.00 – 1.99",
+   "t": "Existe evidencia que la empresa ha reconocido que los problemas existen y requieren ser resueltos. Sin embargo; no existen procesos estándar en su lugar existen enfoques ad hoc que tienden a ser aplicados de forma individual o caso por caso. El enfoque general hacia la administración es desorganizado."
+  },
+  {
+   "n": "Repetible",
+   "rango": "2.00 – 2.99",
+   "t": "Se han desarrollado los procesos hasta el punto en que se siguen procedimientos similares en diferentes áreas que realizan la misma tarea. No hay entrenamiento o comunicación formal de los procedimientos estándar, y se deja la responsabilidad al individuo. Existe un alto grado de confianza en el conocimiento de los individuos y, por lo tanto, los errores son muy probables."
+  },
+  {
+   "n": "Definido",
+   "rango": "3.00 – 3.99",
+   "t": "Los procedimientos se han estandarizado y documentado, y se han difundido a través de entrenamiento. Sin embargo, se deja que el individuo decida utilizar estos procesos, y es poco probable que se detecten desviaciones. Los procedimientos en sí no son sofisticados pero formalizan las prácticas existentes."
+  },
+  {
+   "n": "Gestionado",
+   "rango": "4.00 – 4.99",
+   "t": "Es posible monitorear y medir el cumplimiento de los procedimientos y tomar medidas cuando los procesos no estén trabajando de forma efectiva. Los procesos están bajo constante mejora y proporcionan buenas prácticas. Se usa la automatización y herramientas de una manera limitada o fragmentada."
+  },
+  {
+   "n": "Optimizado",
+   "rango": "5",
+   "t": "Los procesos se han refinado hasta un nivel de mejor práctica, se basan en los resultados de mejoras continuas y en un modelo de madurez con otras empresas. TI se usa de forma integrada para automatizar el flujo de trabajo, brindando herramientas para mejorar la calidad y la efectividad, haciendo que la empresa se adapte de manera rápida."
+  }
+ ],
+ "glosario": [
+  [
+   "Actividades de revisión y ajustes",
+   "Para revisar el desempeño de la entidad, una organización puede considerar qué tan bien funcionan los componentes de gestión de riesgos empresariales a lo largo del tiempo a la luz de cambios sustanciales y qué revisiones se necesitan."
+  ],
+  [
+   "Apetito al riesgo",
+   "Cantidad y tipo de riesgo que la Institución está dispuesta a aceptar en la búsqueda de su misión y objetivos; se expresa con límites cuantitativos aprobados por el Consejo."
+  ],
+  [
+   "Autoevaluación",
+   "Actividad desarrollada por el personal de la empresa para revisar y analizar los procesos y operaciones sujetos a su competencia funcional. Constituye una herramienta diseñada como parte del Sistema de Control Interno que comprende un conjunto de elementos de control que actúan coordinadamente permitiendo en cada proceso, operación o nivel organizacional medir la eficacia y calidad de los controles."
+  ],
+  [
+   "Bitácora de auditoría",
+   "Registro cronológico e inalterable de las acciones realizadas por los usuarios del sistema, encadenado con huellas digitales (hash) para detectar alteraciones."
+  ],
+  [
+   "Capacidad de riesgo",
+   "Nivel máximo de riesgo que la Institución puede asumir sin comprometer su solvencia, liquidez o continuidad."
+  ],
+  [
+   "Cargo",
+   "Denominación del puesto laboral dentro del Cuadro de Asignación de Personal."
+  ],
+  [
+   "Componente",
+   "Uno de los cinco elementos del control interno. Los componentes del control interno son el Entorno de Control, Evaluación de Riesgos, Actividades de Control, Información y Comunicación, y Actividades de Supervisión."
+  ],
+  [
+   "Contraloría de crédito",
+   "Función que supervisa de forma independiente el proceso de crédito (originación, seguimiento y recuperación) y el cumplimiento de las políticas aprobadas."
+  ],
+  [
+   "Control",
+   "(1) Como sustantivo (esto es, la existencia de un control), una política o un procedimiento que forman parte del control interno. Los controles existen dentro de cada uno de los cinco componentes. (2) Como verbo (esto es, controlar) establecer o implementar una política o un procedimiento que lleve a cabo un principio."
+  ],
+  [
+   "Control interno",
+   "Proceso integral efectuado por el Directorio, la Gerencia y el personal de una empresa, diseñado para enfrentar los riesgos de la empresa y para dar seguridad razonable en la consecución de la misión de la empresa, se alcanzarán los siguientes objetivos:\n\n• Promover la eficacia, eficiencia, transparencia y economía en las operaciones de la empresa, así como la calidad de los servicios públicos que presta.\n• Cuidar y resguardar los recursos y bienes del Estado contra cualquier forma de pérdida, deterioro, uso indebido y actos ilegales, así como, en general, contra todo hecho irregular o situación perjudicial que pudiera afectarlos.\n• Cumplir la normatividad aplicable a la empresa y a sus operaciones.\n• Garantizar la confiabilidad y oportunidad de la información.\n• Fomentar e impulsar la práctica de valores institucionales.\n• Promover el cumplimiento del Directorio, la Gerencia y el personal de rendir cuentas por los fondos y bienes públicos a su cargo o por una misión u objetivo encargado y aceptado."
+  ],
+  [
+   "Control interno efectivo",
+   "Un sistema efectivo de control interno requiere que cada uno de los cinco componentes o principios esté presente, en funcionamiento y operando conjuntamente. Debido a que el control interno es un proceso la efectividad del mismo se mide a través el tiempo."
+  ],
+  [
+   "COSO",
+   "The Committee of Sponsoring Organizations of the Treadway Commission. COSO es una iniciativa conjunta de cinco organizaciones del sector privado que se dedica a elaborar fuentes de liderazgo empresarial mediante el desarrollo de directrices y marcos detallados de trabajo en las áreas de control interno, gestión de riesgos corporativos y lucha contra el fraude (véase www.coso.org)."
+  ],
+  [
+   "Deficiencia de control interno",
+   "Cualquier falta de un componente o componentes y sus principios que reducen la probabilidad de que una empresa cumpla sus objetivos."
+  ],
+  [
+   "Desempeño",
+   "Riesgos que pueden afectar el logro de la estrategia y los objetivos de negocio pueden ser identificados y evaluados. Riesgos son priorizados por severidad y en el contexto del apetito al riesgo. La organización selecciona las respuestas al riesgo y toma el riesgo que ha asumido."
+  ],
+  [
+   "Directorio",
+   "Es el órgano colegiado a cargo de la dirección de la Empresa."
+  ],
+  [
+   "Empresa",
+   "Nombre de su Empresa Empresa"
+  ],
+  [
+   "Establecimiento de estrategias y objetivos",
+   "Gestión de riesgos empresariales, estrategia y objetivos trabajan juntos en el proceso de planeación estratégica. El apetito al riesgo es definido y alineado con la estrategia; los objetivos de negocio ponen la estrategia en practica mientras sirve para identificar, evaluar y responder a los riesgos."
+  ],
+  [
+   "Evaluación del sistema de control interno",
+   "Actividad desarrollada cuyo objetivo es verificar la existencia, nivel de desarrollo y el grado de efectividad del control interno en el cumplimiento de los objetivos de la empresa."
+  ],
+  [
+   "Funcionar de forma integrada",
+   "Determinación de que los cinco componentes reducen colectivamente, a un nivel aceptable, el riesgo de no alcanzar un objetivo."
+  ],
+  [
+   "Gobierno y cultura organizacional y de riesgos",
+   "El gobierno establece el tono de la organización, reforzando la importancia de, y estableciendo responsabilidades de supervisión, para la gestión de riesgos empresariales. La cultura se refiere a valores éticos, comportamientos deseados y comprensión del riesgo en la entidad."
+  ],
+  [
+   "Hallazgo de auditoría",
+   "Resultado de comparar la condición observada con el criterio aplicable; se documenta con condición, criterio, causa, efecto y recomendación."
+  ],
+  [
+   "ICOR",
+   "Índice de cobertura: reservas preventivas entre cartera vencida."
+  ],
+  [
+   "IMOR",
+   "Índice de morosidad: cartera vencida entre cartera total."
+  ],
+  [
+   "Indicador clave de riesgo (KRI)",
+   "Métrica que anticipa cambios en el perfil de riesgo y se compara con umbrales de apetito y tolerancia para generar alertas tempranas."
+  ],
+  [
+   "Información, comunicación y reporte",
+   "La gestión de riesgos empresariales requiere un proceso continuo para obtener y compartir información necesaria, de fuentes internas y externas, que fluya en todas las direcciones y a través de toda la organización."
+  ],
+  [
+   "Lineamiento",
+   "Son pautas sobre las cuáles se desprenden las políticas."
+  ],
+  [
+   "Mesa de control",
+   "Función que verifica, antes de la disposición del crédito, que el expediente esté completo, las autorizaciones correspondan al nivel facultado y se cumplan las condiciones aprobadas."
+  ],
+  [
+   "Modelo de las Tres Líneas",
+   "Modelo del IIA (2020) que distingue los roles del órgano de gobierno, la dirección (primera y segunda línea) y la auditoría interna (tercera línea, independiente)."
+  ],
+  [
+   "Plan de solución (PS)",
+   "Conjunto de acciones, responsables, fechas, presupuesto y entregables para corregir una deficiencia de control interno."
+  ],
+  [
+   "Políticas",
+   "Declaración del Directorio o Gerencia que reflejan su visión sobre lo que debe hacerse para llevar a cabo el control. Dicha visión puede documentarse por escrito y plasmarse expresamente en otras comunicaciones o bien de manera implícita a través de las decisiones y medidas adoptadas. Una política sirve como base sobre la que desarrollar los procedimientos."
+  ],
+  [
+   "Procedimiento",
+   "Una medida que pone operativa una política."
+  ],
+  [
+   "Proceso",
+   "Conjunto de actividades, tareas y procedimientos organizados y repetibles que producen un resultado esperado."
+  ],
+  [
+   "Punto de interés",
+   "Tienen como propósito proporcionar material de orientación para el diseño, implementación y operación de los principios a los que se encuentran asociados. Los puntos de interés se consideran relevantes para la implementación del sistema de control interno."
+  ],
+  [
+   "Respuesta ante un riesgo",
+   "La decisión de aceptar, evitar, reducir o compartir un riesgo."
+  ],
+  [
+   "Riesgo",
+   "La condición en que existe la posibilidad de que un evento ocurra e impacte negativamente sobre los objetivos de la empresa."
+  ],
+  [
+   "Riesgo inherente",
+   "El riesgo que afecta a la consecución de objetivos de la empresa en caso de que no concurran las medidas adoptadas para administrar los riesgos."
+  ],
+  [
+   "Riesgo residual",
+   "El riesgo que afecta a la consecución de objetivos de la empresa y que sigue existiendo una vez adoptadas e implementadas las acciones dispuestas para administrar el riesgo."
+  ],
+  [
+   "Seguridad razonable",
+   "Concepto que describe que, el control interno, con independencia de lo bien diseñado y desarrollado que este, no puede garantizar que se cumpla los objetivos de la empresa. Esto se debe a las limitaciones inherentes de todos los sistemas de control interno."
+  ],
+  [
+   "Sistema de control interno",
+   "Conjunto de procesos, mecanismos y elementos organizados y relacionados que interactúan entre sí, y que se aplican de manera específica por una Empresa en sus procesos de gestión, para dar certidumbre a la toma de decisiones y conducirla con una seguridad razonable al logro de sus objetivos y metas en un ambiente ético, de calidad, mejora continua, eficiencia y de cumplimiento de las leyes aplicables, en concordancia con las normas de la actividad empresarial del Estado."
+  ],
+  [
+   "Tolerancia al riesgo",
+   "El nivel aceptable de variación del desempeño en relación con la consecución de los objetivos de la empresa."
+  ]
+ ],
+ "normativa": [
+  {
+   "nombre": "Ley para Regular las Actividades de las Sociedades Cooperativas de Ahorro y Préstamo (LRASCAP)",
+   "tipo": "Externa",
+   "ambito": "SOCAP"
+  },
+  {
+   "nombre": "Disposiciones de carácter general aplicables a las SOCAP (CNBV)",
+   "tipo": "Externa",
+   "ambito": "SOCAP"
+  },
+  {
+   "nombre": "Ley de Ahorro y Crédito Popular y sus disposiciones (SOFIPO)",
+   "tipo": "Externa",
+   "ambito": "SOFIPO"
+  },
+  {
+   "nombre": "Ley General de Organizaciones y Actividades Auxiliares del Crédito (SOFOM)",
+   "tipo": "Externa",
+   "ambito": "SOFOM"
+  },
+  {
+   "nombre": "Ley General de Sociedades Mercantiles (LGSM)",
+   "tipo": "Externa",
+   "ambito": "General"
+  },
+  {
+   "nombre": "Ley General de Sociedades Cooperativas (LGSC)",
+   "tipo": "Externa",
+   "ambito": "General"
+  },
+  {
+   "nombre": "Ley del Impuesto sobre la Renta",
+   "tipo": "Externa",
+   "ambito": "Fiscal"
+  },
+  {
+   "nombre": "Ley del Impuesto al Valor Agregado",
+   "tipo": "Externa",
+   "ambito": "Fiscal"
+  },
+  {
+   "nombre": "Ley Federal del Trabajo",
+   "tipo": "Externa",
+   "ambito": "Laboral"
+  },
+  {
+   "nombre": "Ley de Protección y Defensa al Usuario de Servicios Financieros y disposiciones CONDUSEF",
+   "tipo": "Externa",
+   "ambito": "Usuarios"
+  },
+  {
+   "nombre": "Ley para la Transparencia y Ordenamiento de los Servicios Financieros y circulares de Banco de México (CAT, GAT, contratos, estados de cuenta)",
+   "tipo": "Externa",
+   "ambito": "Usuarios"
+  },
+  {
+   "nombre": "Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita y disposiciones PLD/FT aplicables",
+   "tipo": "Externa",
+   "ambito": "PLD/FT"
+  },
+  {
+   "nombre": "Ley para Regular las Sociedades de Información Crediticia",
+   "tipo": "Externa",
+   "ambito": "Crédito"
+  },
+  {
+   "nombre": "Ley Federal de Protección de Datos Personales en Posesión de los Particulares (2025)",
+   "tipo": "Externa",
+   "ambito": "Datos personales"
+  },
+  {
+   "nombre": "COSO ERM — Gestión del riesgo empresarial: integración con estrategia y desempeño (2017)",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "COSO Control Interno — Marco Integrado (2013)",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "IIA — Normas Globales de Auditoría Interna (2024)",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "IIA — Modelo de las Tres Líneas (2020)",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "ISO 31000:2018 Gestión del riesgo",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "ISO/IEC 27001:2022 Seguridad de la información",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "ISO 22301:2019 Continuidad del negocio",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "ISO/IEC 42001:2023 Sistemas de gestión de inteligencia artificial",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "COBIT 2019 Gobierno y gestión de TI",
+   "tipo": "Externa",
+   "ambito": "Marco"
+  },
+  {
+   "nombre": "Manual De Control Interno",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Crédito Y Cobranza",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Captación De Socios",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Mercadotecnia",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Riesgos",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Pld Cumplimiento",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Captación De Ahorros E Inversiones",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Auditoría Interna",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Recursos Humanos",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Administración Y Finanzas",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Contabilidad",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Informática",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Reglamentos De Consejos Y Directivos",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Contraloría De Crédito Y Mesa De Control",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Contraloría Interna",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Proyectos",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Formación Cooperativa",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Tesorería",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Asuntos Jurídicos",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  },
+  {
+   "nombre": "Manual De Seguridad De La Información",
+   "tipo": "Interna",
+   "ambito": "Manual"
+  }
+ ],
+ "demo": {
+  "1.1.1": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "ev": [
+    "Política de control interno (Código de esa política); Metodología COSO 2013 contenida en el manual de control interno.",
+    "Acta de reunión de consejo de administración, tal fecha.",
+    "Lista de asistencia al evento de difusión o puesta en marcha de la metodología, con fecha tal.",
+    "Manual de control interno (código), política de la metodología de control interno.",
+    "Minuta de reunión de fecha tal… se designó a fulanito de tal…",
+    "Reporte o informe de Auditoría Interna de fecha X…",
+    "Sistema, hoja automatizada, actualización con fecha tal… acta de reunión donde se autorizó la actualización con fecha X."
+   ],
+   "ubic": "Intranet, carpeta compartida",
+   "matriz": "Sí",
+   "prio": "Alta",
+   "coment": "Se está implementado la metodología 2013 de COSO y estamos por implementar la 2017 - 2021.",
+   "defi": "Existe, fue aprobado pero el Comité de Auditoría no conoce a fondo todavía la metodología, no ha recibido actividades de capacitación especializada en el tema, y aún no utiliza o implementa las herramientas de evaluación para este punto.",
+   "plan": "Capacitar a los directivos, supervisar la implementación de esta herramienta de evaluación de COSO por parte de XXXX",
+   "resp": "Consejo de Administración",
+   "entreg": "Metodología diseñada como anexo al Manual de Control Interno y Reglamento del Comité de Auditoría-"
+  },
+  "1.1.2": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "1.1.3": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "area": "Comité de Morosidad",
+   "cargo": "Presidente del Comité de Auditoría",
+   "coment": "EN CADA CONSEJO SE SUPERVISAN ENTRE SÍ (VIGILANCIA A ADMINISTRACIÓN Y AUDITORÍA A VIGILANCIA)"
+  },
+  "1.1.4": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "cargo": "Recursos humanos",
+   "defi": "En este momento el programa es parcialmente dirigido a los directivos, faltaría integrar temas para los Consejo X y los Comité Y"
+  },
+  "1.1.5": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "1.1.6": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "1.1.7": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0
+   ]
+  },
+  "1.1.8": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "1.2.1": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0
+   ]
+  },
+  "1.2.2": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "1.2.3": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "1.2.5": {
+   "ubic": "QDOC",
+   "defi": "Faltaría la documentación del puesto de Jefe Cumplimiento Normativo."
+  },
+  "1.2.6": {
+   "coment": "Pendiente revisión y análisis con la comisión mixta acerca de la administración de sanciones."
+  },
+  "1.2.7": {
+   "coment": "Falta el manual del área X de crédito y cobranza.",
+   "defi": "Faltaría la documentación del puesto de Jefe Cumplimiento Normativo. Faltarían documentar procedimientos en cada manual."
+  },
+  "1.4.1": {
+   "area": "General",
+   "cargo": "Gerente General",
+   "ev": [
+    "",
+    "",
+    "ddf",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "1.4.2": {
+   "area": "General",
+   "cargo": "Gerente General"
+  },
+  "1.4.7": {
+   "coment": "Identificar por puesto compromisos de control"
+  },
+  "1.4.9": {
+   "defi": "Parcialmente mediante las Auditorías Internas pero no se realizan evaluaciones específicas de valores y principios éticos. La Empresa deberá contar con los mecanismos (buzón anónimo) para que el personal de la Empresa pueda reportar ese tipo de información sin ningún riesgo de que se conozca su identidad."
+  },
+  "1.4.10": {
+   "coment": "no hay un canal o medio especifico"
+  },
+  "1.5.1": {
+   "area": "TH",
+   "cargo": "Gerente de Talento Humano",
+   "ev": [
+    "Kit de salida basado en la NOM 035",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "1.5.2": {
+   "ev": [
+    "Manual Organizacional",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "1.5.3": {
+   "ev": [
+    "Wellness",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "1.5.4": {
+   "area": "TH",
+   "cargo": "Gerente de Talento Humano"
+  },
+  "1.5.6": {
+   "ev": [
+    "el 100% de PLDFT, faltaría el general",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "1.5.7": {
+   "ev": [
+    "aplicación de exámenes y casos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "1.5.9": {
+   "a": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "2.7.1": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0
+   ],
+   "area": "CR",
+   "cargo": "Comité de Riesgos"
+  },
+  "2.7.2": {
+   "area": "AIR",
+   "cargo": "Comité de Auditoría"
+  },
+  "2.8.1": {
+   "a": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "2.8.2": {
+   "a": [
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "2.8.3": {
+   "a": [
+    1,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  "3.10.6": {
+   "defi": "A nivel sucursal existen áreas de oportunidad por los eventos que se generan a ese nivel."
+  },
+  "3.10.8": {
+   "ev": [
+    "Con Jefe de Sucursal y mesa de control se realiza de manera proactiva, AI lo realiza con eventos pasados. Faltaría conocer a las demás áreas si realizan actividades.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.11.2": {
+   "ev": [
+    "Faltaría con un enfoque de riesgos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.11.3": {
+   "ev": [
+    "Faltaría con un enfoque de riesgos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.11.8": {
+   "ev": [
+    "Con Jefe de Sucursal y mesa de control se realiza de manera proactiva, AI lo realiza con eventos pasados. Faltaría conocer a las demás áreas si realizan actividades.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.12.2": {
+   "ev": [
+    "Faltaría con un enfoque de riesgos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.12.3": {
+   "ev": [
+    "Faltaría con un enfoque de riesgos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.13.3": {
+   "ev": [
+    "Faltaría con un enfoque de riesgos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.13.4": {
+   "ev": [
+    "Solo se realiza la evaluación de los indicadores de la CNBV",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.13.7": {
+   "ev": [
+    "Promover las autoevaluaciones en todas las áreas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.13.9": {
+   "ev": [
+    "INFORME DE AUDITORÍA INTERNAS Y EXTERNAS",
+    "Acta del Consejo de Administración (No. Y fecha)",
+    "Asamblea, reuniones con las áreas responsables",
+    "Informes de auditorías/ revisión de las áreas críticas",
+    "Acta de Consejo # y con fecha X",
+    "Plan de auditoría, guías de supervisión",
+    ""
+   ],
+   "ubic": "Dropbox, gerente general",
+   "matriz": "Dropbox, gerente general"
+  },
+  "3.13.10": {
+   "ev": [
+    "Solo se realiza la evaluación de los indicadores de la CNBV",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "3.14.1": {
+   "ev": [
+    "INFORME DE AUDITORÍA INTERNAS Y EXTERNAS",
+    "Acta del Consejo de Administración (No. Y fecha)",
+    "Asamblea, reuniones con las áreas responsables",
+    "Informes de auditorías/ revisión de las áreas críticas",
+    "Acta de Consejo # y con fecha X",
+    "Plan de auditoría, guías de supervisión",
+    ""
+   ],
+   "ubic": "Dropbox, gerente general",
+   "matriz": "Dropbox, gerente general"
+  },
+  "3.14.2": {
+   "area": "Gerencia",
+   "cargo": "Gerente General",
+   "ev": [
+    "Programa de mejora del SCI",
+    "0",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   "matriz": "Matriz de riesgos"
+  },
+  "4.15.2": {
+   "ev": [
+    "Agregar la asignación de procesos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "4.15.4": {
+   "ev": [
+    "Elaborar un listado de características de los procesos críticos y su priorización (nivel de riesgo, impacto en el cumplimiento de objetivos)",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "4.15.7": {
+   "ev": [
+    "Añadir en tabla",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "4.16.1": {
+   "ev": [
+    "Plan de contingencia, continuidad del negocio",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "4.16.6": {
+   "ev": [
+    "Cada año",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "4.17.2": {
+   "ev": [
+    "Agregar la asignación de procesos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "4.17.4": {
+   "ev": [
+    "Elaborar un listado de características de los procesos críticos y su priorización (nivel de riesgo, impacto en el cumplimiento de objetivos)",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "4.17.7": {
+   "ev": [
+    "Añadir en tabla",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.1": {
+   "ev": [
+    "Inficaja, C5, Contpaq, Infi PLD,",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.2": {
+   "area": "COMITÉ DE ADMINISTRACIÓN DE DATOS",
+   "ev": [
+    "COBIT 5",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.6": {
+   "ev": [
+    "Solo de Si Bancs y Aspel",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.8": {
+   "ev": [
+    "Auditoría de sistemas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.9": {
+   "ev": [
+    "Diseñar proceso de baja de empleados o rotación para cambio y cancelación de contraselñas y accesos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.11": {
+   "ev": [
+    "El proveedor de sistemas desarrolla nuevas aplicaciones o módulos (algunos con cobro y otros sin cobro)",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.12": {
+   "ev": [
+    "Existe capacitación, manuales y controles de los cambios al sistema (si Bancs)",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.13": {
+   "defi": "Contratos y controles actualizados."
+  },
+  "5.18.16": {
+   "ev": [
+    "Definir fuentes",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.17": {
+   "ev": [
+    "Mejorar herramientas internas",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.18": {
+   "area": "TI",
+   "cargo": "Gerente de TI"
+  },
+  "5.18.20": {
+   "area": "Riesgos",
+   "cargo": "Administrador de Riesgos",
+   "ev": [
+    "faltaría realizar presentación de AIR por cada proceso crítico",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.22": {
+   "ev": [
+    "faltaría realizar presentación de AIR por cada proceso crítico",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.24": {
+   "ev": [
+    "Distribución de riesgos: Mkt - Riesgo reputacional; Operaciones: Gte Operaciones; Liquidez - Tesorería; Mercado - Gte Gral; Crédito - Gte Operaciones / Gte Crédito",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.27": {
+   "ev": [
+    "Se asignan en seguimiento; mejorar el formato de informe considerando los riesgos identificados, su tratamiento y el responsable del riesgo",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.30": {
+   "area": "Riesgos",
+   "cargo": "Administrador de Riesgos",
+   "ev": [
+    "faltaría realizar presentación de AIR por cada proceso crítico",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.32": {
+   "ev": [
+    "faltaría realizar presentación de AIR por cada proceso crítico",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.34": {
+   "ev": [
+    "Distribución de riesgos: Mkt - Riesgo reputacional; Operaciones: Gte Operaciones; Liquidez - Tesorería; Mercado - Gte Gral; Crédito - Gte Operaciones / Gte Crédito",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.39": {
+   "ev": [
+    "faltaría realizar presentación de AIR por cada proceso crítico",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.41": {
+   "ev": [
+    "Distribución de riesgos: Mkt - Riesgo reputacional; Operaciones: Gte Operaciones; Liquidez - Tesorería; Mercado - Gte Gral; Crédito - Gte Operaciones / Gte Crédito",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.18.43": {
+   "ev": [
+    "Se asignan en seguimiento; mejorar el formato de informe considerando los riesgos identificados, su tratamiento y el responsable del riesgo",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.19.1": {
+   "ev": [
+    "Solo se realiza en asamblea anual",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.19.6": {
+   "ev": [
+    "Hay una sucursal q no esta en linea y se debe incluir en el global maniualmente",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.19.7": {
+   "ev": [
+    "Presupuesto + Plan Estratégico y Financiero",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.19.8": {
+   "ev": [
+    "Originada por Auditores externos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.19.9": {
+   "ev": [
+    "Se realizaran una vez recibido informe de audo¡itores externos",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.19.11": {
+   "ev": [
+    "na",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  },
+  "5.20.1": {
+   "ev": [
+    "na",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ]
+  }
+ },
+ "cambios": [
+  "Principio 8 (Evalúa estrategias alternativas): recibe los puntos de interés de estrategias alternativas que en el Excel estaban bajo el Principio 9.",
+  "Principio 9 (Formula objetivos de negocio): se redactan 6 puntos de interés propios del principio (antes no tenía preguntas sobre objetivos).",
+  "Los 28 puntos de interés de gobierno de inteligencia artificial se trasladan al Principio 18 (Aprovecha la información y la tecnología); se eliminan 2 duplicados (2.8.20≈2.8.9, 2.8.25≈2.8.7).",
+  "Se agregan 15 puntos de interés 2026: ciberseguridad, partes relacionadas, ASG, apetito de crédito, terceros, fraude, estrés de cartera, mesa de control, contraloría de crédito, continuidad, calidad de auditoría interna, observaciones del supervisor, datos personales, reportes regulatorios y tablero integrado.",
+  "Se actualizan referencias a marcos vigentes: COBIT 5 → COBIT 2019, «3 líneas de defensa» → Modelo de las Tres Líneas (IIA 2020), ISO 31000:2018, ISO/IEC 27001:2022.",
+  "Los puntos de interés se renumeran como componente.principio.consecutivo; cada uno conserva su ID del Excel en «orig» para trazabilidad.",
+  "Cálculo corregido: el nivel de cada punto de interés (0-5) se obtiene de la tabla de Criterios (atributos a-h acumulativos); la calificación del principio es el promedio de sus puntos contestados. En el Excel la suma de atributos (0-8) se dividía entre un número fijo de renglones que no siempre coincidía con el número de preguntas.",
+  "Normativa: se amplía con marcos de referencia vigentes y leyes aplicables a SOCAP, SOFIPO y SOFOM; glosario: se agregan términos de apetito al riesgo, KRI, Tres Líneas, mesa de control, contraloría de crédito e indicadores de cartera."
+ ]
+}

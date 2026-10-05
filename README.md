@@ -56,6 +56,17 @@ Todas incluyen **Saldo Vigente y Saldo Vencido**:
 - **Reportes personalizados**: dimensión, periodo, orden y número de
   renglones a elección, con **exportación a CSV**.
 
+## SECI · Evaluación de Control Interno COSO ERM 2026
+
+En `coso_erm/` se incluye un sistema HTML autocontenido
+(`coso_erm/SECI_COSO_ERM_2026.html`) que digitaliza la evaluación COSO ERM:
+funciona sin servidor, guarda la información en el equipo, genera respaldos
+(normales y cifrados), maneja usuarios por perfil (auditor interno, contralor
+interno, administrador de riesgos y sistemas) y se integra con herramientas de
+auditoría interna, contraloría de crédito / mesa de control y gestión de
+riesgos (CSV, paquetes JSON y conectores REST). La cartera se importa con el
+mismo lay out de carga de este sistema. Ver `coso_erm/README.md`.
+
 ## Tecnología
 
 - Python 3.10+ · FastAPI · SQLAlchemy 2 · Jinja2
