@@ -254,6 +254,7 @@ const ROL_NOMBRE={superadmin:'Superadministrador',gerente:'Gerente de sucursal',
 function defaultParams(){
   return {
     mezcla:{cincoC:0.60,flujo:0.30,canvas:0.10},
+    montoEvalSimplificada:30000,
     bloques:{caracter:0.35,capacidad:0.25,capital:0.15,condiciones:0.15,colateral:0.10},
     caracter:{arraigoDom:0.15,arraigoLab:0.20,expCred:0.60,compromiso:0.05},
     arraigoDom:{vivienda:0.6,residencia:0.4},
@@ -479,6 +480,7 @@ const APP={
   evaluar(s,montoOv,plazoOv){
     const P=this.state.params;const vetos=[];
     const pl=this.plan(s.datos,montoOv,plazoOv);
+    const simplificada=pl.monto>0&&pl.monto<num(P.montoEvalSimplificada);
     const c=s.caracter;
 
     // BONUS POINTS
@@ -565,12 +567,12 @@ const APP={
     const endAct=activos>0?pasivos/activos:1;
     let q1=0;
     if(endAct>1)q1=0;
-    else if(endAct>P.u.endActVeto){q1=0;vetos.push('Capital: el endeudamiento actual es '+pct(endAct)+', arriba del límite de '+pct(P.u.endActVeto)+'.')}
+    else if(endAct>P.u.endActVeto){q1=0;if(!simplificada)vetos.push('Capital: el endeudamiento actual es '+pct(endAct)+', arriba del límite de '+pct(P.u.endActVeto)+'.')}
     else if(endAct>P.u.endActMedio)q1=5;else if(endAct>P.u.endActBueno)q1=7;else q1=10;
     const endProy=(activos+pl.monto)>0?(pasivos+pl.monto)/(activos+pl.monto):1;
     let q2=0;
     if(endProy>1)q2=0;
-    else if(endProy>P.u.endProyVeto){q2=0;vetos.push('Capital: con el crédito solicitado el endeudamiento llega a '+pct(endProy)+', arriba del límite de '+pct(P.u.endProyVeto)+'.')}
+    else if(endProy>P.u.endProyVeto){q2=0;if(!simplificada)vetos.push('Capital: con el crédito solicitado el endeudamiento llega a '+pct(endProy)+', arriba del límite de '+pct(P.u.endProyVeto)+'.')}
     else if(endProy>P.u.endProyMedio)q2=5;else if(endProy>P.u.endProyBueno)q2=7;else q2=10;
     const capital=(q1*P.capital.endeudActual+q2*P.capital.endeudProyectado)/10;
 
@@ -615,7 +617,11 @@ const APP={
       colTxt='Cobertura del avalúo '+cov.toFixed(2)+' veces el crédito; se requiere '+req.toFixed(2)+(colateral?' — adecuada':' — insuficiente');
     }
 
-    const score5c=caracter*P.bloques.caracter+capacidad*P.bloques.capacidad+capital*P.bloques.capital+condiciones*P.bloques.condiciones+colateral*P.bloques.colateral;
+    const B=P.bloques;
+    const pesosC=simplificada
+      ?(t=>({caracter:B.caracter/t,capacidad:B.capacidad/t,capital:0,condiciones:0,colateral:B.colateral/t}))(B.caracter+B.capacidad+B.colateral)
+      :{caracter:B.caracter,capacidad:B.capacidad,capital:B.capital,condiciones:B.condiciones,colateral:B.colateral};
+    const score5c=caracter*pesosC.caracter+capacidad*pesosC.capacidad+capital*pesosC.capital+condiciones*pesosC.condiciones+colateral*pesosC.colateral;
 
     // FLUJO DE EFECTIVO
     const mesesFlujo=Math.max(1,num(s.flujoAnios))*12;
@@ -670,7 +676,7 @@ const APP={
       ingresos,egresosTot,disponible,cobCuota,ratioGI,ratioGCI,alertaGastos,gastoRef,
       bonusDiscapacidad,bonusGenero,
       flujo:{ing,egr,res,acum,ratio:ratioFlujo,cobertura:cobFlujo,mesesNeg,mesesFlujo,ingMesPago,compromisoMes,f1,f2,f3},
-      sinHist,tieneNegocio,tieneOVaEmprender,flujoRequerido,pesos:{cincoC:wC,flujo:wF,canvas:wV},
+      sinHist,tieneNegocio,tieneOVaEmprender,flujoRequerido,simplificada,pesosC,pesos:{cincoC:wC,flujo:wF,canvas:wV},
       activoFijoTotal,activoFijoComprobado
     };
   },
@@ -815,8 +821,9 @@ const APP={
   renderSolicitud(){
     const st=this.state,s=this.actual(),E=this.evaluar(s),cfg=st.config;
     const allTabs=[['datos','Datos'],['caracter','Carácter'],['capacidad','Capacidad'],['capital','Capital'],['condiciones','Condiciones'],['colateral','Colateral'],['flujo','Flujo de efectivo'],['canvas','CANVAS'],['dictamen','Dictamen']];
-    const tabs=E.tieneNegocio?allTabs:allTabs.filter(t=>t[0]!=='canvas');
-    const activeTab=(!E.tieneNegocio&&st.tab==='canvas')?'datos':st.tab;
+    const ocultas=(E.tieneNegocio?[]:['canvas']).concat(E.simplificada?['capital','condiciones']:[]);
+    const tabs=allTabs.filter(t=>!ocultas.includes(t[0]));
+    const activeTab=ocultas.includes(st.tab)?'datos':st.tab;
 
     let tabContent='';
     if(activeTab==='datos')tabContent=this.renderTabDatos(s,E);
@@ -832,12 +839,13 @@ const APP={
     const sidebar=`<aside style="flex:1 1 270px;min-width:0">
       <div style="border-top:3px solid var(--text);padding-top:12px">
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:12px">Desglose del score</div>
+        ${E.simplificada?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);background:var(--n200);padding:8px 10px;border-radius:3px;margin-bottom:10px">Evaluación simplificada: monto menor a ${mx(this.state.params.montoEvalSimplificada)}. Solo se evalúan Carácter, Capacidad y Colateral.</div>`:''}
         ${[
-          {l:'Carácter',p:pct(this.state.params.bloques.caracter),v:pct(E.caracter)},
-          {l:'Capacidad de pago',p:pct(this.state.params.bloques.capacidad),v:pct(E.capacidad)},
-          {l:'Capital',p:pct(this.state.params.bloques.capital),v:pct(E.capital)},
-          {l:'Condiciones',p:pct(this.state.params.bloques.condiciones),v:pct(E.condiciones)},
-          {l:'Colateral',p:pct(this.state.params.bloques.colateral),v:pct(E.colateral)},
+          {l:'Carácter',p:pct(E.pesosC.caracter),v:pct(E.caracter)},
+          {l:'Capacidad de pago',p:pct(E.pesosC.capacidad),v:pct(E.capacidad)},
+          {l:'Capital',p:E.simplificada?'—':pct(E.pesosC.capital),v:E.simplificada?'No aplica':pct(E.capital)},
+          {l:'Condiciones',p:E.simplificada?'—':pct(E.pesosC.condiciones),v:E.simplificada?'No aplica':pct(E.condiciones)},
+          {l:'Colateral',p:pct(E.pesosC.colateral),v:pct(E.colateral)},
           {l:'Subtotal 5C',p:pct(E.pesos.cincoC),v:pct(E.score5c)},
           {l:'Flujo de efectivo',p:pct(E.pesos.flujo),v:pct(E.scoreFlujo)}
         ].concat(E.tieneNegocio?[{l:'Modelo CANVAS',p:pct(E.pesos.canvas),v:pct(E.scoreCanvas)}]:[]).map(b=>`<div style="display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--div)">
@@ -1059,7 +1067,7 @@ const APP={
       this.renderField('Arrendamientos y factorajes','',`<input class="input" type="number" value="${k.dArrendamiento}" data-action="updNum" data-path="capacidad.dArrendamiento" min="0">`)+
       this.renderField('Prestamistas y préstamos familiares','',`<input class="input" type="number" value="${k.dPrestamistas}" data-action="updNum" data-path="capacidad.dPrestamistas" min="0">`)
     )+
-    this.renderSection('Indicadores de capacidad de pago',pct(this.state.params.bloques.capacidad)+' del score 5C · '+pct(E.capacidad),
+    this.renderSection('Indicadores de capacidad de pago',pct(E.pesosC.capacidad)+' del score 5C · '+pct(E.capacidad),
       this.renderField('Disponible mensual','Ingresos menos egresos con margen',`<strong>${mx(E.disponible)}</strong>`)+
       this.renderField('Cuota mensual equivalente','Del plan de pagos propuesto',`<strong>${mx(E.pl.cuotaMensual)}</strong>`)+
       this.renderField('Cobertura de la cuota','Mínimo '+P.u.cobCuotaMin.toFixed(2),`<strong>${E.cobCuota.toFixed(2)}</strong>`,E.sub.r1.toFixed(0))+
@@ -1130,7 +1138,7 @@ const APP={
       campos+=this.renderField('Valor del avalúo o del colateral','Cobertura exigida: '+req+' veces el crédito',`<input class="input" type="number" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
     }
     campos+=this.renderField('Calificación de la garantía',E.colTxt,`<strong>${E.colateral>=0.7?'Aceptable':'No aceptable'}</strong>`,pct(E.colateral));
-    return this.renderSection('Colateral',pct(P.bloques.colateral)+' del score 5C',campos);
+    return this.renderSection('Colateral',pct(E.pesosC.colateral)+' del score 5C',campos);
   },
 
   renderTabFlujo(s,E){
@@ -1364,19 +1372,19 @@ const APP={
         <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C1 CARÁCTER — ${(E.caracter*100).toFixed(1)}%</div>
           <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Arraigo domiciliario</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.dom.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Arraigo laboral</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.lab.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Experiencia crediticia</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.exp.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Compromiso institucional</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.com.toFixed(1)}/10</td></tr></table>
         </div>
-        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C2 CAPITAL — ${(E.capital*100).toFixed(1)}%</div>
+        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C2 CAPITAL — ${E.simplificada?'NO APLICA':(E.capital*100).toFixed(1)+'%'}</div>
           <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Activos totales</td><td style="padding:1px 4px;text-align:right">${mx(activos)}</td></tr><tr><td style="padding:1px 4px">Pasivos totales</td><td style="padding:1px 4px;text-align:right">${mx(pasivos)}</td></tr><tr><td style="padding:1px 4px">Capital contable</td><td style="padding:1px 4px;text-align:right;font-weight:700">${mx(activos-pasivos)}</td></tr><tr><td style="padding:1px 4px">Endeudamiento actual</td><td style="padding:1px 4px;text-align:right">${E.sub.q1.toFixed(0)}/10</td></tr><tr><td style="padding:1px 4px">Endeudamiento proyectado</td><td style="padding:1px 4px;text-align:right">${E.sub.q2.toFixed(0)}/10</td></tr></table>
         </div>
         <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C3 CAPACIDAD DE PAGO — ${(E.capacidad*100).toFixed(1)}%</div>
           <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Ingresos mensuales</td><td style="padding:1px 4px;text-align:right">${mx(E.ingresos)}</td></tr><tr><td style="padding:1px 4px">Egresos mensuales</td><td style="padding:1px 4px;text-align:right">${mx(E.egresosTot)}</td></tr><tr><td style="padding:1px 4px">Disponible mensual</td><td style="padding:1px 4px;text-align:right;font-weight:700">${mx(E.disponible)}</td></tr><tr><td style="padding:1px 4px">Cobertura de cuota</td><td style="padding:1px 4px;text-align:right">${E.cobCuota.toFixed(2)} · ${E.sub.r1.toFixed(0)}/10</td></tr><tr><td style="padding:1px 4px">Gastos/Ingresos</td><td style="padding:1px 4px;text-align:right">${pct(E.ratioGI)} · ${E.sub.r2.toFixed(0)}/10</td></tr></table>
         </div>
-        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C4 CONDICIONES — ${(E.condiciones*100).toFixed(1)}%</div>
+        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C4 CONDICIONES — ${E.simplificada?'NO APLICA':(E.condiciones*100).toFixed(1)+'%'}</div>
           <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Fuente de ingresos</td><td style="padding:1px 4px;text-align:right">${OPC.fuente[cd.fuente]?esc(OPC.fuente[cd.fuente][0]):'—'}</td></tr><tr><td style="padding:1px 4px">Sector y mercado</td><td style="padding:1px 4px;text-align:right">${OPC.sector[cd.sector]?esc(OPC.sector[cd.sector][0].substring(0,25)):'—'}</td></tr><tr><td style="padding:1px 4px">Entorno</td><td style="padding:1px 4px;text-align:right">${OPC.entorno[cd.entorno]?esc(OPC.entorno[cd.entorno][0].substring(0,25)):'—'}</td></tr><tr><td style="padding:1px 4px">Antigüedad negocio</td><td style="padding:1px 4px;text-align:right">${OPC.antigNegocio[cd.antigNegocio]?esc(OPC.antigNegocio[cd.antigNegocio][0].substring(0,25)):'—'}</td></tr></table>
         </div>
       </div>
       <div style="border:1px solid #999;margin-bottom:4px"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C5 COLATERAL — ${pct(E.colateral)}</div><div style="padding:2px 4px;font-size:8.5px">Tipo: ${garantia?esc(garantia[1]):'—'} · ${esc(E.colTxt)}</div></div>
       <div style="border:2px solid #000;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:12px">
-        <div style="flex:1;font:700 9.5px/1.3 Arial,sans-serif"><div>CALIFICACIÓN CREDITICIA</div><div style="font-weight:400;margin-top:1px">5C: ${pct(E.score5c)} (${pct(E.pesos.cincoC)}) · Flujo: ${pct(E.scoreFlujo)} (${pct(E.pesos.flujo)})${E.tieneNegocio?' · CANVAS: '+pct(E.scoreCanvas)+' ('+pct(E.pesos.canvas)+')':''}</div></div>
+        <div style="flex:1;font:700 9.5px/1.3 Arial,sans-serif"><div>CALIFICACIÓN CREDITICIA</div><div style="font-weight:400;margin-top:1px">5C${E.simplificada?' simplificada (C1, C3, C5)':''}: ${pct(E.score5c)} (${pct(E.pesos.cincoC)}) · Flujo: ${pct(E.scoreFlujo)} (${pct(E.pesos.flujo)})${E.tieneNegocio?' · CANVAS: '+pct(E.scoreCanvas)+' ('+pct(E.pesos.canvas)+')':''}</div></div>
         <div style="font:700 22px/1 Arial,sans-serif">${E.global.toFixed(1)}</div>
         <div style="font:700 10px/1.2 Arial,sans-serif;padding:3px 8px;border:1px solid #000">${E.dictamen}</div>
       </div>
@@ -1610,6 +1618,7 @@ const APP={
         ${mkRow('Capital','',''+P.bloques.capital,'bloques.capital')}
         ${mkRow('Condiciones','',''+P.bloques.condiciones,'bloques.condiciones')}
         ${mkRow('Colateral','',''+P.bloques.colateral,'bloques.colateral')}
+        ${mkRow('Monto para evaluación simplificada','Debajo de este monto solo se evalúan Carácter, Capacidad y Colateral',''+P.montoEvalSimplificada,'montoEvalSimplificada')}
       </section>
       <section>
         <div style="border-bottom:2px solid var(--text);padding-bottom:6px"><h2 style="margin:0">Semáforo del dictamen</h2></div>
