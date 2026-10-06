@@ -85,10 +85,119 @@ const PERIODICIDADES=[
   ['pago_unico_periodico','Un solo pago de capital con intereses periódicos',0]
 ];
 const OCUPACIONES_DEFAULT=[
-  ['ama_casa','Ama de casa'],['empleado_informal','Empleado informal'],
-  ['empleado_formal','Empleado formal'],['negocio_rural','Dueño de un negocio rural'],
-  ['negocio_urbano','Dueño de un negocio urbano']
+  ['abogado','Abogado'],
+  ['acuicultor','Acuicultor'],
+  ['agente_de_viajes','Agente de viajes'],
+  ['agente_inmobiliario','Agente inmobiliario'],
+  ['agricultor','Agricultor'],
+  ['albanil','Albañil'],
+  ['ama_casa','Ama de casa'],
+  ['apicultor','Apicultor'],
+  ['arquitecto','Arquitecto'],
+  ['arrendador','Arrendador'],
+  ['artesano','Artesano'],
+  ['artista','Artista'],
+  ['avicultor','Avicultor'],
+  ['carpintero','Carpintero'],
+  ['cazador','Cazador'],
+  ['chofer_transportista','Chofer/ Transportista'],
+  ['ciudadano','Ciudadano'],
+  ['comerciante_agropecuario','Comerciante agropecuario'],
+  ['comerciante_de_abarrotes','Comerciante de abarrotes'],
+  ['comerciante_de_artesanias','Comerciante de artesanias'],
+  ['comerciante_de_articulos_para_el_hogar','Comerciante de artículos para el hogar'],
+  ['comerciante_de_articulos_recreativos_culturales_y_de_entretenimiento','Comerciante de artículos recreativos, culturales y de entretenimiento'],
+  ['comerciante_de_articulos_varios_no_especificados','Comerciante de artículos varios no especificados'],
+  ['comerciante_de_combustibles','Comerciante de combustibles'],
+  ['comerciante_de_equipo_medico','Comerciante de equipo medico'],
+  ['comerciante_de_ferreteria','Comerciante de ferreteria'],
+  ['comerciante_de_maquinaria_y_equipo','Comerciante de maquinaria y equipo'],
+  ['comerciante_de_otras_materias_primas','Comerciante de otras materias primas'],
+  ['comerciante_de_productos_de_origen_animal','Comerciante de productos de origen animal'],
+  ['comerciante_de_ropa_y_calzado','Comerciante de ropa y calzado'],
+  ['comerciante_de_vehiculos_y_refacciones','Comerciante de vehículos y refacciones'],
+  ['constructor','Constructor'],
+  ['contador','Contador'],
+  ['costurero_confeccionista','Costurero / Confeccionista'],
+  ['docente','Docente'],
+  ['negocio_rural','Dueño de un negocio rural'],
+  ['negocio_urbano','Dueño de un negocio urbano'],
+  ['editor','Editor'],
+  ['electricista','Electricista'],
+  ['empleado','Empleado'],
+  ['empleado_formal','Empleado formal'],
+  ['empleado_informal','Empleado informal'],
+  ['estilista_peluquero','Estilista / Peluquero'],
+  ['estudiante','Estudiante'],
+  ['fabricante_de_agroquimicos','Fabricante de agroquímicos'],
+  ['fabricante_de_alimentos_para_animales','Fabricante de alimentos para animales'],
+  ['fabricante_de_articulos_recreativos','Fabricante de artículos recreativos'],
+  ['fabricante_de_bebidas_alcoholicas_y_no_alcoholicas','Fabricante de bebidas alcoholicas y no alcoholicas'],
+  ['fabricante_de_equipo_de_seguridad_y_defensa','Fabricante de equipo de seguridad y defensa'],
+  ['fabricante_de_instrumentos_de_medicion_y_equipo_medico','Fabricante de instrumentos de medición y equipo médico'],
+  ['fabricante_de_maquinaria_y_de_equipos_electricos_y_electronicos','Fabricante de maquinaria y de equipos eléctricos y electrónicos'],
+  ['fabricante_de_materiales_para_construccion','Fabricante de materiales para construcción'],
+  ['fabricante_de_otros_alimentos','Fabricante de otros alimentos'],
+  ['fabricante_de_otros_productos_metalicos','Fabricante de otros productos metálicos'],
+  ['fabricante_de_productos_de_plastico_hule_papel_y_carton','Fabricante de productos de plástico, hule, papel y cartón'],
+  ['fabricante_de_productos_quimicos_de_belleza_y_limpieza','Fabricante de productos químicos, de belleza y limpieza'],
+  ['fabricante_de_vehiculos_y_refacciones','Fabricante de vehiculos y refacciones'],
+  ['florista','Florista'],
+  ['funcionario_publico','Funcionario público'],
+  ['ganadero','Ganadero'],
+  ['heladero','Heladero'],
+  ['herrero','Herrero'],
+  ['impresor','Impresor'],
+  ['ingeniero','Ingeniero'],
+  ['instructor_deportivo','Instructor deportivo'],
+  ['joyero','Joyero'],
+  ['mensajero','Mensajero'],
+  ['minero','Minero'],
+  ['molinero','Molinero'],
+  ['operador_de_grua','Operador de grua'],
+  ['operador_de_juegos_con_apuestas_concursos_y_sorteos','Operador de juegos con apuestas, concursos y sorteos'],
+  ['organismos_e_instituciones','Organismos e instituciones'],
+  ['organizador_de_eventos','Organizador de eventos'],
+  ['panadero_repostero','Panadero/Repostero'],
+  ['pensionado_jubilado','Pensionado/ Jubilado'],
+  ['pescador','Pescador'],
+  ['petrolero','Petrolero'],
+  ['pintor','Pintor'],
+  ['plomero','Plomero'],
+  ['prestador_de_otros_servicios_profesionales_y_tecnicos','Prestador de otros servicios profesionales y técnicos'],
+  ['prestador_de_otros_servicios_recreativos','Prestador de otros servicios recreativos'],
+  ['prestador_de_servicios_de_alimentos_y_bebidas','Prestador de servicios de alimentos y bebidas'],
+  ['prestador_de_servicios_de_hospedaje','Prestador de servicios de hospedaje'],
+  ['prestador_de_servicios_de_mantenimiento_y_reparacion_de_vehiculos_maquinaria_y_equipo','Prestador de servicios de mantenimiento y reparación de vehículos, maquinaria y equipo'],
+  ['prestador_de_servicios_funerarios','Prestador de servicios funerarios'],
+  ['productor_de_lacteos_y_derivados','Productor de lacteos y derivados'],
+  ['profesional_de_la_salud','Profesional de la salud'],
+  ['servicios_de_estacionamiento_y_lavado_automotriz','Servicios de estacionamiento y lavado automotriz'],
+  ['servicios_financieros','Servicios Financieros'],
+  ['silvicultor','Silvicultor'],
+  ['sin_ocupacion','Sin ocupación'],
+  ['tabacalero','Tabacalero'],
+  ['talabartero','Talabartero'],
+  ['tecnico_en_mantenimiento_y_reparacion_de_equipos_electricos_y_electronicos','Técnico en mantenimiento y reparación de equipos eléctricos y electrónicos'],
+  ['tecnico_en_telecomunicaciones_y_sistemas','Técnico en telecomunicaciones y sistemas'],
+  ['textilero','Textilero'],
+  ['tortillero','Tortillero'],
+  ['trabajadora_domestica','Trabajadora domestica'],
+  ['transportista_aereo','Transportista aéreo'],
+  ['transportista_maritimo','Transportista marítimo'],
+  ['veterinario','Veterinario'],
+  ['vidriero','Vidriero'],
+  ['zapatero','Zapatero']
 ];
+const OCUPACIONES_VER=2;
+function migrarConfig(c){
+  if(c.ocupacionesVer!==OCUPACIONES_VER&&Array.isArray(c.ocupaciones)){
+    const claves=new Set(c.ocupaciones.map(o=>o[0]));
+    c.ocupaciones=c.ocupaciones.concat(OCUPACIONES_DEFAULT.filter(o=>!claves.has(o[0]))).sort((a,b)=>a[1].localeCompare(b[1],'es'));
+  }
+  c.ocupacionesVer=OCUPACIONES_VER;
+  return c;
+}
 const CLASIFICACION_IFRS9=[
   ['consumo','Consumo'],['comercial','Comercial'],['vivienda','Vivienda'],
   ['microempresa','Microempresa'],['pyme','Pequeña y mediana empresa'],
@@ -256,7 +365,7 @@ const APP={
         const d=JSON.parse(raw);
         Object.assign(this.state,{
           users:d.users||USUARIOS_INICIALES,sucursales:d.sucursales||SUCURSALES_INICIALES,
-          params:Object.assign(defaultParams(),d.params||{}),config:Object.assign(defaultConfig(),d.config||{}),
+          params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{})),
           solicitudes:d.solicitudes||[],auditoria:d.auditoria||[],folioSeq:d.folioSeq||1001
         });
       }
@@ -1968,7 +2077,7 @@ const APP={
               const merged=(d.solicitudes||[]).concat(st.solicitudes.filter(x=>!(d.solicitudes||[]).some(y=>y.id===x.id)));
               Object.assign(this.state,{
                 users:d.users||st.users,sucursales:d.sucursales||st.sucursales,
-                params:Object.assign(defaultParams(),d.params||{}),config:Object.assign(defaultConfig(),d.config||{}),
+                params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{})),
                 solicitudes:merged,auditoria:(d.auditoria||[]).concat(st.auditoria).slice(0,400),
                 folioSeq:Math.max(d.folioSeq||1001,st.folioSeq)
               });
