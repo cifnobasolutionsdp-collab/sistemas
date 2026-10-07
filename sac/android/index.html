@@ -324,7 +324,11 @@ select.input{appearance:auto}
 <script>
 'use strict';
 const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const LS_KEY='sac_sistema_2_0';
+// Cada archivo guarda sus datos aparte según su nombre ("SAC 2.0 Amealco.html" y "SAC 2.0 Coroneo.html" no se mezclan).
+// index.html y la carpeta publicada conservan la clave original para no perder los datos ya capturados.
+const LS_KEY=(()=>{const base='sac_sistema_2_0';try{const n=decodeURIComponent((location.pathname||'').split('/').pop()||'').replace(/\.html?$/i,'').trim().toLowerCase();return (!n||n==='index')?base:base+'::'+n}catch(e){return base}})();
+// Institución con la que arranca este archivo antes de configurarlo.
+const INSTITUCION_INICIAL={nombre:'',logotipo:''};
 const mx=n=>(n<0?'-$':'$')+Math.abs(Math.round(n||0)).toLocaleString('es-MX');
 const pct=n=>(isFinite(n)?(n*100).toFixed(1):'0.0')+'%';
 const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
@@ -546,8 +550,8 @@ function defaultParams(){
 
 function defaultConfig(){
   return {
-    nombreInstitucion:'Mi Sociedad Financiera',
-    logotipo:'',
+    nombreInstitucion:INSTITUCION_INICIAL.nombre||'Mi Sociedad Financiera',
+    logotipo:INSTITUCION_INICIAL.logotipo||'',
     ocupaciones:[...OCUPACIONES_DEFAULT],
     productos:[
       {nombre:'Crédito Personal',plazoMax:48,tasaAnual:24,montoMin:5000,montoMax:150000},
@@ -968,6 +972,7 @@ const APP={
             <span style="flex:1"></span>
             <span style="font:400 12px/1 var(--font);color:var(--n700)">Sistema de Análisis de Crédito</span>
           </div>
+          ${cfg.logotipo?`<img src="${cfg.logotipo}" alt="${esc(cfg.nombreInstitucion)}" style="display:block;max-height:110px;max-width:280px;object-fit:contain;margin-top:28px">`:''}
           <h1 style="font:600 64px/0.95 var(--fonth);margin:30px 0 0;letter-spacing:-.02em">SAC</h1>
           <div style="font:400 28px/1 var(--fonth);color:var(--a700);margin-top:6px">2.0</div>
           <p style="font:400 16px/1.55 var(--font);max-width:36ch;margin:30px 0 0;color:var(--n800)">Scoring crediticio por las cinco C del crédito, con análisis de flujo de efectivo y modelo CANVAS para micro y pequeños negocios rurales y urbanos.</p>
