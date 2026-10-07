@@ -451,6 +451,12 @@ function migrarConfig(c){
   c.ocupacionesVer=OCUPACIONES_VER;
   return c;
 }
+const OCUPACIONES_SIN_CANVAS=['ama_casa','empleado','empleado_formal','empleado_informal','funcionario_publico','trabajadora_domestica','estudiante','sin_ocupacion','pensionado_jubilado'];
+function usaCanvas(clave,catalogo){
+  const o=(catalogo||[]).find(x=>x[0]===clave);
+  if(o&&typeof o[2]==='boolean')return o[2];
+  return !!clave&&!clave.startsWith('empleado')&&!OCUPACIONES_SIN_CANVAS.includes(clave);
+}
 const CLASIFICACION_IFRS9=[
   ['consumo','Consumo'],['comercial','Comercial'],['vivienda','Vivienda'],
   ['microempresa','Microempresa'],['pyme','Pequeña y mediana empresa'],
@@ -733,6 +739,7 @@ const APP={
     const pl=this.plan(s.datos,montoOv,plazoOv);
     const simplificada=pl.monto>0&&pl.monto<num(P.montoEvalSimplificada);
     const c=s.caracter;
+    const tieneNegocio=usaCanvas(s.datos.ocupacion,this.state.config.ocupaciones||OCUPACIONES_DEFAULT);
 
     // BONUS POINTS
     let bonusDiscapacidad=s.datos.tieneDiscapacidad?7:0;
@@ -786,8 +793,8 @@ const APP={
     const pRf=OPC.referencias[c.referencias]?OPC.referencias[c.referencias][1]:OPC.referencias[0][1];
     const exp=clamp10(pHi*P.expCred.historial+pAt*P.expCred.atrasos+pCo*P.expCred.comportamiento+pRf*P.expCred.referencias);
     const com=clamp10((OPC.antigSocio[c.antigSocio]?OPC.antigSocio[c.antigSocio][1]:10)*P.compromiso.antigSocio+(OPC.ahorro[c.ahorro]?OPC.ahorro[c.ahorro][1]:10)*P.compromiso.ahorro);
-    let caracter=(dom*P.caracter.arraigoDom+lab*P.caracter.arraigoLab+exp*P.caracter.expCred+com*P.caracter.compromiso)/10;
-    caracter=Math.min(1,caracter+(bonusDiscapacidad+bonusGenero)/100);
+    const caracterBase=(dom*P.caracter.arraigoDom+lab*P.caracter.arraigoLab+exp*P.caracter.expCred+com*P.caracter.compromiso)/10;
+    const caracter=Math.min(1,caracterBase+(bonusDiscapacidad+bonusGenero)/100);
 
     // CAPACIDAD
     const k=s.capacidad;
@@ -807,6 +814,13 @@ const APP={
     const capacidad=(r1*P.capacidad.coberturaCuota+r2*P.capacidad.gastosIngresos+r3*P.capacidad.gastosCuotaIng)/10;
     const gastoRef=num(s.datos.dependientes)*P.u.gastoBasicoPersona;
     const alertaGastos=fam>0&&fam<gastoRef;
+    const LIM_CAP=0.30;
+    const capMaxPago=ingresos*LIM_CAP;
+    const capDisponible=capMaxPago-deudas;
+    const pctCuotaIng=ingresos>0?pl.cuotaMensual/ingresos:1;
+    const ratioCompromisos=ingresos>0?(deudas+pl.cuotaMensual)/ingresos:1;
+    let plazoIdeal=null;
+    if(capDisponible>0&&pl.monto>0){for(let m=1;m<=360;m++){if(this.plan(s.datos,pl.monto,m).cuotaMensual<=capDisponible){plazoIdeal=m;break}}}
 
     // CAPITAL
     const cp=s.capital;
@@ -830,7 +844,7 @@ const APP={
     // CONDICIONES
     const cd=s.condiciones;
     const pFu=OPC.fuente[cd.fuente]?OPC.fuente[cd.fuente][1]:10;
-    const tieneOVaEmprender=(s.datos.ocupacion==='negocio_rural'||s.datos.ocupacion==='negocio_urbano')||(c.actividad===0||c.actividad===4);
+    const tieneOVaEmprender=tieneNegocio||(c.actividad===0||c.actividad===4);
     let condiciones;
     if(tieneOVaEmprender){
       const pSe=OPC.sector[cd.sector]?OPC.sector[cd.sector][1]:10;
@@ -889,7 +903,9 @@ const APP={
     const mp=Math.min(mesesFlujo-1,Math.max(0,num(s.flujoMesPago)));
     const ingMesPago=ing[mp]||0;
     const compromisoMes=egr[mp]||0;
-    const cobFlujo=compromisoMes>0?ingMesPago/compromisoMes:0;
+    const acumPrevio=mp>0?acum[mp-1]:0;
+    const ingDisponibleMes=ingMesPago+Math.min(0,acumPrevio);
+    const cobFlujo=compromisoMes>0?Math.max(0,ingDisponibleMes)/compromisoMes:0;
     const mesesNeg=acum.filter(x=>x<0).length;
     let f1=0;
     if(totIng<=0){f1=0}
@@ -904,8 +920,7 @@ const APP={
     const scoreFlujo=capturado?(f1*P.flujoPeso.ratioGastos+f2*P.flujoPeso.cobertura+f3*P.flujoPeso.acumulado)/10:0;
     if(!capturado)vetos.push('Flujo de efectivo: no se ha capturado el flujo mensual.');
 
-    // CANVAS (solo aplica si tiene negocio)
-    const tieneNegocio=s.datos.ocupacion==='negocio_rural'||s.datos.ocupacion==='negocio_urbano';
+    // CANVAS (solo aplica a actividades productivas)
     let cs=0;
     CANVAS_BLOQUES.forEach(b=>{cs+=num((s.canvas[b[0]]||{}).p)});
     const scoreCanvas=tieneNegocio?cs/(CANVAS_BLOQUES.length*5):0;
@@ -922,11 +937,12 @@ const APP={
     return {
       pl,vetos,banda,dictamen:dict,global,
       score5c,scoreFlujo,scoreCanvas,
-      caracter,capacidad,capital,condiciones,colateral,colTxt,
+      caracter,caracterBase,capacidad,capital,condiciones,colateral,colTxt,
       sub:{dom,lab,exp,com,pVi,pRe,pAc,pAn,pHi,pAt,pCo,pRf,r1,r2,r3,q1,q2},
       ingresos,egresosTot,disponible,cobCuota,ratioGI,ratioGCI,alertaGastos,gastoRef,
+      deudas,LIM_CAP,capMaxPago,capDisponible,pctCuotaIng,ratioCompromisos,plazoIdeal,
       bonusDiscapacidad,bonusGenero,
-      flujo:{ing,egr,res,acum,ratio:ratioFlujo,cobertura:cobFlujo,mesesNeg,mesesFlujo,ingMesPago,compromisoMes,f1,f2,f3},
+      flujo:{ing,egr,res,acum,ratio:ratioFlujo,cobertura:cobFlujo,mesesNeg,mesesFlujo,ingMesPago,compromisoMes,acumPrevio,ingDisponibleMes,f1,f2,f3},
       sinHist,tieneNegocio,tieneOVaEmprender,flujoRequerido,simplificada,pesosC,pesos:{cincoC:wC,flujo:wF,canvas:wV},
       activoFijoTotal,activoFijoComprobado
     };
@@ -1185,7 +1201,7 @@ const APP={
         <option value="mujer" ${d.genero==='mujer'?'selected':''}>Mujer</option>
         <option value="hombre" ${d.genero==='hombre'?'selected':''}>Hombre</option>
       </select>`)+
-      this.renderField('¿Es el(la) único(a) que sostiene a su familia?','Mujer única sostén: +10 pts · Hombre único sostén: +5 pts',`<select class="input" data-action="updBool" data-path="datos.esUnicoSosten">
+      this.renderField('¿Es el(la) único(a) que sostiene a su familia?','Suma al score de Carácter. Mujer: +3 pts · Mujer única sostén: +10 pts · Hombre único sostén: +5 pts',`<select class="input" data-action="updBool" data-path="datos.esUnicoSosten">
         <option value="false" ${!d.esUnicoSosten?'selected':''}>No</option>
         <option value="true" ${d.esUnicoSosten?'selected':''}>Sí</option>
       </select>`,E.bonusGenero)+
@@ -1193,7 +1209,7 @@ const APP={
         <option value="false" ${!d.tieneDiscapacidad?'selected':''}>No</option>
         <option value="true" ${d.tieneDiscapacidad?'selected':''}>Sí</option>
       </select>`,E.bonusDiscapacidad)+
-      this.renderField('Ocupación','Actividad principal del solicitante',`<select class="input" data-action="updText" data-path="datos.ocupacion">
+      this.renderField('Ocupación','Actividad principal del solicitante · '+(E.tieneNegocio?'Activa el modelo CANVAS':'No activa el modelo CANVAS'),`<select class="input" data-action="updText" data-path="datos.ocupacion">
         ${(cfg.ocupaciones||OCUPACIONES_DEFAULT).map(o=>`<option value="${o[0]}" ${d.ocupacion===o[0]?'selected':''}>${o[1]}</option>`).join('')}
       </select>`)+
       this.renderField('Clasificación IFRS9','Tipo de crédito según las Normas Internacionales de Información Financiera',`<select class="input" data-action="updText" data-path="datos.clasificacionIFRS9">
@@ -1205,15 +1221,15 @@ const APP={
         <option value="true" ${d.esPrimerEmpleo?'selected':''}>Sí</option>
       </select>`)+
       this.renderField('Destino del crédito','Capital de trabajo, activo fijo, ciclo agrícola...',`<input class="input" type="text" value="${esc(d.destino)}" data-action="updText" data-path="datos.destino">`)+
-      this.renderField('Dependientes económicos','Se usa para el gasto familiar de referencia',`<input class="input" type="number" value="${d.dependientes}" data-action="updNum" data-path="datos.dependientes" min="0">`)
+      this.renderField('Dependientes económicos','Se usa para el gasto familiar de referencia',`<input class="input" type="text" inputmode="decimal" value="${d.dependientes}" data-action="updNum" data-path="datos.dependientes" min="0">`)
     )+
     this.renderSection('Producto y condiciones del crédito','Cuota mensual equivalente '+mx(E.pl.cuotaMensual),
       this.renderField('Producto de crédito','Seleccione del catálogo de productos configurado',`<select class="input" data-action="updText" data-path="datos.producto">
         <option value="">Seleccione un producto...</option>${productoOpts}
       </select>`)+
-      this.renderField('Monto solicitado','En pesos mexicanos',`<input class="input" type="number" value="${d.monto}" data-action="updNum" data-path="datos.monto" min="1000">`)+
-      this.renderField('Plazo en meses',prodSel?'Máximo del producto: '+prodSel.plazoMax+' meses':'Seleccione un producto para ver el límite',`<input class="input" type="number" value="${d.plazo}" data-action="updNum" data-path="datos.plazo" min="1"${prodSel?' max="'+prodSel.plazoMax+'"':''}>`)+
-      this.renderField('Tasa de interés anual (%)',prodSel?'Máximo del producto: '+prodSel.tasaAnual+'%':'Seleccione un producto para ver el límite',`<input class="input" type="number" value="${d.tasaPct}" data-action="updNum" data-path="datos.tasaPct" min="0" step="0.1"${prodSel?' max="'+prodSel.tasaAnual+'"':''}>`)+
+      this.renderField('Monto solicitado','En pesos mexicanos',`<input class="input" type="text" inputmode="decimal" value="${d.monto}" data-action="updNum" data-path="datos.monto" min="1000">`)+
+      this.renderField('Plazo en meses',prodSel?'Máximo del producto: '+prodSel.plazoMax+' meses':'Seleccione un producto para ver el límite',`<input class="input" type="text" inputmode="decimal" value="${d.plazo}" data-action="updNum" data-path="datos.plazo" min="1"${prodSel?' max="'+prodSel.plazoMax+'"':''}>`)+
+      this.renderField('Tasa de interés anual (%)',prodSel?'Máximo del producto: '+prodSel.tasaAnual+'%':'Seleccione un producto para ver el límite',`<input class="input" type="text" inputmode="decimal" value="${d.tasaPct}" data-action="updNum" data-path="datos.tasaPct" min="0" step="0.1"${prodSel?' max="'+prodSel.tasaAnual+'"':''}>`)+
       this.renderField('Periodicidad de pago','Frecuencia de los pagos',`<select class="input" data-action="updText" data-path="datos.periodicidad">
         ${PERIODICIDADES.map(p=>`<option value="${p[0]}" ${d.periodicidad===p[0]?'selected':''}>${p[1]}</option>`).join('')}
       </select>`)+
@@ -1232,6 +1248,9 @@ const APP={
     const totalResMeses=num(c.resAnios)*12+num(c.resMeses);
     const totalLabMeses=num(c.labAnios)*12+num(c.labMeses);
     const d=s.datos;
+    const bonus=E.bonusGenero+E.bonusDiscapacidad;
+    const txtGenero=(d.genero==='mujer'?'Mujer':d.genero==='hombre'?'Hombre':'Género sin capturar')+(d.esUnicoSosten?' · único(a) sostén de su familia':'');
+    const rubros=[['Arraigo domiciliario',P.caracter.arraigoDom,E.sub.dom],['Arraigo laboral o estabilidad económica',P.caracter.arraigoLab,E.sub.lab],['Experiencia crediticia',P.caracter.expCred,E.sub.exp],['Compromiso con la institución',P.caracter.compromiso,E.sub.com]];
 
     let expFields=this.renderField('Experiencia crediticia','Determina si se evalúa el comportamiento de pago',this.renderRadio('historial',OPC.historial,c.historial,'caracter.historial'),E.sub.pHi);
     if(!E.sinHist){
@@ -1252,13 +1271,13 @@ const APP={
 
     let domFields=this.renderField('Tipo de vivienda','Tenencia del domicilio declarado',this.renderRadio('vivienda',OPC.vivienda,c.vivienda,'caracter.vivienda'),E.sub.pVi);
     domFields+=this.renderField('Tiempo en el domicilio actual','Capture en años y meses',`<div style="display:flex;gap:10px">
-      <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.resAnios}" data-action="updNum" data-path="caracter.resAnios" min="0"></div>
-      <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.resMeses}" data-action="updNum" data-path="caracter.resMeses" min="0" max="11"></div>
+      <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.resAnios}" data-action="updNum" data-path="caracter.resAnios" min="0"></div>
+      <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.resMeses}" data-action="updNum" data-path="caracter.resMeses" min="0" max="11"></div>
     </div>`,E.sub.pRe.toFixed(0));
     if(totalResMeses<6){
       domFields+=this.renderField('Tiempo en vivienda anterior','Menos de 6 meses en vivienda actual: se evalúa la anterior. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts',`<div style="display:flex;gap:10px">
-        <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.resPrevAnios}" data-action="updNum" data-path="caracter.resPrevAnios" min="0"></div>
-        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.resPrevMeses}" data-action="updNum" data-path="caracter.resPrevMeses" min="0" max="11"></div>
+        <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.resPrevAnios}" data-action="updNum" data-path="caracter.resPrevAnios" min="0"></div>
+        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.resPrevMeses}" data-action="updNum" data-path="caracter.resPrevMeses" min="0" max="11"></div>
       </div>`);
     }
 
@@ -1267,13 +1286,13 @@ const APP={
       labFields+=this.renderField('Tiempo en la actividad actual','<strong>Primer empleo:</strong> no se evalúa antigüedad laboral',`<strong>No aplica (primer empleo)</strong>`,'10');
     }else{
       labFields+=this.renderField('Tiempo en la actividad actual','Capture en años y meses',`<div style="display:flex;gap:10px">
-        <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.labAnios}" data-action="updNum" data-path="caracter.labAnios" min="0"></div>
-        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.labMeses}" data-action="updNum" data-path="caracter.labMeses" min="0" max="11"></div>
+        <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.labAnios}" data-action="updNum" data-path="caracter.labAnios" min="0"></div>
+        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.labMeses}" data-action="updNum" data-path="caracter.labMeses" min="0" max="11"></div>
       </div>`,E.sub.pAn.toFixed(0));
       if(totalLabMeses<6){
         labFields+=this.renderField('Tiempo en actividad anterior','Menos de 6 meses: se evalúa la anterior. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts',`<div style="display:flex;gap:10px">
-          <div class="field" style="flex:1"><label>Años</label><input class="input" type="number" value="${c.labPrevAnios}" data-action="updNum" data-path="caracter.labPrevAnios" min="0"></div>
-          <div class="field" style="flex:1"><label>Meses</label><input class="input" type="number" value="${c.labPrevMeses}" data-action="updNum" data-path="caracter.labPrevMeses" min="0" max="11"></div>
+          <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.labPrevAnios}" data-action="updNum" data-path="caracter.labPrevAnios" min="0"></div>
+          <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.labPrevMeses}" data-action="updNum" data-path="caracter.labPrevMeses" min="0" max="11"></div>
         </div>`);
       }
     }
@@ -1286,44 +1305,66 @@ const APP={
       this.renderSection('Arraigo laboral o estabilidad económica',pct(P.caracter.arraigoLab)+' del carácter · '+E.sub.lab.toFixed(1)+'/10',labFields)+
       this.renderSection('Experiencia crediticia',pct(P.caracter.expCred)+' del carácter · '+E.sub.exp.toFixed(1)+'/10',expFields)+
       this.renderSection('Compromiso con la institución',pct(P.caracter.compromiso)+' del carácter · '+E.sub.com.toFixed(1)+'/10',
-        this.renderField('Antigüedad como socio','',this.renderRadio('antigSocio',OPC.antigSocio,c.antigSocio,'caracter.antigSocio'))+
-        this.renderField('Cultura de ahorro','Aportaciones y compromiso de ahorro al día',this.renderRadio('ahorro',OPC.ahorro,c.ahorro,'caracter.ahorro'))
+        this.renderField('Antigüedad como socio','',this.renderRadio('antigSocio',OPC.antigSocio,c.antigSocio,'caracter.antigSocio'),OPC.antigSocio[c.antigSocio]?OPC.antigSocio[c.antigSocio][1]:'')+
+        this.renderField('Cultura de ahorro','Aportaciones y compromiso de ahorro al día',this.renderRadio('ahorro',OPC.ahorro,c.ahorro,'caracter.ahorro'),OPC.ahorro[c.ahorro]?OPC.ahorro[c.ahorro][1]:'')
+      )+
+      this.renderSection('Bonificaciones del solicitante','Se capturan en la pestaña Datos · +'+bonus+' pts',
+        this.renderField('Género y sostén económico','Mujer: +3 pts · Mujer única sostén: +10 pts · Hombre único sostén: +5 pts',`<strong>${esc(txtGenero)}</strong>`,'+'+E.bonusGenero)+
+        this.renderField('Discapacidad','Bonificación de +7 puntos',`<strong>${d.tieneDiscapacidad?'Sí':'No'}</strong>`,'+'+E.bonusDiscapacidad)
+      )+
+      this.renderSection('Resumen del carácter',pct(E.pesosC.caracter)+' del score 5C · '+pct(E.caracter),
+        rubros.map(x=>this.renderField(x[0],pct(x[1])+' del carácter · '+x[2].toFixed(1)+'/10',`<strong>${(x[1]*x[2]*10).toFixed(1)} pts</strong>`)).join('')+
+        this.renderField('Carácter base','Suma ponderada de los cuatro rubros',`<strong>${pct(E.caracterBase)}</strong>`)+
+        this.renderField('Bonificaciones','Capturadas en la pestaña Datos',`<strong>+${bonus} pts</strong>`)+
+        this.renderField('Score de carácter',E.caracterBase+bonus/100>1?'Carácter base más bonificaciones, con tope de 100%':'Carácter base más bonificaciones',`<strong>${pct(E.caracter)}</strong>`)+
+        this.renderField('Aporte al score global','Carácter × '+pct(E.pesosC.caracter)+' del 5C × '+pct(E.pesos.cincoC)+' del score global',`<strong>${(100*E.caracter*E.pesosC.caracter*E.pesos.cincoC).toFixed(1)} pts</strong>`)
       );
   },
 
   renderTabCapacidad(s,E){
     const k=s.capacidad,P=this.state.params;
+    const prodSel=s.datos.producto?this.state.config.productos.find(p=>p.nombre===s.datos.producto):null;
+    const dentro=v=>v<=E.LIM_CAP?'Dentro del límite':'Excede el 30%';
+    let plazoTxt;
+    if(E.ingresos<=0)plazoTxt='Capture los ingresos para calcularlo';
+    else if(E.capDisponible<=0)plazoTxt='Sin capacidad: sus deudas actuales ya ocupan el 30% de sus ingresos';
+    else if(E.plazoIdeal==null)plazoTxt='Más de 360 meses: considere un monto menor';
+    else plazoTxt=E.plazoIdeal+' meses'+(prodSel&&E.plazoIdeal>prodSel.plazoMax?' · excede el máximo del producto ('+prodSel.plazoMax+' meses)':E.plazoIdeal<=num(s.datos.plazo)?' · el plazo solicitado ('+num(s.datos.plazo)+' meses) es suficiente':' · el plazo solicitado ('+num(s.datos.plazo)+' meses) es menor al ideal');
     return this.renderSection('Ingresos mensuales',mx(E.ingresos)+' declarados',
-      this.renderField('Ingresos por trabajo','Sueldos, salarios, honorarios',`<input class="input" type="number" value="${k.ingTrabajo}" data-action="updNum" data-path="capacidad.ingTrabajo" min="0">`)+
-      this.renderField('Arrendamientos de vivienda o cualquier activo','Rentas que recibe',`<input class="input" type="number" value="${k.ingArrendamiento}" data-action="updNum" data-path="capacidad.ingArrendamiento" min="0">`)+
-      this.renderField('Ingresos por intereses','Rendimientos financieros',`<input class="input" type="number" value="${k.ingIntereses}" data-action="updNum" data-path="capacidad.ingIntereses" min="0">`)+
-      this.renderField('Transferencias','Remesas, apoyos gubernamentales, pensiones',`<input class="input" type="number" value="${k.ingTransferencias}" data-action="updNum" data-path="capacidad.ingTransferencias" min="0">`)+
-      this.renderField('Otros ingresos','Cualquier otro ingreso recurrente',`<input class="input" type="number" value="${k.ingOtros}" data-action="updNum" data-path="capacidad.ingOtros" min="0">`)
+      this.renderField('Ingresos por trabajo','Sueldos, salarios, honorarios',`<input class="input" type="text" inputmode="decimal" value="${k.ingTrabajo}" data-action="updNum" data-path="capacidad.ingTrabajo" min="0">`)+
+      this.renderField('Arrendamientos de vivienda o cualquier activo','Rentas que recibe',`<input class="input" type="text" inputmode="decimal" value="${k.ingArrendamiento}" data-action="updNum" data-path="capacidad.ingArrendamiento" min="0">`)+
+      this.renderField('Ingresos por intereses','Rendimientos financieros',`<input class="input" type="text" inputmode="decimal" value="${k.ingIntereses}" data-action="updNum" data-path="capacidad.ingIntereses" min="0">`)+
+      this.renderField('Transferencias','Remesas, apoyos gubernamentales, pensiones',`<input class="input" type="text" inputmode="decimal" value="${k.ingTransferencias}" data-action="updNum" data-path="capacidad.ingTransferencias" min="0">`)+
+      this.renderField('Otros ingresos','Cualquier otro ingreso recurrente',`<input class="input" type="text" inputmode="decimal" value="${k.ingOtros}" data-action="updNum" data-path="capacidad.ingOtros" min="0">`)
     )+
     this.renderSection('Egresos mensuales','Referencia mínima '+mx(E.gastoRef)+' por '+s.datos.dependientes+' dependientes',
-      this.renderField('Alimentos, bebidas y tabaco','',`<input class="input" type="number" value="${k.gAlimentos}" data-action="updNum" data-path="capacidad.gAlimentos" min="0">`)+
-      this.renderField('Transporte y comunicaciones','Teléfono, celular, plan de celular, combustible',`<input class="input" type="number" value="${k.gTransporte}" data-action="updNum" data-path="capacidad.gTransporte" min="0">`)+
-      this.renderField('Educación y esparcimiento','Recreación, entretenimiento, membresías de streaming',`<input class="input" type="number" value="${k.gEducacion}" data-action="updNum" data-path="capacidad.gEducacion" min="0">`)+
-      this.renderField('Vivienda y servicios','Luz, agua, gas, renta o mantenimiento',`<input class="input" type="number" value="${k.gVivienda}" data-action="updNum" data-path="capacidad.gVivienda" min="0">`)+
-      this.renderField('Cuidados personales','',`<input class="input" type="number" value="${k.gPersonal}" data-action="updNum" data-path="capacidad.gPersonal" min="0">`)+
-      this.renderField('Artículos para limpieza y cuidado de la casa','',`<input class="input" type="number" value="${k.gLimpieza}" data-action="updNum" data-path="capacidad.gLimpieza" min="0">`)+
-      this.renderField('Vestido y calzado','',`<input class="input" type="number" value="${k.gVestido}" data-action="updNum" data-path="capacidad.gVestido" min="0">`)+
-      this.renderField('Salud','Médicos, medicamentos, seguros',`<input class="input" type="number" value="${k.gSalud}" data-action="updNum" data-path="capacidad.gSalud" min="0">`)+
-      this.renderField('Transferencias y otros gastos','',`<input class="input" type="number" value="${k.gOtrosGastos}" data-action="updNum" data-path="capacidad.gOtrosGastos" min="0">`)+
+      this.renderField('Alimentos, bebidas y tabaco','',`<input class="input" type="text" inputmode="decimal" value="${k.gAlimentos}" data-action="updNum" data-path="capacidad.gAlimentos" min="0">`)+
+      this.renderField('Transporte y comunicaciones','Teléfono, celular, plan de celular, combustible',`<input class="input" type="text" inputmode="decimal" value="${k.gTransporte}" data-action="updNum" data-path="capacidad.gTransporte" min="0">`)+
+      this.renderField('Educación y esparcimiento','Recreación, entretenimiento, membresías de streaming',`<input class="input" type="text" inputmode="decimal" value="${k.gEducacion}" data-action="updNum" data-path="capacidad.gEducacion" min="0">`)+
+      this.renderField('Vivienda y servicios','Luz, agua, gas, renta o mantenimiento',`<input class="input" type="text" inputmode="decimal" value="${k.gVivienda}" data-action="updNum" data-path="capacidad.gVivienda" min="0">`)+
+      this.renderField('Cuidados personales','',`<input class="input" type="text" inputmode="decimal" value="${k.gPersonal}" data-action="updNum" data-path="capacidad.gPersonal" min="0">`)+
+      this.renderField('Artículos para limpieza y cuidado de la casa','',`<input class="input" type="text" inputmode="decimal" value="${k.gLimpieza}" data-action="updNum" data-path="capacidad.gLimpieza" min="0">`)+
+      this.renderField('Vestido y calzado','',`<input class="input" type="text" inputmode="decimal" value="${k.gVestido}" data-action="updNum" data-path="capacidad.gVestido" min="0">`)+
+      this.renderField('Salud','Médicos, medicamentos, seguros',`<input class="input" type="text" inputmode="decimal" value="${k.gSalud}" data-action="updNum" data-path="capacidad.gSalud" min="0">`)+
+      this.renderField('Transferencias y otros gastos','',`<input class="input" type="text" inputmode="decimal" value="${k.gOtrosGastos}" data-action="updNum" data-path="capacidad.gOtrosGastos" min="0">`)+
       this.renderField('Alerta de subdeclaración','Regla de gastos básicos mínimos por persona',`<strong>${E.alertaGastos?'Revisar: declara menos que el valor de referencia':'Sin observación'}</strong>`)
     )+
     this.renderSection('Deudas con terceros','',
-      this.renderField('Pagos a cooperativas, cajas o financieras','',`<input class="input" type="number" value="${k.dCajas}" data-action="updNum" data-path="capacidad.dCajas" min="0">`)+
-      this.renderField('Pagos a bancos y tarjetas de crédito','',`<input class="input" type="number" value="${k.dBancos}" data-action="updNum" data-path="capacidad.dBancos" min="0">`)+
-      this.renderField('Arrendamientos y factorajes','',`<input class="input" type="number" value="${k.dArrendamiento}" data-action="updNum" data-path="capacidad.dArrendamiento" min="0">`)+
-      this.renderField('Prestamistas y préstamos familiares','',`<input class="input" type="number" value="${k.dPrestamistas}" data-action="updNum" data-path="capacidad.dPrestamistas" min="0">`)
+      this.renderField('Pagos a cooperativas, cajas o financieras','',`<input class="input" type="text" inputmode="decimal" value="${k.dCajas}" data-action="updNum" data-path="capacidad.dCajas" min="0">`)+
+      this.renderField('Pagos a bancos y tarjetas de crédito','',`<input class="input" type="text" inputmode="decimal" value="${k.dBancos}" data-action="updNum" data-path="capacidad.dBancos" min="0">`)+
+      this.renderField('Arrendamientos y factorajes','',`<input class="input" type="text" inputmode="decimal" value="${k.dArrendamiento}" data-action="updNum" data-path="capacidad.dArrendamiento" min="0">`)+
+      this.renderField('Prestamistas y préstamos familiares','',`<input class="input" type="text" inputmode="decimal" value="${k.dPrestamistas}" data-action="updNum" data-path="capacidad.dPrestamistas" min="0">`)
     )+
     this.renderSection('Indicadores de capacidad de pago',pct(E.pesosC.capacidad)+' del score 5C · '+pct(E.capacidad),
       this.renderField('Disponible mensual','Ingresos menos egresos con margen',`<strong>${mx(E.disponible)}</strong>`)+
       this.renderField('Cuota mensual equivalente','Del plan de pagos propuesto',`<strong>${mx(E.pl.cuotaMensual)}</strong>`)+
       this.renderField('Cobertura de la cuota','Mínimo '+P.u.cobCuotaMin.toFixed(2),`<strong>${E.cobCuota.toFixed(2)}</strong>`,E.sub.r1.toFixed(0))+
       this.renderField('Gastos sobre ingresos','Debajo de '+pct(P.u.gastosIngBueno)+' es óptimo',`<strong>${pct(E.ratioGI)}</strong>`,E.sub.r2.toFixed(0))+
-      this.renderField('Gastos más cuota sobre ingresos','Debajo de '+pct(P.u.gastosCuotaBueno)+' es óptimo',`<strong>${pct(E.ratioGCI)}</strong>`,E.sub.r3.toFixed(0))
+      this.renderField('Gastos más cuota sobre ingresos','Debajo de '+pct(P.u.gastosCuotaBueno)+' es óptimo',`<strong>${pct(E.ratioGCI)}</strong>`,E.sub.r3.toFixed(0))+
+      this.renderField('Capacidad máxima de pago','Hasta el 30% de los ingresos mensuales ('+mx(E.ingresos)+')',`<strong>${mx(E.capMaxPago)}</strong>`)+
+      this.renderField('Cuota solicitada sobre ingresos','La mensualidad no debe superar el 30% de los ingresos',`<strong>${pct(E.pctCuotaIng)}</strong> · ${dentro(E.pctCuotaIng)}`)+
+      this.renderField('Nivel de compromisos financieros','Deudas actuales ('+mx(E.deudas)+') más la cuota solicitada ('+mx(E.pl.cuotaMensual)+'); máximo 30% de los ingresos',`<strong>${pct(E.ratioCompromisos)}</strong> · ${dentro(E.ratioCompromisos)}`)+
+      this.renderField('Plazo ideal','Plazo mínimo en que la cuota cabe en el 30% de los ingresos, descontando las deudas actuales ('+mx(Math.max(0,E.capDisponible))+' disponibles)',`<strong>${plazoTxt}</strong>`)
     );
   },
 
@@ -1334,19 +1375,19 @@ const APP={
     ACTIVOS_FIJOS.forEach(a=>{
       const it=af[a[0]]||{monto:0,comprobante:'ninguno'};
       activoFijoFields+=this.renderField(a[1],'',`<div style="display:flex;gap:10px;align-items:flex-end">
-        <div class="field" style="flex:1"><label>Monto declarado</label><input class="input" type="number" value="${it.monto}" data-action="updActivoFijo" data-key="${a[0]}" data-prop="monto" min="0"></div>
+        <div class="field" style="flex:1"><label>Monto declarado</label><input class="input" type="text" inputmode="decimal" value="${it.monto}" data-action="updActivoFijo" data-key="${a[0]}" data-prop="monto" min="0"></div>
         <div class="field" style="flex:1.5"><label>Comprobante</label><select class="input" data-action="updActivoFijo" data-key="${a[0]}" data-prop="comprobante">
           ${COMPROBANTES_ACTIVO.map(c2=>`<option value="${c2[0]}" ${it.comprobante===c2[0]?'selected':''}>${c2[1]}</option>`).join('')}
         </select></div>
       </div>`);
     });
     return this.renderSection('Activos totales — lo que tiene','Comprobado: '+mx(E.activoFijoComprobado)+' de '+mx(E.activoFijoTotal)+' declarado',
-      this.renderField('Activo circulante','Efectivo, inventarios, cuentas por cobrar',`<input class="input" type="number" value="${cp.activoCirculante}" data-action="updNum" data-path="capital.activoCirculante" min="0">`)
+      this.renderField('Activo circulante','Efectivo, inventarios, cuentas por cobrar',`<input class="input" type="text" inputmode="decimal" value="${cp.activoCirculante}" data-action="updNum" data-path="capital.activoCirculante" min="0">`)
     )+
     this.renderSection('Activo fijo desglosado','Solo se toman en cuenta montos con escritura o factura a nombre del solicitante',activoFijoFields)+
     this.renderSection('Pasivos totales — lo que debe',mx(num(cp.pasivoCorto)+num(cp.pasivoLargo)),
-      this.renderField('Pasivo de corto plazo','Vencimientos dentro de doce meses',`<input class="input" type="number" value="${cp.pasivoCorto}" data-action="updNum" data-path="capital.pasivoCorto" min="0">`)+
-      this.renderField('Pasivo de largo plazo','Vencimientos a más de doce meses',`<input class="input" type="number" value="${cp.pasivoLargo}" data-action="updNum" data-path="capital.pasivoLargo" min="0">`)
+      this.renderField('Pasivo de corto plazo','Vencimientos dentro de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoCorto}" data-action="updNum" data-path="capital.pasivoCorto" min="0">`)+
+      this.renderField('Pasivo de largo plazo','Vencimientos a más de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoLargo}" data-action="updNum" data-path="capital.pasivoLargo" min="0">`)
     )+
     this.renderSection('Indicadores de capital',pct(P.bloques.capital)+' del score 5C · '+pct(E.capital),
       this.renderField('Capital contable','Activos comprobados menos pasivos',`<strong>${mx(num(cp.activoCirculante)+E.activoFijoComprobado-num(cp.pasivoCorto)-num(cp.pasivoLargo))}</strong>`)+
@@ -1378,15 +1419,15 @@ const APP={
       ${GARANTIAS.map(x=>`<option value="${x[0]}" ${g.tipo===x[0]?'selected':''}>${x[1]}</option>`).join('')}
     </select>`);
     if(g.tipo==='garantes'){
-      campos+=this.renderField('Ingresos mensuales del primer garante','Se compara contra la cuota mensual',`<input class="input" type="number" value="${g.ingGarante1}" data-action="updNum" data-path="colateral.ingGarante1" min="0">`);
-      campos+=this.renderField('Ingresos mensuales del segundo garante','Se compara contra la cuota mensual',`<input class="input" type="number" value="${g.ingGarante2}" data-action="updNum" data-path="colateral.ingGarante2" min="0">`);
+      campos+=this.renderField('Ingresos mensuales del primer garante','Se compara contra la cuota mensual',`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante1}" data-action="updNum" data-path="colateral.ingGarante1" min="0">`);
+      campos+=this.renderField('Ingresos mensuales del segundo garante','Se compara contra la cuota mensual',`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante2}" data-action="updNum" data-path="colateral.ingGarante2" min="0">`);
     }else if(g.tipo==='aval'){
-      campos+=this.renderField('Ingresos mensuales del aval/codeudor','Debe cubrir al menos 2 veces la cuota',`<input class="input" type="number" value="${g.ingAval}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
+      campos+=this.renderField('Ingresos mensuales del aval/codeudor','Debe cubrir al menos 2 veces la cuota',`<input class="input" type="text" inputmode="decimal" value="${g.ingAval}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
     }else if(g.tipo==='sin_aval_garantia_liquida'){
-      campos+=this.renderField('Monto de la garantía líquida','Cobertura exigida: '+P.u.covAhorro+' veces el crédito',`<input class="input" type="number" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
+      campos+=this.renderField('Monto de la garantía líquida','Cobertura exigida: '+P.u.covAhorro+' veces el crédito',`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
     }else if(g.tipo!=='ninguna'){
       const req=g.tipo==='prenda'?P.u.covPrenda:g.tipo==='hipoteca'?P.u.covHipoteca:P.u.covAhorro;
-      campos+=this.renderField('Valor del avalúo o del colateral','Cobertura exigida: '+req+' veces el crédito',`<input class="input" type="number" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
+      campos+=this.renderField('Valor del avalúo o del colateral','Cobertura exigida: '+req+' veces el crédito',`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
     }
     campos+=this.renderField('Calificación de la garantía',E.colTxt,`<strong>${E.colateral>=0.7?'Aceptable':'No aceptable'}</strong>`,pct(E.colateral));
     return this.renderSection('Colateral',pct(E.pesosC.colateral)+' del score 5C',campos);
@@ -1398,7 +1439,7 @@ const APP={
     const mkRow=(key,label)=>{
       const arr=s.flujo[key]||[];
       let cells='';
-      for(let m=0;m<meses;m++)cells+=`<td><input type="number" value="${arr[m]||0}" data-action="updFlujo" data-key="${key}" data-mes="${m}" step="any"></td>`;
+      for(let m=0;m<meses;m++)cells+=`<td><input type="text" inputmode="decimal" value="${arr[m]||0}" data-action="updFlujo" data-key="${key}" data-mes="${m}" step="any"></td>`;
       return `<tr><td style="position:sticky;left:0;background:var(--bg);padding:5px 10px;font:400 12.5px/1.3 var(--font);white-space:nowrap;z-index:1">${label}</td>${cells}</tr>`;
     };
     const totRow=(label,arr)=>`<tr><td style="position:sticky;left:0;background:var(--n200);padding:6px 10px;font:600 12.5px/1.3 var(--font);white-space:nowrap;z-index:1">${label}</td>${arr.slice(0,meses).map(x=>`<td style="background:var(--n200);padding:6px;font:600 12px/1.2 var(--font);text-align:right;white-space:nowrap">${mx(x)}</td>`).join('')}</tr>`;
@@ -1451,12 +1492,13 @@ const APP={
       <div>
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:6px">Cobertura del mes de pago</div>
         <div style="font:600 28px/1 var(--fonth)">${pct(E.flujo.cobertura)}</div>
-        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Ingreso del mes analizado ${mx(E.flujo.ingMesPago)} entre compromisos ${mx(E.flujo.compromisoMes)}. Debe superar el 100%.</div>
+        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Ingreso del mes analizado ${mx(E.flujo.ingMesPago)}${E.flujo.acumPrevio<0?' menos el acumulado negativo de meses anteriores ('+mx(-E.flujo.acumPrevio)+')':''} entre compromisos ${mx(E.flujo.compromisoMes)}. Debe superar el 100%.</div>
         <div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.cobertura>this.state.params.u.flujoCoberturaMin?'Viable · '+E.flujo.f2+'/10':'Negado'}</div>
       </div>
       <div>
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:6px">Meses con acumulado negativo</div>
         <div style="font:600 28px/1 var(--fonth)">${E.flujo.mesesNeg} de ${meses}</div>
+        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Ninguno: 10 · 1 a 2 meses: 6 · 3 o más: 2.</div>
         <div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.f3}/10</div>
       </div>
       <div>
@@ -1645,6 +1687,10 @@ const APP={
         <div style="font:400 8.5px/1.4 Arial,sans-serif">${s.resolucion?esc(s.resolucion.comentario):'(Pendiente de resolución)'}</div>
         ${s.resolucion?'<div style="font:400 8px/1.2 Arial,sans-serif;color:#666;margin-top:2px">Resuelto por: '+esc(s.resolucion.por)+' · '+esc(s.resolucion.rol)+' · '+new Date(s.resolucion.ts).toLocaleDateString('es-MX')+'</div>':''}
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:50px;margin:34px 30px 8px">
+        <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${esc(s.analista)}<br>Nombre y firma del analista</div>
+        <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${s.resolucion?esc(s.resolucion.por):'&nbsp;'}<br>Nombre y firma de quien autoriza</div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6px;padding-top:4px;border-top:1px solid #999">
         <div style="font:400 8px/1.3 Arial,sans-serif;color:#666">Analista: ${esc(s.analista)}<br>Banda de riesgo 5C: ${E.banda}</div>
         <div style="font:400 8px/1.3 Arial,sans-serif;color:#666;text-align:right">SAC 2.0 · ${esc(cfg.nombreInstitucion)}<br>${new Date().toLocaleString('es-MX')}</div>
@@ -1670,6 +1716,10 @@ const APP={
         ${totRow('Acumulado',E.flujo.acum)}
       </tbody></table>
       <div style="margin-top:6px;font:400 8px/1.3 Arial,sans-serif;color:#666">Egresos/Ingresos: ${pct(E.flujo.ratio)} · Cobertura mes pago: ${pct(E.flujo.cobertura)} · Meses negativos: ${E.flujo.mesesNeg} · Score flujo: ${pct(E.scoreFlujo)} · ${new Date().toLocaleString('es-MX')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:50px;margin:34px 30px 8px">
+        <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${esc(s.datos.nombre||'&nbsp;')}<br>Nombre y firma del solicitante</div>
+        <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${esc(s.analista)}<br>Nombre y firma del analista</div>
+      </div>
     </div>`;
   },
 
@@ -1724,10 +1774,10 @@ const APP={
       <h4 style="font:600 15px/1.3 var(--font);margin:0 0 10px">Agregar producto</h4>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;max-width:900px">
         <div class="field"><label>Nombre del producto</label><input class="input" type="text" id="nuevoProductoNombre" value="${esc(st.nuevoProducto.nombre)}"></div>
-        <div class="field"><label>Plazo máximo (meses)</label><input class="input" type="number" id="nuevoProductoPlazo" value="${st.nuevoProducto.plazoMax}" min="1"></div>
-        <div class="field"><label>Tasa anual (%)</label><input class="input" type="number" id="nuevoProductoTasa" value="${st.nuevoProducto.tasaAnual}" min="0" step="0.1"></div>
-        <div class="field"><label>Monto mínimo</label><input class="input" type="number" id="nuevoProductoMontoMin" value="${st.nuevoProducto.montoMin}" min="0"></div>
-        <div class="field"><label>Monto máximo</label><input class="input" type="number" id="nuevoProductoMontoMax" value="${st.nuevoProducto.montoMax}" min="0"></div>
+        <div class="field"><label>Plazo máximo (meses)</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoPlazo" value="${st.nuevoProducto.plazoMax}" min="1"></div>
+        <div class="field"><label>Tasa anual (%)</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoTasa" value="${st.nuevoProducto.tasaAnual}" min="0" step="0.1"></div>
+        <div class="field"><label>Monto mínimo</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoMontoMin" value="${st.nuevoProducto.montoMin}" min="0"></div>
+        <div class="field"><label>Monto máximo</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoMontoMax" value="${st.nuevoProducto.montoMax}" min="0"></div>
         <button class="btn btn-p" data-action="agregarProducto">Agregar</button>
       </div>
     </div>`:''}
@@ -1741,7 +1791,7 @@ const APP={
         <tbody>
           ${cfg.nivelesOperacion.map((n,i)=>`<tr>
             <td>${esc(n.nombre)}</td>
-            <td style="text-align:right"><input class="input" type="number" value="${n.plazoMax}" data-action="updNivelPlazo" data-idx="${i}" style="width:100px;text-align:right" min="1"></td>
+            <td style="text-align:right"><input class="input" type="text" inputmode="decimal" value="${n.plazoMax}" data-action="updNivelPlazo" data-idx="${i}" style="width:100px;text-align:right" min="1"></td>
             <td style="text-align:right"><button class="btn btn-g" data-action="borrarNivel" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
           </tr>`).join('')}
         </tbody>
@@ -1749,7 +1799,7 @@ const APP={
       <h4 style="font:600 15px/1.3 var(--font);margin:0 0 10px">Agregar nivel</h4>
       <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;max-width:500px">
         <div class="field"><label>Nombre del nivel</label><input class="input" type="text" id="nuevoNivelNombre" value="${esc(st.nuevoNivel.nombre)}"></div>
-        <div class="field"><label>Plazo máximo (meses)</label><input class="input" type="number" id="nuevoNivelPlazo" value="${st.nuevoNivel.plazoMax}" min="1"></div>
+        <div class="field"><label>Plazo máximo (meses)</label><input class="input" type="text" inputmode="decimal" id="nuevoNivelPlazo" value="${st.nuevoNivel.plazoMax}" min="1"></div>
         <button class="btn btn-p" data-action="agregarNivel">Agregar</button>
       </div>
     </div>`:''}
@@ -1757,13 +1807,14 @@ const APP={
     ${st.configTab==='ocupaciones'?`
     <div class="config-card">
       <h3>Catálogo de ocupaciones</h3>
-      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Personalice las ocupaciones disponibles para seleccionar en la solicitud. Las claves <code>negocio_rural</code> y <code>negocio_urbano</code> activan el modelo CANVAS.</p>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Personalice las ocupaciones disponibles para seleccionar en la solicitud. La columna CANVAS indica qué ocupaciones activan el modelo CANVAS. Por omisión lo activan todas las actividades productivas; no lo activan empleados, amas de casa, estudiantes, pensionados ni personas sin ocupación. Haga clic en Sí / No para cambiarlo.</p>
       <table class="table" style="margin-bottom:20px">
-        <thead><tr><th>Clave</th><th>Nombre</th><th></th></tr></thead>
+        <thead><tr><th>Clave</th><th>Nombre</th><th>CANVAS</th><th></th></tr></thead>
         <tbody>
           ${(cfg.ocupaciones||OCUPACIONES_DEFAULT).map((o,i)=>`<tr>
             <td><code>${esc(o[0])}</code></td>
             <td>${esc(o[1])}</td>
+            <td><button class="btn btn-g" data-action="toggleCanvasOcupacion" data-idx="${i}" style="padding:4px 9px;font-size:12px">${usaCanvas(o[0],[o])?'Sí':'No'}</button></td>
             <td style="text-align:right"><button class="btn btn-g" data-action="borrarOcupacion" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
           </tr>`).join('')}
         </tbody>
@@ -1849,7 +1900,7 @@ const APP={
     const dis=esSuper?'':'disabled';
     const mkRow=(label,hint,value,path)=>`<div style="display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--div)">
       <div><div style="font:400 14px/1.35 var(--font)">${label}</div>${hint?`<div style="font:400 12px/1.4 var(--font);color:var(--n600)">${hint}</div>`:''}</div>
-      <input class="input" type="number" value="${value}" data-action="updParam" data-path="${path}" step="any" ${dis} style="text-align:right">
+      <input class="input" type="text" inputmode="decimal" value="${value}" data-action="updParam" data-path="${path}" step="any" ${dis} style="text-align:right">
     </div>`;
 
     return `
@@ -1918,7 +1969,7 @@ const APP={
       <div class="field"><label>Sucursal</label><select class="input" id="nuSucursal">
         ${st.sucursales.concat(['Todas']).map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('')}
       </select></div>
-      <div class="field"><label>Tope de resolución</label><input class="input" type="number" id="nuTope" value="0" min="0"></div>
+      <div class="field"><label>Tope de resolución</label><input class="input" type="text" inputmode="decimal" id="nuTope" value="0" min="0"></div>
       <button class="btn btn-p" data-action="altaUsuario">Dar de alta</button>
     </div>
     ${st.avisoUsuarios?`<div style="font:400 13.5px/1.45 var(--font);color:var(--a2700);margin-top:14px">${esc(st.avisoUsuarios)}</div>`:''}
@@ -2216,6 +2267,14 @@ const APP={
         if(!cfg.ocupaciones)cfg.ocupaciones=[...OCUPACIONES_DEFAULT];
         cfg.ocupaciones.push([clave,nombre]);
         this.state.config=cfg;this.persist();this.log('Ocupación agregada',nombre);this.render();
+        break;
+      }
+      case 'toggleCanvasOcupacion':{
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        if(!cfg.ocupaciones)cfg.ocupaciones=JSON.parse(JSON.stringify(OCUPACIONES_DEFAULT));
+        const o=cfg.ocupaciones[parseInt(el.dataset.idx)];if(!o)break;
+        o[2]=!usaCanvas(o[0],[o]);
+        this.state.config=cfg;this.persist();this.log('CANVAS '+(o[2]?'activado':'desactivado')+' para ocupación',o[1]);this.render();
         break;
       }
       case 'borrarOcupacion':{
