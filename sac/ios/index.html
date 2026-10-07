@@ -447,7 +447,7 @@ const APP={
     loginUser:'',loginPass:'',loginErr:'',
     users:[...USUARIOS_INICIALES],sucursales:[...SUCURSALES_INICIALES],
     params:defaultParams(),config:defaultConfig(),solicitudes:[],auditoria:[],
-    comentario:'',firma:'',avisoAccion:'',avisoUsuarios:'',
+    comentario:'',firma:'',avisoAccion:'',avisoUsuarios:'',avisoSucursales:'',editUsuario:null,editSucursal:null,
     pegarAbierto:false,pegarTexto:'',pegarAviso:'',
     nuevoU:{usuario:'',nombre:'',rol:'analista',sucursal:'Sucursal Matriz',pass:'',tope:0},
     nuevaSucursal:'',esc:null,folioSeq:1001,
@@ -829,11 +829,7 @@ const APP={
           <input class="input" type="password" id="loginPass" value="${esc(st.loginPass)}" placeholder="••••••••">
         </div>
         ${st.loginErr?`<div style="font:400 13px/1.4 var(--font);color:var(--a2700);margin-bottom:16px">${esc(st.loginErr)}</div>`:''}
-        <button class="btn btn-p btn-block" data-action="login" style="margin-bottom:30px">Entrar al sistema</button>
-        <div style="font:400 12px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:10px">Cuentas de demostración</div>
-        <div style="display:flex;flex-direction:column;gap:7px">
-          ${USUARIOS_INICIALES.map(d=>`<button class="btn btn-g" data-action="demoPick" data-user="${esc(d.usuario)}" data-pass="${esc(d.pass)}" style="justify-content:flex-start;text-align:left;padding:9px 11px;font:400 13px/1.35 var(--font)"><span><strong>${esc(d.usuario)}</strong> · ${esc(d.pass)}</span><br><span style="color:var(--n700)">${ROL_NOMBRE[d.rol]} — ${esc(d.nombre)}</span></button>`).join('')}
-        </div>
+        <button class="btn btn-p btn-block" data-action="login">Entrar al sistema</button>
       </div>
     </div>`;
   },
@@ -1787,15 +1783,23 @@ const APP={
     const st=this.state;
     return `
     <h1 style="margin:0 0 4px">Usuarios y sucursales</h1>
-    <p style="font:400 15px/1.5 var(--font);color:var(--n700);margin:0 0 30px">Altas, roles, sucursal asignada y tope de monto.</p>
+    <p style="font:400 15px/1.5 var(--font);color:var(--n700);margin:0 0 30px">Altas, edición, roles, sucursal asignada y tope de monto.</p>
     <div style="overflow-x:auto;margin-bottom:34px">
-    <table class="table" style="min-width:720px">
+    <table class="table" style="min-width:980px">
       <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Sucursal</th><th style="text-align:right">Tope de resolución</th><th></th></tr></thead>
-      <tbody>${st.users.map(x=>`<tr>
+      <tbody>${st.users.map(x=>st.editUsuario===x.usuario?`<tr style="background:var(--n100)">
+        <td><input class="input" type="text" id="euUsuario" value="${esc(x.usuario)}" style="min-width:110px"></td>
+        <td><input class="input" type="text" id="euNombre" value="${esc(x.nombre)}" style="min-width:180px">
+          <input class="input" type="text" id="euPass" value="" placeholder="Nueva contraseña (vacío = conservar)" style="min-width:180px;margin-top:6px"></td>
+        <td><select class="input" id="euRol" style="min-width:170px">${Object.keys(ROL_NOMBRE).map(r=>`<option value="${r}"${x.rol===r?' selected':''}>${ROL_NOMBRE[r]}</option>`).join('')}</select></td>
+        <td><select class="input" id="euSucursal" style="min-width:170px">${st.sucursales.concat(['Todas']).map(s=>`<option value="${esc(s)}"${x.sucursal===s?' selected':''}>${esc(s)}</option>`).join('')}</select></td>
+        <td style="text-align:right"><input class="input" type="text" inputmode="decimal" id="euTope" value="${num(x.tope)}" style="max-width:120px;text-align:right"></td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn btn-p" data-action="guardarUsuario" style="padding:4px 9px;font-size:13px">Guardar</button> <button class="btn btn-g" data-action="cancelarUsuario" style="padding:4px 9px;font-size:13px">Cancelar</button></td>
+      </tr>`:`<tr>
         <td>${esc(x.usuario)}</td><td>${esc(x.nombre)}</td><td>${ROL_NOMBRE[x.rol]}</td>
         <td style="color:var(--n700)">${esc(x.sucursal)}</td>
         <td style="text-align:right">${x.rol==='analista'?'—':mx(x.tope)}</td>
-        <td style="text-align:right"><button class="btn btn-g" data-action="borrarUsuario" data-user="${esc(x.usuario)}" style="padding:4px 9px;font-size:13px">Quitar</button></td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn btn-s" data-action="editarUsuario" data-user="${esc(x.usuario)}" style="padding:4px 9px;font-size:13px">Editar</button> <button class="btn btn-g" data-action="borrarUsuario" data-user="${esc(x.usuario)}" style="padding:4px 9px;font-size:13px">Quitar</button></td>
       </tr>`).join('')}</tbody>
     </table></div>
     <h2 style="margin:0 0 14px;border-bottom:2px solid var(--text);padding-bottom:6px">Nuevo usuario</h2>
@@ -1814,11 +1818,24 @@ const APP={
     </div>
     ${st.avisoUsuarios?`<div style="font:400 13.5px/1.45 var(--font);color:var(--a2700);margin-top:14px">${esc(st.avisoUsuarios)}</div>`:''}
     <h2 style="margin:40px 0 14px;border-bottom:2px solid var(--text);padding-bottom:6px">Sucursales</h2>
+    <div style="overflow-x:auto;margin-bottom:16px">
+    <table class="table" style="min-width:560px;max-width:900px">
+      <thead><tr><th>Sucursal</th><th style="text-align:right">Usuarios</th><th style="text-align:right">Solicitudes</th><th></th></tr></thead>
+      <tbody>${st.sucursales.map((s,i)=>{const nu=st.users.filter(u=>u.sucursal===s).length;const ns=st.solicitudes.filter(x=>x.sucursal===s).length;return st.editSucursal===i?`<tr style="background:var(--n100)">
+        <td><input class="input" type="text" id="esNombre" value="${esc(s)}" style="min-width:220px"></td>
+        <td style="text-align:right">${nu}</td><td style="text-align:right">${ns}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn btn-p" data-action="guardarSucursal" data-idx="${i}" style="padding:4px 9px;font-size:13px">Guardar</button> <button class="btn btn-g" data-action="cancelarSucursal" style="padding:4px 9px;font-size:13px">Cancelar</button></td>
+      </tr>`:`<tr>
+        <td>${esc(s)}</td><td style="text-align:right">${nu}</td><td style="text-align:right">${ns}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn btn-s" data-action="editarSucursal" data-idx="${i}" style="padding:4px 9px;font-size:13px">Editar</button> <button class="btn btn-g" data-action="borrarSucursal" data-idx="${i}" style="padding:4px 9px;font-size:13px">Quitar</button></td>
+      </tr>`}).join('')}</tbody>
+    </table></div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      ${st.sucursales.map(s=>`<span class="tag" style="background:var(--n200);color:var(--n800)">${esc(s)}</span>`).join('')}
       <input class="input" type="text" id="nuevaSucursal" placeholder="Nombre de la sucursal" style="width:240px">
       <button class="btn btn-s" data-action="altaSucursal">Agregar sucursal</button>
-    </div>`;
+    </div>
+    ${st.avisoSucursales?`<div style="font:400 13.5px/1.45 var(--font);color:var(--a2700);margin-top:14px">${esc(st.avisoSucursales)}</div>`:''}
+    <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:14px 0 0">Al renombrar una sucursal se actualizan sus usuarios y solicitudes. Solo se puede quitar una sucursal sin usuarios asignados.</p>`;
   },
 
   renderAuditoria(){
@@ -1911,9 +1928,6 @@ const APP={
         this.log('Inicio de sesión',f.sucursal);
         break;
       }
-      case 'demoPick':
-        this.set({loginUser:el.dataset.user,loginPass:el.dataset.pass,loginErr:''});
-        break;
       case 'logout':
         this.log('Cierre de sesión','');
         this.set({sesion:null,loginUser:'',loginPass:'',idActual:null,vista:'tablero'});
@@ -2209,11 +2223,76 @@ const APP={
         this.set({avisoUsuarios:''});
         break;
       }
+      case 'editarUsuario':
+        this.set({editUsuario:el.dataset.user,avisoUsuarios:''});
+        break;
+      case 'cancelarUsuario':
+        this.set({editUsuario:null,avisoUsuarios:''});
+        break;
+      case 'guardarUsuario':{
+        const orig=st.users.find(u=>u.usuario===st.editUsuario);
+        if(!orig){this.set({editUsuario:null});return}
+        const usuario=document.getElementById('euUsuario')?.value?.trim();
+        const nombre=document.getElementById('euNombre')?.value?.trim();
+        const pass=document.getElementById('euPass')?.value||'';
+        const rol=document.getElementById('euRol')?.value||orig.rol;
+        const sucursal=document.getElementById('euSucursal')?.value||orig.sucursal;
+        const tope=num(document.getElementById('euTope')?.value);
+        if(!usuario||!nombre){this.set({avisoUsuarios:'Usuario y nombre son obligatorios.'});return}
+        if(usuario!==orig.usuario&&st.users.some(u=>u.usuario===usuario)){this.set({avisoUsuarios:'Ese nombre de usuario ya existe.'});return}
+        const propia=orig.usuario===st.sesion.usuario;
+        if(propia&&rol!=='superadmin'){this.set({avisoUsuarios:'No puede quitarse a sí mismo el rol de superadministrador.'});return}
+        if(orig.rol==='superadmin'&&rol!=='superadmin'&&!st.users.some(u=>u!==orig&&u.rol==='superadmin')){this.set({avisoUsuarios:'Debe existir al menos un superadministrador.'});return}
+        const nuevo={...orig,usuario,nombre,rol,sucursal,tope,pass:pass||orig.pass};
+        this.state.users=st.users.map(u=>u===orig?nuevo:u);
+        if(usuario!==orig.usuario||nombre!==orig.nombre){
+          this.state.solicitudes=st.solicitudes.map(s=>s.analistaId===orig.usuario?{...s,analistaId:usuario,analista:nombre}:s);
+        }
+        if(propia)this.state.sesion=nuevo;
+        this.persist();
+        this.log('Usuario modificado',orig.usuario+(usuario!==orig.usuario?' → '+usuario:'')+' — '+ROL_NOMBRE[rol]+(pass?' · contraseña cambiada':''));
+        this.set({editUsuario:null,avisoUsuarios:''});
+        break;
+      }
       case 'altaSucursal':{
         const n=document.getElementById('nuevaSucursal')?.value?.trim();
         if(!n)return;
+        if(n==='Todas'||st.sucursales.some(s=>s.toLowerCase()===n.toLowerCase())){this.set({avisoSucursales:'Esa sucursal ya existe.'});return}
         const lista=[...st.sucursales,n];
-        this.state.sucursales=lista;this.persist();this.log('Sucursal creada',n);this.render();
+        this.state.sucursales=lista;this.persist();this.log('Sucursal creada',n);this.set({avisoSucursales:''});
+        break;
+      }
+      case 'editarSucursal':
+        this.set({editSucursal:Number(el.dataset.idx),avisoSucursales:''});
+        break;
+      case 'cancelarSucursal':
+        this.set({editSucursal:null,avisoSucursales:''});
+        break;
+      case 'guardarSucursal':{
+        const i=Number(el.dataset.idx);const ant=st.sucursales[i];
+        const n=document.getElementById('esNombre')?.value?.trim();
+        if(ant===undefined){this.set({editSucursal:null});return}
+        if(!n){this.set({avisoSucursales:'El nombre de la sucursal es obligatorio.'});return}
+        if(n==='Todas'||st.sucursales.some((s,j)=>j!==i&&s.toLowerCase()===n.toLowerCase())){this.set({avisoSucursales:'Esa sucursal ya existe.'});return}
+        if(n!==ant){
+          this.state.sucursales=st.sucursales.map((s,j)=>j===i?n:s);
+          this.state.users=st.users.map(u=>u.sucursal===ant?{...u,sucursal:n}:u);
+          this.state.solicitudes=st.solicitudes.map(s=>s.sucursal===ant?{...s,sucursal:n}:s);
+          if(st.sesion&&st.sesion.sucursal===ant)this.state.sesion=this.state.users.find(u=>u.usuario===st.sesion.usuario)||st.sesion;
+          this.persist();this.log('Sucursal renombrada',ant+' → '+n);
+        }
+        this.set({editSucursal:null,avisoSucursales:''});
+        break;
+      }
+      case 'borrarSucursal':{
+        const i=Number(el.dataset.idx);const s=st.sucursales[i];
+        if(s===undefined)return;
+        const nu=st.users.filter(u=>u.sucursal===s).length;
+        if(nu>0){this.set({avisoSucursales:'No se puede quitar «'+s+'»: tiene '+nu+' usuario(s) asignado(s). Reasígnelos primero.'});return}
+        if(st.sucursales.length<=1){this.set({avisoSucursales:'Debe existir al menos una sucursal.'});return}
+        this.state.sucursales=st.sucursales.filter((x,j)=>j!==i);
+        this.persist();this.log('Sucursal eliminada',s);
+        this.set({editSucursal:null,avisoSucursales:''});
         break;
       }
       case 'exportar':{
