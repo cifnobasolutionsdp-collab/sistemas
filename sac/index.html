@@ -78,7 +78,7 @@ const LS_KEY=(()=>{const base='sac_sistema_2_0';try{const n=decodeURIComponent((
 const INSTITUCION_INICIAL={nombre:'',logotipo:''};
 const mx=n=>(n<0?'-$':'$')+Math.abs(Math.round(n||0)).toLocaleString('es-MX');
 const pct=n=>(isFinite(n)?(n*100).toFixed(1):'0.0')+'%';
-const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const num=v=>{const n=parseFloat(typeof v==='string'?v.replace(/[$,\s]/g,''):v);return isFinite(n)?n:0};
 const clamp10=n=>Math.max(0,Math.min(10,n));
 const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
@@ -214,12 +214,32 @@ const CLASIFICACION_IFRS9=[
   ['agropecuario','Agropecuario'],['gobierno','Gobierno']
 ];
 const MOP_VALORES=[
-  [0,'MOP 0 — Al corriente'],[1,'MOP 1 — 1 a 29 días'],
-  [2,'MOP 2 — 30 a 59 días'],[3,'MOP 3 — 60 a 89 días'],
-  [4,'MOP 4 — 90 a 119 días'],[5,'MOP 5 — 120 a 149 días'],
-  [6,'MOP 6 — 150+ días'],[7,'MOP 7 — Quita o castigo'],
-  [9,'MOP 9 — Sin información']
+  ['00','MOP 00 — Cuenta muy reciente, aún sin antigüedad para evaluarse'],
+  ['01','MOP 01 — Al corriente, pago puntual'],
+  ['02','MOP 02 — Atraso de 1 a 29 días'],
+  ['03','MOP 03 — Atraso de 30 a 59 días'],
+  ['04','MOP 04 — Atraso de 60 a 89 días'],
+  ['05','MOP 05 — Atraso de 90 a 119 días'],
+  ['06','MOP 06 — Atraso de 120 a 149 días'],
+  ['07','MOP 07 — Atraso de 150 días hasta 12 meses'],
+  ['96','MOP 96 — Más de 12 meses de atraso sin un solo abono'],
+  ['97','MOP 97 — Cuenta con quebranto o liquidada con quita'],
+  ['99','MOP 99 — Fraude cometido por el consumidor'],
+  ['U','MOP U — Cuenta no calificada en el periodo'],
+  ['-','Guion (-) — Crédito no reportado en el periodo']
 ];
+// No existe MOP 08: después del 07 siguen las claves especiales de cierre de cuenta.
+const MOP_REGLA={
+  '00':{p:10},'01':{p:10},'02':{p:10},'03':{p:5},
+  '04':{p:3,comprobante:true},'05':{p:3,comprobante:true},
+  '06':{veto:'la deuda se considera irrecuperable'},'07':{veto:'la deuda se considera irrecuperable'},
+  '96':{veto:'más de 12 meses de atraso sin abono'},'97':{veto:'cuenta con quebranto o quita'},
+  '99':{veto:'fraude cometido por el consumidor'},
+  'U':{p:10},'-':{p:10}
+};
+// Solicitudes capturadas con la escala anterior (0 = al corriente … 9 = sin información).
+const MOP_ANTERIOR={0:'01',1:'02',2:'03',3:'04',4:'05',5:'06',6:'07',7:'97',9:'U'};
+const mopClave=v=>typeof v==='number'?(MOP_ANTERIOR[v]||'01'):(MOP_REGLA[v]?v:'01');
 const ACTIVOS_FIJOS=[
   ['terreno','Terreno'],['inmueble','Inmueble (casa, local, bodega)'],
   ['vehiculo','Vehículo'],['maquinaria','Maquinaria y equipo'],
@@ -257,7 +277,7 @@ const CANVAS_BLOQUES=[
   ['flujoCanvas','Flujo de Efectivo','Referencia al análisis de flujo de efectivo del negocio.'],
   ['dictamenCanvas','Dictamen de Viabilidad del Negocio','Evaluación integral de la viabilidad y sostenibilidad del modelo de negocio.']
 ];
-const FILAS_ING=[['agricolas','Agrícolas'],['ganaderos','Ganaderos'],['ventas','Ventas'],['sueldos','Sueldos'],['remesas','Otros ingresos (remesas)'],['prestamoInst','Préstamo de la Institución'],['prestamoOtra','Préstamo con otra Entidad Financiera']];
+const FILAS_ING=[['agricolas','Agrícolas'],['ganaderos','Ganaderos'],['ventas','Ventas'],['sueldos','Sueldos'],['remesas','Otros ingresos (remesas, transferencias, apoyos)'],['prestamoInst','Préstamo de la Institución'],['prestamoOtra','Préstamo con otra Entidad Financiera']];
 const FILAS_EGR=[['egresosFam','Egresos familiares'],['gastosNegocio','Gastos del negocio'],['pagoIntereses','Pago de intereses'],['pagoInst','Pago a la Institución'],['pagoOtras','Pago a otras Entidades Financieras'],['ahorroFlujo','Compromiso de ahorro'],['otrosGastos','Otros gastos']];
 const ROL_NOMBRE={superadmin:'Superadministrador',gerente:'Gerente de sucursal',analista:'Analista de crédito'};
 
@@ -327,7 +347,7 @@ const USUARIOS_INICIALES=[
 
 function nuevaSolicitud(folio,user){
   const flujo={};
-  FILAS_ING.concat(FILAS_EGR).forEach(f=>{flujo[f[0]]=new Array(36).fill(0)});
+  FILAS_ING.concat(FILAS_EGR).forEach(f=>{flujo[f[0]]=new Array(96).fill(0)});
   const canvas={};
   CANVAS_BLOQUES.forEach(c=>{canvas[c[0]]={p:3,nota:''}});
   return {
@@ -341,14 +361,14 @@ function nuevaSolicitud(folio,user){
       clasificacionIFRS9:'',esPrimerEmpleo:false,nombreNegocio:''},
     caracter:{vivienda:0,resAnios:2,resMeses:0,resPrevAnios:0,resPrevMeses:0,
       actividad:0,labAnios:2,labMeses:0,labPrevAnios:0,labPrevMeses:0,
-      historial:0,mopMaximo:0,comprobantePagoMOP:false,comportamiento:0,referencias:0,antigSocio:0,ahorro:0},
+      historial:0,mopMaximo:'01',comprobantePagoMOP:false,comportamiento:0,referencias:0,antigSocio:0,ahorro:0},
     capacidad:{ingTrabajo:0,ingArrendamiento:0,ingIntereses:0,ingTransferencias:0,ingOtros:0,
       gAlimentos:0,gTransporte:0,gEducacion:0,gVivienda:0,gPersonal:0,gLimpieza:0,gVestido:0,gSalud:0,gOtrosGastos:0,
       dCajas:0,dBancos:0,dArrendamiento:0,dPrestamistas:0},
     capital:{activoCirculante:0,activosFijos:{terreno:{monto:0,comprobante:'ninguno'},inmueble:{monto:0,comprobante:'ninguno'},vehiculo:{monto:0,comprobante:'ninguno'},maquinaria:{monto:0,comprobante:'ninguno'},ganado:{monto:0,comprobante:'ninguno'},mobiliario:{monto:0,comprobante:'ninguno'},otroFijo:{monto:0,comprobante:'ninguno'}},pasivoCorto:0,pasivoLargo:0},
     condiciones:{fuente:0,sector:0,entorno:0,antigNegocio:0},
     colateral:{tipo:'garantes',ingGarante1:0,ingGarante2:0,avaluo:0,ingAval:0},
-    flujo,flujoAnios:2,flujoMesPago:11,
+    flujo,flujoAnios:1,flujoMesPago:11,
     canvas,
     resolucion:null,bitacora:[{ts:Date.now(),accion:'Solicitud creada',quien:user.nombre}]
   };
@@ -421,13 +441,15 @@ const APP={
     const mes=ae?.getAttribute('data-mes');
     const action=ae?.getAttribute('data-action');
     const pos=ae?.selectionStart;
+    // Conserva lo que el usuario está tecleando («12.», «1,500», campo vacío) en lugar del valor ya convertido.
+    const typed=ae&&ae.tagName==='INPUT'&&ae.type==='text'?ae.value:null;
     const tag=ae?.tagName;
     this.render();
     let el=null;
     if(path&&action)el=document.querySelector('[data-path="'+path+'"][data-action="'+action+'"]');
     else if(key&&mes)el=document.querySelector('[data-key="'+key+'"][data-mes="'+mes+'"]');
     else if(key&&action)el=document.querySelector('[data-key="'+key+'"][data-action="'+action+'"]');
-    if(el){el.focus();if(pos!=null&&el.setSelectionRange&&(tag==='INPUT'||tag==='TEXTAREA')){try{el.setSelectionRange(pos,pos)}catch(e){}}}
+    if(el){if(typed!=null&&el.tagName==='INPUT'&&el.value!==typed)el.value=typed;el.focus();if(pos!=null&&el.setSelectionRange&&(tag==='INPUT'||tag==='TEXTAREA')){try{el.setSelectionRange(pos,pos)}catch(e){}}}
   },
 
   _clampProductLimits(){
@@ -479,6 +501,10 @@ const APP={
     return {monto,meses,n,porAnio,cuota,cuotaIva,cuotaMensual,totalInt,iva:totalInt*P.u.ivaInteres,total:cuotaIva*n};
   },
 
+  // Años del flujo: como mínimo los que abarca el plazo solicitado, hasta 8.
+  aniosPlazo(s){return Math.min(8,Math.max(1,Math.ceil(num(s.datos.plazo)/12)))},
+  aniosFlujo(s){return Math.min(8,Math.max(this.aniosPlazo(s),num(s.flujoAnios)||1))},
+
   calcArraigo(anios,meses2){
     const totalMeses=num(anios)*12+num(meses2);
     if(totalMeses>=18)return 10;
@@ -493,6 +519,8 @@ const APP={
     const simplificada=pl.monto>0&&pl.monto<num(P.montoEvalSimplificada);
     const c=s.caracter;
     const tieneNegocio=usaCanvas(s.datos.ocupacion,this.state.config.ocupaciones||OCUPACIONES_DEFAULT);
+    // En la evaluación simplificada, sin negocio no se analiza el flujo de efectivo.
+    const flujoAplica=!(simplificada&&!tieneNegocio);
 
     // BONUS POINTS
     let bonusDiscapacidad=s.datos.tieneDiscapacidad?7:0;
@@ -534,13 +562,12 @@ const APP={
     const pHi=OPC.historial[c.historial]?OPC.historial[c.historial][1]:OPC.historial[0][1];
     let pAt=10;
     if(!sinHist){
-      const mop=num(c.mopMaximo);
-      if(mop>=5){pAt=0;vetos.push('Experiencia crediticia: MOP '+mop+', la deuda se considera irrecuperable.')}
-      else if(mop>=3){
-        if(c.comprobantePagoMOP)pAt=3;
+      const mop=mopClave(c.mopMaximo),regla=MOP_REGLA[mop];
+      if(regla.veto){pAt=0;vetos.push('Experiencia crediticia: MOP '+mop+', '+regla.veto+'.')}
+      else if(regla.comprobante){
+        if(c.comprobantePagoMOP)pAt=regla.p;
         else{pAt=0;vetos.push('Experiencia crediticia: MOP '+mop+' sin comprobante de pago presentado.')}
-      }else if(mop===2)pAt=5;
-      else pAt=10;
+      }else pAt=regla.p;
     }
     const pCo=sinHist?10:(OPC.comportamiento[c.comportamiento]?OPC.comportamiento[c.comportamiento][1]:10);
     const pRf=OPC.referencias[c.referencias]?OPC.referencias[c.referencias][1]:OPC.referencias[0][1];
@@ -580,17 +607,16 @@ const APP={
     const af=cp.activosFijos||{};
     let activoFijoComprobado=0,activoFijoTotal=0;
     ACTIVOS_FIJOS.forEach(a=>{const it=af[a[0]];if(it){activoFijoTotal+=num(it.monto);if(it.comprobante&&it.comprobante!=='ninguno')activoFijoComprobado+=num(it.monto)}});
-    const activos=num(cp.activoCirculante)+activoFijoComprobado;
+    const activos=num(cp.activoCirculante)+activoFijoTotal;
     const pasivos=num(cp.pasivoCorto)+num(cp.pasivoLargo);
-    const endAct=activos>0?pasivos/activos:1;
+    const capitalContable=activos-pasivos;
+    const endAct=pasivos<=0?0:activos>0?pasivos/activos:Infinity;
     let q1=0;
-    if(endAct>1)q1=0;
-    else if(endAct>P.u.endActVeto){q1=0;if(!simplificada)vetos.push('Capital: el endeudamiento actual es '+pct(endAct)+', arriba del límite de '+pct(P.u.endActVeto)+'.')}
+    if(endAct>P.u.endActVeto){q1=0;if(!simplificada)vetos.push('Capital: el endeudamiento actual es '+pct(endAct)+', arriba del límite de '+pct(P.u.endActVeto)+'.')}
     else if(endAct>P.u.endActMedio)q1=5;else if(endAct>P.u.endActBueno)q1=7;else q1=10;
     const endProy=(activos+pl.monto)>0?(pasivos+pl.monto)/(activos+pl.monto):1;
     let q2=0;
-    if(endProy>1)q2=0;
-    else if(endProy>P.u.endProyVeto){q2=0;if(!simplificada)vetos.push('Capital: con el crédito solicitado el endeudamiento llega a '+pct(endProy)+', arriba del límite de '+pct(P.u.endProyVeto)+'.')}
+    if(endProy>P.u.endProyVeto){q2=0;if(!simplificada)vetos.push('Capital: con el crédito solicitado el endeudamiento llega a '+pct(endProy)+', arriba del límite de '+pct(P.u.endProyVeto)+'.')}
     else if(endProy>P.u.endProyMedio)q2=5;else if(endProy>P.u.endProyBueno)q2=7;else q2=10;
     const capital=(q1*P.capital.endeudActual+q2*P.capital.endeudProyectado)/10;
 
@@ -642,7 +668,7 @@ const APP={
     const score5c=caracter*pesosC.caracter+capacidad*pesosC.capacidad+capital*pesosC.capital+condiciones*pesosC.condiciones+colateral*pesosC.colateral;
 
     // FLUJO DE EFECTIVO
-    const mesesFlujo=Math.max(1,num(s.flujoAnios))*12;
+    const mesesFlujo=this.aniosFlujo(s)*12;
     let ing=[],egr=[],res=[],acum=[],run=0;
     for(let m=0;m<mesesFlujo;m++){
       let a=0,b=0;
@@ -663,15 +689,15 @@ const APP={
     let f1=0;
     if(totIng<=0){f1=0}
     else if(ratioFlujo<=0.70)f1=10;else if(ratioFlujo<=0.80)f1=7;else if(ratioFlujo<=P.u.flujoGastosMax)f1=4;
-    else{f1=0;vetos.push('Flujo de efectivo: los egresos son '+pct(ratioFlujo)+' de los ingresos, arriba del máximo de '+pct(P.u.flujoGastosMax)+'.')}
+    else{f1=0;if(flujoAplica)vetos.push('Flujo de efectivo: los egresos son '+pct(ratioFlujo)+' de los ingresos, arriba del máximo de '+pct(P.u.flujoGastosMax)+'.')}
     let f2=0;
     if(compromisoMes<=0){f2=0}
     else if(cobFlujo>=1.5)f2=10;else if(cobFlujo>=1.2)f2=8;else if(cobFlujo>P.u.flujoCoberturaMin)f2=5;
-    else{f2=0;vetos.push('Flujo de efectivo: la cobertura del mes de pago es '+pct(cobFlujo)+', igual o menor al 100% exigido.')}
+    else{f2=0;if(flujoAplica)vetos.push('Flujo de efectivo: la cobertura del mes de pago es '+pct(cobFlujo)+', igual o menor al 100% exigido.')}
     const f3=mesesNeg===0?10:mesesNeg<=2?6:2;
     const capturado=totIng>0||totEgr>0;
     const scoreFlujo=capturado?(f1*P.flujoPeso.ratioGastos+f2*P.flujoPeso.cobertura+f3*P.flujoPeso.acumulado)/10:0;
-    if(!capturado)vetos.push('Flujo de efectivo: no se ha capturado el flujo mensual.');
+    if(!capturado&&flujoAplica)vetos.push('Flujo de efectivo: no se ha capturado el flujo mensual.');
 
     // CANVAS (solo aplica a actividades productivas)
     let cs=0;
@@ -680,13 +706,14 @@ const APP={
 
     let wC=P.mezcla.cincoC,wF=P.mezcla.flujo,wV=P.mezcla.canvas;
     if(!tieneNegocio){wV=0;const tot=P.mezcla.cincoC+P.mezcla.flujo;wC=P.mezcla.cincoC/tot;wF=P.mezcla.flujo/tot}
+    if(!flujoAplica){wC=1;wF=0;wV=0}
     const global=100*(score5c*wC+scoreFlujo*wF+scoreCanvas*wV);
     let banda='NO AUTORIZABLE';
     for(let i=0;i<P.bandas.length;i++){if(score5c>=P.bandas[i][0]){banda=P.bandas[i][1];break}}
     let dict='RECHAZADO';
     if(vetos.length===0)dict=global>=P.dictamen.aprobado?'APROBADO':global>=P.dictamen.condicionado?'CONDICIONADO':'RECHAZADO';
 
-    const flujoRequerido=s.condiciones.fuente>0||['anual','pago_unico','pago_unico_periodico'].includes(s.datos.periodicidad)||s.datos.ocupacion==='negocio_rural';
+    const flujoRequerido=flujoAplica&&(s.condiciones.fuente>0||['anual','pago_unico','pago_unico_periodico'].includes(s.datos.periodicidad)||s.datos.ocupacion==='negocio_rural');
     return {
       pl,vetos,banda,dictamen:dict,global,
       score5c,scoreFlujo,scoreCanvas,
@@ -696,8 +723,8 @@ const APP={
       deudas,LIM_CAP,capMaxPago,capDisponible,pctCuotaIng,ratioCompromisos,plazoIdeal,
       bonusDiscapacidad,bonusGenero,
       flujo:{ing,egr,res,acum,ratio:ratioFlujo,cobertura:cobFlujo,mesesNeg,mesesFlujo,ingMesPago,compromisoMes,acumPrevio,ingDisponibleMes,f1,f2,f3},
-      sinHist,tieneNegocio,tieneOVaEmprender,flujoRequerido,simplificada,pesosC,pesos:{cincoC:wC,flujo:wF,canvas:wV},
-      activoFijoTotal,activoFijoComprobado
+      sinHist,tieneNegocio,tieneOVaEmprender,flujoRequerido,flujoAplica,simplificada,pesosC,pesos:{cincoC:wC,flujo:wF,canvas:wV},
+      activoFijoTotal,activoFijoComprobado,activos,pasivos,capitalContable,endAct,endProy
     };
   },
 
@@ -838,7 +865,7 @@ const APP={
   renderSolicitud(){
     const st=this.state,s=this.actual(),E=this.evaluar(s),cfg=st.config;
     const allTabs=[['datos','Datos'],['caracter','Carácter'],['capacidad','Capacidad'],['capital','Capital'],['condiciones','Condiciones'],['colateral','Colateral'],['flujo','Flujo de efectivo'],['canvas','CANVAS'],['dictamen','Dictamen']];
-    const ocultas=(E.tieneNegocio?[]:['canvas']).concat(E.simplificada?['capital','condiciones']:[]);
+    const ocultas=(E.tieneNegocio?[]:['canvas']).concat(E.simplificada?['capital','condiciones']:[]).concat(E.flujoAplica?[]:['flujo']);
     const tabs=allTabs.filter(t=>!ocultas.includes(t[0]));
     const activeTab=ocultas.includes(st.tab)?'datos':st.tab;
 
@@ -856,7 +883,7 @@ const APP={
     const sidebar=`<aside style="flex:1 1 270px;min-width:0">
       <div style="border-top:3px solid var(--text);padding-top:12px">
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:12px">Desglose del score</div>
-        ${E.simplificada?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);background:var(--n200);padding:8px 10px;border-radius:3px;margin-bottom:10px">Evaluación simplificada: monto menor a ${mx(this.state.params.montoEvalSimplificada)}. Solo se evalúan Carácter, Capacidad y Colateral.</div>`:''}
+        ${E.simplificada?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);background:var(--n200);padding:8px 10px;border-radius:3px;margin-bottom:10px">Evaluación simplificada: monto menor a ${mx(this.state.params.montoEvalSimplificada)}. Solo se evalúan Carácter, Capacidad y Colateral${E.flujoAplica?'':'; sin negocio, tampoco el flujo de efectivo'}.</div>`:''}
         ${[
           {l:'Carácter',p:pct(E.pesosC.caracter),v:pct(E.caracter)},
           {l:'Capacidad de pago',p:pct(E.pesosC.capacidad),v:pct(E.capacidad)},
@@ -864,7 +891,7 @@ const APP={
           {l:'Condiciones',p:E.simplificada?'—':pct(E.pesosC.condiciones),v:E.simplificada?'No aplica':pct(E.condiciones)},
           {l:'Colateral',p:pct(E.pesosC.colateral),v:pct(E.colateral)},
           {l:'Subtotal 5C',p:pct(E.pesos.cincoC),v:pct(E.score5c)},
-          {l:'Flujo de efectivo',p:pct(E.pesos.flujo),v:pct(E.scoreFlujo)}
+          {l:'Flujo de efectivo',p:E.flujoAplica?pct(E.pesos.flujo):'—',v:E.flujoAplica?pct(E.scoreFlujo):'No aplica'}
         ].concat(E.tieneNegocio?[{l:'Modelo CANVAS',p:pct(E.pesos.canvas),v:pct(E.scoreCanvas)}]:[]).map(b=>`<div style="display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--div)">
           <span style="font:400 13.5px/1.3 var(--font)">${b.l}</span><span style="flex:1"></span>
           <span style="font:400 12px/1.3 var(--font);color:var(--n600)">${b.p}</span>
@@ -1004,11 +1031,11 @@ const APP={
 
     let expFields=this.renderField('Experiencia crediticia','Determina si se evalúa el comportamiento de pago',this.renderRadio('historial',OPC.historial,c.historial,'caracter.historial'),E.sub.pHi);
     if(!E.sinHist){
-      expFields+=this.renderField('MOP Máximo','Modo de Pago máximo registrado en Buró de Crédito en los últimos 24 meses',`<select class="input" data-action="updNum" data-path="caracter.mopMaximo">
-        ${MOP_VALORES.map(m=>`<option value="${m[0]}" ${num(c.mopMaximo)===m[0]?'selected':''}>${m[1]}</option>`).join('')}
+      expFields+=this.renderField('MOP máximo','Clave MOP más alta (la peor) registrada en Buró de Crédito en los últimos 24 meses',`<select class="input" data-action="updText" data-path="caracter.mopMaximo">
+        ${MOP_VALORES.map(m=>`<option value="${esc(m[0])}" ${mopClave(c.mopMaximo)===m[0]?'selected':''}>${m[1]}</option>`).join('')}
       </select>`,E.sub.pAt.toFixed(0));
-      if(num(c.mopMaximo)>=3){
-        expFields+=this.renderField('Comprobante de pago de la deuda','MOP 3 o mayor: se requiere que el solicitante presente comprobante de pago',`<select class="input" data-action="updBool" data-path="caracter.comprobantePagoMOP">
+      if(MOP_REGLA[mopClave(c.mopMaximo)].comprobante){
+        expFields+=this.renderField('Comprobante de pago de la deuda','MOP 04 o 05: se requiere que el solicitante presente comprobante de pago',`<select class="input" data-action="updBool" data-path="caracter.comprobantePagoMOP">
           <option value="false" ${!c.comprobantePagoMOP?'selected':''}>No presentado</option>
           <option value="true" ${c.comprobantePagoMOP?'selected':''}>Sí, comprobante presentado</option>
         </select>`);
@@ -1131,18 +1158,20 @@ const APP={
         </select></div>
       </div>`);
     });
-    return this.renderSection('Activos totales — lo que tiene','Comprobado: '+mx(E.activoFijoComprobado)+' de '+mx(E.activoFijoTotal)+' declarado',
+    return this.renderSection('Activos totales — lo que tiene','Total de activos: '+mx(E.activos),
       this.renderField('Activo circulante','Efectivo, inventarios, cuentas por cobrar',`<input class="input" type="text" inputmode="decimal" value="${cp.activoCirculante}" data-action="updNum" data-path="capital.activoCirculante" min="0">`)
     )+
-    this.renderSection('Activo fijo desglosado','Solo se toman en cuenta montos con escritura o factura a nombre del solicitante',activoFijoFields)+
+    this.renderSection('Activo fijo desglosado','Total '+mx(E.activoFijoTotal)+' · con escritura o factura: '+mx(E.activoFijoComprobado),activoFijoFields)+
     this.renderSection('Pasivos totales — lo que debe',mx(num(cp.pasivoCorto)+num(cp.pasivoLargo)),
       this.renderField('Pasivo de corto plazo','Vencimientos dentro de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoCorto}" data-action="updNum" data-path="capital.pasivoCorto" min="0">`)+
       this.renderField('Pasivo de largo plazo','Vencimientos a más de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoLargo}" data-action="updNum" data-path="capital.pasivoLargo" min="0">`)
     )+
     this.renderSection('Indicadores de capital',pct(P.bloques.capital)+' del score 5C · '+pct(E.capital),
-      this.renderField('Capital contable','Activos comprobados menos pasivos',`<strong>${mx(num(cp.activoCirculante)+E.activoFijoComprobado-num(cp.pasivoCorto)-num(cp.pasivoLargo))}</strong>`)+
-      this.renderField('Endeudamiento actual','Arriba de '+pct(P.u.endActVeto)+' es rechazo',`<strong>${pct((num(cp.activoCirculante)+E.activoFijoComprobado)>0?(num(cp.pasivoCorto)+num(cp.pasivoLargo))/(num(cp.activoCirculante)+E.activoFijoComprobado):1)}</strong>`,E.sub.q1.toFixed(0))+
-      this.renderField('Endeudamiento con el crédito','Arriba de '+pct(P.u.endProyVeto)+' es rechazo',`<strong>${pct((E.pl.monto+num(cp.activoCirculante)+E.activoFijoComprobado)>0?(num(cp.pasivoCorto)+num(cp.pasivoLargo)+E.pl.monto)/(num(cp.activoCirculante)+E.activoFijoComprobado+E.pl.monto):1)}</strong>`,E.sub.q2.toFixed(0))
+      this.renderField('Activos totales','Activo circulante más activo fijo',`<strong>${mx(E.activos)}</strong>`)+
+      this.renderField('Pasivos totales','Corto más largo plazo',`<strong>${mx(E.pasivos)}</strong>`)+
+      this.renderField('Capital contable','Activos totales menos pasivos totales',`<strong style="color:${E.capitalContable<0?'var(--a2700)':'inherit'}">${mx(E.capitalContable)}</strong>`)+
+      this.renderField('Endeudamiento actual','Pasivos ÷ activos · hasta '+pct(P.u.endActBueno)+' óptimo · arriba de '+pct(P.u.endActVeto)+' es rechazo',`<strong>${isFinite(E.endAct)?pct(E.endAct):'Sin activos'}</strong>`,E.sub.q1.toFixed(0))+
+      this.renderField('Endeudamiento con el crédito','(Pasivos + crédito) ÷ (activos + crédito) · arriba de '+pct(P.u.endProyVeto)+' es rechazo',`<strong>${pct(E.endProy)}</strong>`,E.sub.q2.toFixed(0))
     );
   },
 
@@ -1207,10 +1236,9 @@ const APP={
     <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:24px;margin-bottom:22px">
       <div><label style="display:block;font:400 13px/1.4 var(--font);margin-bottom:5px">Años analizados</label>
         <select class="input" data-action="updFlujoProp" data-prop="flujoAnios" style="width:130px">
-          <option value="1" ${num(s.flujoAnios)===1?'selected':''}>1 año</option>
-          <option value="2" ${num(s.flujoAnios)===2?'selected':''}>2 años</option>
-          <option value="3" ${num(s.flujoAnios)===3?'selected':''}>3 años</option>
+          ${[1,2,3,4,5,6,7,8].filter(n=>n>=this.aniosPlazo(s)).map(n=>`<option value="${n}" ${meses/12===n?'selected':''}>${n} año${n>1?'s':''}</option>`).join('')}
         </select>
+        <div style="font:400 12px/1.4 var(--font);color:var(--n700);margin-top:4px">Mínimo ${this.aniosPlazo(s)} según el plazo de ${num(s.datos.plazo)} meses · máximo 8</div>
       </div>
       <div><label style="display:block;font:400 13px/1.4 var(--font);margin-bottom:5px">Mes del pago analizado</label>
         <select class="input" data-action="updFlujoProp" data-prop="flujoMesPago" style="width:180px">${mesesOpts}</select>
@@ -1372,7 +1400,7 @@ const APP={
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:18px">
             ${acciones}
             <button class="btn btn-s" data-action="imprimirDictamen">Imprimir dictamen (1 página)</button>
-            <button class="btn btn-s" data-action="imprimirFlujo">Imprimir flujo</button>
+            ${E.flujoAplica?'<button class="btn btn-s" data-action="imprimirFlujo">Imprimir flujo</button>':''}
             ${E.tieneNegocio?'<button class="btn btn-s" data-action="imprimirCanvas">Imprimir CANVAS</button>':''}
           </div>
           ${st.avisoAccion?`<div style="font:400 13.5px/1.45 var(--font);color:var(--a2700);margin-top:12px">${esc(st.avisoAccion)}</div>`:''}
@@ -1394,8 +1422,8 @@ const APP={
     const P=this.state.params,cfg=this.state.config;
     const ocu=(cfg.ocupaciones||OCUPACIONES_DEFAULT).find(o=>o[0]===s.datos.ocupacion);
     const cp=s.capital,cd=s.condiciones,g=s.colateral;
-    const activos=num(cp.activoCirculante)+E.activoFijoComprobado;
-    const pasivos=num(cp.pasivoCorto)+num(cp.pasivoLargo);
+    const activos=E.activos;
+    const pasivos=E.pasivos;
     const garantia=GARANTIAS.find(x=>x[0]===g.tipo);
     const per=PERIODICIDADES.find(p=>p[0]===s.datos.periodicidad);
     return `<div style="font:400 10px/1.3 Arial,sans-serif;color:#000;padding:8px 15px;max-width:800px;margin:0 auto">
@@ -1427,7 +1455,7 @@ const APP={
       </div>
       <div style="border:1px solid #999;margin-bottom:4px"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C5 COLATERAL — ${pct(E.colateral)}</div><div style="padding:2px 4px;font-size:8.5px">Tipo: ${garantia?esc(garantia[1]):'—'} · ${esc(E.colTxt)}</div></div>
       <div style="border:2px solid #000;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:12px">
-        <div style="flex:1;font:700 9.5px/1.3 Arial,sans-serif"><div>CALIFICACIÓN CREDITICIA</div><div style="font-weight:400;margin-top:1px">5C${E.simplificada?' simplificada (C1, C3, C5)':''}: ${pct(E.score5c)} (${pct(E.pesos.cincoC)}) · Flujo: ${pct(E.scoreFlujo)} (${pct(E.pesos.flujo)})${E.tieneNegocio?' · CANVAS: '+pct(E.scoreCanvas)+' ('+pct(E.pesos.canvas)+')':''}</div></div>
+        <div style="flex:1;font:700 9.5px/1.3 Arial,sans-serif"><div>CALIFICACIÓN CREDITICIA</div><div style="font-weight:400;margin-top:1px">5C${E.simplificada?' simplificada (C1, C3, C5)':''}: ${pct(E.score5c)} (${pct(E.pesos.cincoC)}) · Flujo: ${E.flujoAplica?pct(E.scoreFlujo)+' ('+pct(E.pesos.flujo)+')':'No aplica'}${E.tieneNegocio?' · CANVAS: '+pct(E.scoreCanvas)+' ('+pct(E.pesos.canvas)+')':''}</div></div>
         <div style="font:700 22px/1 Arial,sans-serif">${E.global.toFixed(1)}</div>
         <div style="font:700 10px/1.2 Arial,sans-serif;padding:3px 8px;border:1px solid #000">${E.dictamen}</div>
       </div>
@@ -1449,24 +1477,33 @@ const APP={
   },
 
   renderFlujoImprimible(s,E){
-    const meses=E.flujo.mesesFlujo;
-    const colLabel=m=>MESES[m%12].slice(0,3)+(meses>12?' A'+(Math.floor(m/12)+1):'');
+    const meses=E.flujo.mesesFlujo,anios=Math.ceil(meses/12);
     const cfg=this.state.config;
-    let cols='';for(let m=0;m<meses;m++)cols+='<th style="border:1px solid #999;padding:2px 3px;font:700 7px/1.1 Arial,sans-serif;white-space:nowrap;background:#eee">'+colLabel(m)+'</th>';
-    const mkRow=(key,label)=>{const arr=s.flujo[key]||[];let cells='';for(let m=0;m<meses;m++)cells+='<td style="border:1px solid #ddd;padding:1px 3px;text-align:right;font-size:7.5px">'+(arr[m]?mx(arr[m]):'—')+'</td>';return '<tr><td style="border:1px solid #999;padding:2px 4px;font-size:8px;white-space:nowrap;background:#f8f8f8">'+label+'</td>'+cells+'</tr>'};
-    const totRow=(label,arr)=>'<tr><td style="border:1px solid #999;padding:2px 4px;font:700 8px/1.1 Arial,sans-serif;white-space:nowrap;background:#e0e0e0">'+label+'</td>'+arr.slice(0,meses).map(x=>'<td style="border:1px solid #999;padding:1px 3px;text-align:right;font:700 7.5px/1.1 Arial,sans-serif;background:#e0e0e0">'+mx(x)+'</td>').join('')+'</tr>';
+    const th='border:1px solid #999;padding:2px 3px;font:700 7px/1.1 Arial,sans-serif;white-space:nowrap;background:#eee';
+    const tot='border:1px solid #999;padding:1px 3px;text-align:right;font:700 7.5px/1.1 Arial,sans-serif;background:#e0e0e0';
+    // Una tabla de 12 meses por año, con columna de total anual.
+    const tablaAnio=y=>{
+      const ms=[];for(let m=y*12;m<Math.min(meses,y*12+12);m++)ms.push(m);
+      const suma=arr=>ms.reduce((a,m)=>a+num(arr[m]),0);
+      const mkRow=(key,label)=>{const arr=s.flujo[key]||[];return '<tr><td style="border:1px solid #999;padding:2px 4px;font-size:8px;white-space:nowrap;background:#f8f8f8">'+label+'</td>'+ms.map(m=>'<td style="border:1px solid #ddd;padding:1px 3px;text-align:right;font-size:7.5px">'+(num(arr[m])?mx(arr[m]):'—')+'</td>').join('')+'<td style="'+tot+'">'+mx(suma(arr))+'</td></tr>'};
+      const totRow=(label,arr,acum)=>'<tr><td style="border:1px solid #999;padding:2px 4px;font:700 8px/1.1 Arial,sans-serif;white-space:nowrap;background:#e0e0e0">'+label+'</td>'+ms.map(m=>'<td style="'+tot+'">'+mx(arr[m])+'</td>').join('')+'<td style="'+tot+'">'+mx(acum?arr[ms[ms.length-1]]:suma(arr))+'</td></tr>';
+      return `<div style="margin-top:${y?10:0}px;break-inside:avoid;page-break-inside:avoid">
+        ${anios>1?`<div style="font:700 8.5px/1.2 Arial,sans-serif;margin-bottom:2px">AÑO ${y+1}</div>`:''}
+        <table style="width:100%;border-collapse:collapse"><thead><tr><th style="${th};text-align:left;min-width:120px">Concepto</th>${ms.map(m=>`<th style="${th}">${MESES[m%12].slice(0,3)}</th>`).join('')}<th style="${th}">Total</th></tr></thead><tbody>
+          ${FILAS_ING.map(f=>mkRow(f[0],f[1])).join('')}
+          ${totRow('Total ingresos',E.flujo.ing)}
+          ${FILAS_EGR.map(f=>mkRow(f[0],f[1])).join('')}
+          ${totRow('Total egresos',E.flujo.egr)}
+          ${totRow('Resultado',E.flujo.res)}
+          ${totRow('Acumulado',E.flujo.acum,true)}
+        </tbody></table>
+      </div>`;
+    };
     return `<div style="font:400 9px/1.2 Arial,sans-serif;color:#000;padding:8px 10px">
-      <div style="text-align:center;margin-bottom:6px">${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:35px;max-width:160px;object-fit:contain;margin-bottom:2px">`:''}<div style="font:700 12px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div><div style="font:700 10px/1.2 Arial,sans-serif">FLUJO DE EFECTIVO — ${esc(s.datos.nombre||'—')} · Folio ${esc(s.folio)}</div></div>
-      <table style="width:100%;border-collapse:collapse"><thead><tr><th style="border:1px solid #999;padding:2px 4px;text-align:left;font:700 8px/1.1 Arial,sans-serif;background:#eee;min-width:120px">Concepto</th>${cols}</tr></thead><tbody>
-        ${FILAS_ING.map(f=>mkRow(f[0],f[1])).join('')}
-        ${totRow('Total ingresos',E.flujo.ing)}
-        ${FILAS_EGR.map(f=>mkRow(f[0],f[1])).join('')}
-        ${totRow('Total egresos',E.flujo.egr)}
-        ${totRow('Resultado',E.flujo.res)}
-        ${totRow('Acumulado',E.flujo.acum)}
-      </tbody></table>
+      <div style="text-align:center;margin-bottom:6px">${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:35px;max-width:160px;object-fit:contain;margin-bottom:2px">`:''}<div style="font:700 12px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div><div style="font:700 10px/1.2 Arial,sans-serif">FLUJO DE EFECTIVO — ${esc(s.datos.nombre||'—')} · Folio ${esc(s.folio)} · ${anios} año${anios>1?'s':''}</div></div>
+      ${Array.from({length:anios},(_,y)=>tablaAnio(y)).join('')}
       <div style="margin-top:6px;font:400 8px/1.3 Arial,sans-serif;color:#666">Egresos/Ingresos: ${pct(E.flujo.ratio)} · Cobertura mes pago: ${pct(E.flujo.cobertura)} · Meses negativos: ${E.flujo.mesesNeg} · Score flujo: ${pct(E.scoreFlujo)} · ${new Date().toLocaleString('es-MX')}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:50px;margin:34px 30px 8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:50px;margin:34px 30px 8px;break-inside:avoid;page-break-inside:avoid">
         <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${esc(s.datos.nombre||'&nbsp;')}<br>Nombre y firma del solicitante</div>
         <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${esc(s.analista)}<br>Nombre y firma del analista</div>
       </div>
@@ -1791,7 +1828,6 @@ const APP={
               if(el.dataset.path==='datos.tasaPct'&&v>pr.tasaAnual){v=pr.tasaAnual;el.value=v}
               if(el.dataset.path==='datos.plazo'&&v>pr.plazoMax){v=pr.plazoMax;el.value=v}
               if(el.dataset.path==='datos.monto'&&pr.montoMax&&v>pr.montoMax){v=pr.montoMax;el.value=v}
-              if(el.dataset.path==='datos.monto'&&pr.montoMin&&v<pr.montoMin){v=pr.montoMin;el.value=v}
             }
           }
         }
@@ -1807,6 +1843,13 @@ const APP={
     };
     app.onchange=e=>{
       const el=e.target.closest('[data-action]');
+      // El monto mínimo del producto se aplica al salir del campo, no mientras se teclea.
+      if(el&&el.tagName==='INPUT'&&el.dataset.path==='datos.monto'){
+        const sol=this.actual();
+        const pr=sol&&sol.datos.producto?this.state.config.productos.find(p=>p.nombre===sol.datos.producto):null;
+        if(pr&&pr.montoMin&&num(el.value)<pr.montoMin){this.upd('datos.monto',pr.montoMin);this.render()}
+        return;
+      }
       if(!el||el.tagName!=='SELECT')return;
       const a=el.dataset.action;
       if(a==='updText'){
@@ -1948,11 +1991,11 @@ const APP={
         const sol=this.actual();if(!sol)break;
         const pl=this.plan(sol.datos);
         const per=sol.datos.periodicidad;
-        const mesesFlujo=Math.max(1,num(sol.flujoAnios))*12;
+        const mesesFlujo=this.aniosFlujo(sol)*12;
         const prestamoArr=(sol.flujo.prestamoInst||[]).slice();
         const pagoArr=(sol.flujo.pagoInst||[]).slice();
-        while(prestamoArr.length<36)prestamoArr.push(0);
-        while(pagoArr.length<36)pagoArr.push(0);
+        while(prestamoArr.length<96)prestamoArr.push(0);
+        while(pagoArr.length<96)pagoArr.push(0);
         prestamoArr[0]=num(sol.datos.monto);
         if(per==='anual'){
           const mesPago=Math.min(mesesFlujo-1,Math.max(0,num(sol.flujoMesPago)));
