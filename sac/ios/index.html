@@ -550,6 +550,8 @@ const APP={
   sincronizarFlujo(sol,forzar){
     const cat=this.state.config.ocupaciones||OCUPACIONES_DEFAULT;
     if(!flujoActivo(sol.datos,cat))return sol;
+    // Solicitudes guardadas antes de la carga automática: solo se cargan si su flujo está vacío.
+    if(!forzar&&!sol.flujoAuto&&Object.values(sol.flujo||{}).some(arr=>(arr||[]).some(v=>num(v)!==0)))return sol;
     const k=sol.capacidad,neg=tipoActividad(sol.datos,cat)==='negocio';
     const suma=campos=>campos.reduce((a,x)=>a+num(k[x]),0);
     const objetivo={
