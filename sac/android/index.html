@@ -456,6 +456,27 @@ function migrarConfig(c){
   return c;
 }
 const OCUPACIONES_SIN_CANVAS=['ama_casa','empleado','empleado_formal','empleado_informal','funcionario_publico','trabajadora_domestica','estudiante','sin_ocupacion','pensionado_jubilado'];
+const TIPOS_ACTIVIDAD=[['negocio','Negocio o empresa'],['empleado','Empleado'],['ama_casa','Ama de casa'],['dependiente','Dependiente económico']];
+const OCUPACIONES_DEPENDIENTE=['estudiante','sin_ocupacion'];
+// Solicitudes capturadas antes del tipo de actividad: se deduce de la ocupación.
+function tipoActividad(d,catalogo){
+  if(d.tipoActividad)return d.tipoActividad;
+  const o=d.ocupacion||'';
+  if(usaCanvas(o,catalogo))return 'negocio';
+  if(o==='ama_casa')return 'ama_casa';
+  if(OCUPACIONES_DEPENDIENTE.includes(o))return 'dependiente';
+  return 'empleado';
+}
+// Ocupaciones del catálogo que se ofrecen para cada tipo de actividad.
+function ocupacionesDeTipo(tipo,catalogo){
+  const cat=catalogo||OCUPACIONES_DEFAULT;
+  if(tipo==='negocio')return cat.filter(o=>usaCanvas(o[0],cat));
+  if(tipo==='ama_casa')return cat.filter(o=>o[0]==='ama_casa');
+  if(tipo==='dependiente')return cat.filter(o=>OCUPACIONES_DEPENDIENTE.includes(o[0]));
+  return cat.filter(o=>!usaCanvas(o[0],cat)&&o[0]!=='ama_casa'&&!OCUPACIONES_DEPENDIENTE.includes(o[0]));
+}
+// El flujo de efectivo aplica con negocio, ingresos variables o un gasto importante en el año.
+function flujoActivo(d,catalogo){return tipoActividad(d,catalogo)==='negocio'||!!d.ingresosVariables||!!d.gastoImportante}
 function usaCanvas(clave,catalogo){
   const o=(catalogo||[]).find(x=>x[0]===clave);
   if(o&&typeof o[2]==='boolean')return o[2];
@@ -611,7 +632,7 @@ function nuevaSolicitud(folio,user){
       monto:50000,plazo:24,tasaPct:24,periodicidad:'mensual',plan:'fijo',
       producto:'',genero:'',esUnicoSosten:false,tieneDiscapacidad:false,
       fuenteIngresos:'',proveedorIngresos:'',actividadSecundaria:'',
-      clasificacionIFRS9:'',esPrimerEmpleo:false,nombreNegocio:''},
+      clasificacionIFRS9:'',esPrimerEmpleo:false,nombreNegocio:'',tipoActividad:'empleado',ingresosVariables:false,gastoImportante:false},
     caracter:{vivienda:0,resAnios:2,resMeses:0,resPrevAnios:0,resPrevMeses:0,
       actividad:0,labAnios:2,labMeses:0,labPrevAnios:0,labPrevMeses:0,
       historial:0,mopMaximo:'01',comprobantePagoMOP:false,comportamiento:0,referencias:0,antigSocio:0,ahorro:0},
@@ -621,7 +642,7 @@ function nuevaSolicitud(folio,user){
     capital:{activoCirculante:0,activosFijos:{terreno:{monto:0,comprobante:'ninguno'},inmueble:{monto:0,comprobante:'ninguno'},vehiculo:{monto:0,comprobante:'ninguno'},maquinaria:{monto:0,comprobante:'ninguno'},ganado:{monto:0,comprobante:'ninguno'},mobiliario:{monto:0,comprobante:'ninguno'},otroFijo:{monto:0,comprobante:'ninguno'}},pasivoCorto:0,pasivoLargo:0},
     condiciones:{fuente:0,sector:0,entorno:0,antigNegocio:0},
     colateral:{tipo:'garantes',ingGarante1:0,ingGarante2:0,avaluo:0,ingAval:0},
-    flujo,flujoAnios:1,flujoMesPago:11,
+    flujo,flujoAuto:{},flujoAnios:1,flujoMesPago:11,
     canvas,
     resolucion:null,bitacora:[{ts:Date.now(),accion:'Solicitud creada',quien:user.nombre}]
   };
@@ -681,9 +702,36 @@ const APP={
       let ref=c;const parts=path.split('.');
       for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];
       ref[parts[parts.length-1]]=value;
-      return c;
+      return /^(capacidad|datos)\./.test(path)?this.sincronizarFlujo(c):c;
     });
     this.persist();
+  },
+
+  // Carga en el flujo los ingresos y gastos mensuales capturados en Capacidad. Un renglón que el
+  // analista modificó a mano deja de actualizarse; «Recargar desde Capacidad» (forzar) lo reemplaza.
+  sincronizarFlujo(sol,forzar){
+    const cat=this.state.config.ocupaciones||OCUPACIONES_DEFAULT;
+    if(!flujoActivo(sol.datos,cat))return sol;
+    const k=sol.capacidad,neg=tipoActividad(sol.datos,cat)==='negocio';
+    const suma=campos=>campos.reduce((a,x)=>a+num(k[x]),0);
+    const objetivo={
+      ventas:neg?num(k.ingTrabajo):0,
+      sueldos:neg?0:num(k.ingTrabajo),
+      remesas:suma(['ingArrendamiento','ingIntereses','ingTransferencias','ingOtros']),
+      egresosFam:suma(['gAlimentos','gTransporte','gEducacion','gVivienda','gPersonal','gLimpieza','gVestido','gSalud','gOtrosGastos']),
+      pagoOtras:suma(['dCajas','dBancos','dArrendamiento','dPrestamistas'])
+    };
+    const auto=sol.flujoAuto||{},flujo={...sol.flujo},nuevoAuto={...auto};
+    let cambio=false;
+    Object.keys(objetivo).forEach(r=>{
+      const arr=flujo[r]||[],previo=num(auto[r]);
+      let intacto=forzar;
+      if(!intacto){intacto=true;for(let m=0;m<96;m++)if(num(arr[m])!==previo){intacto=false;break}}
+      if(intacto&&(forzar||previo!==objetivo[r]||auto[r]===undefined)){
+        flujo[r]=new Array(96).fill(objetivo[r]);nuevoAuto[r]=objetivo[r];cambio=true;
+      }
+    });
+    return cambio?{...sol,flujo,flujoAuto:nuevoAuto}:sol;
   },
 
   _scheduleRender(){clearTimeout(this._rt);this._rt=setTimeout(()=>this._renderSafe(),600)},
@@ -769,9 +817,9 @@ const APP={
     const pl=this.plan(s.datos,montoOv,plazoOv);
     const simplificada=pl.monto>0&&pl.monto<num(P.montoEvalSimplificada);
     const c=s.caracter;
-    const tieneNegocio=usaCanvas(s.datos.ocupacion,this.state.config.ocupaciones||OCUPACIONES_DEFAULT);
-    // En la evaluación simplificada, sin negocio no se analiza el flujo de efectivo.
-    const flujoAplica=!(simplificada&&!tieneNegocio);
+    const catOcup=this.state.config.ocupaciones||OCUPACIONES_DEFAULT;
+    const tieneNegocio=tipoActividad(s.datos,catOcup)==='negocio';
+    const flujoAplica=flujoActivo(s.datos,catOcup);
 
     // BONUS POINTS
     let bonusDiscapacidad=s.datos.tieneDiscapacidad?7:0;
@@ -964,7 +1012,7 @@ const APP={
     let dict='RECHAZADO';
     if(vetos.length===0)dict=global>=P.dictamen.aprobado?'APROBADO':global>=P.dictamen.condicionado?'CONDICIONADO':'RECHAZADO';
 
-    const flujoRequerido=flujoAplica&&(s.condiciones.fuente>0||['anual','pago_unico','pago_unico_periodico'].includes(s.datos.periodicidad)||s.datos.ocupacion==='negocio_rural');
+    const flujoRequerido=flujoAplica;
     return {
       pl,vetos,banda,dictamen:dict,global,
       score5c,scoreFlujo,scoreCanvas,
@@ -1134,7 +1182,7 @@ const APP={
     const sidebar=`<aside style="flex:1 1 270px;min-width:0">
       <div style="border-top:3px solid var(--text);padding-top:12px">
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:12px">Desglose del score</div>
-        ${E.simplificada?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);background:var(--n200);padding:8px 10px;border-radius:3px;margin-bottom:10px">Evaluación simplificada: monto menor a ${mx(this.state.params.montoEvalSimplificada)}. Solo se evalúan Carácter, Capacidad y Colateral${E.flujoAplica?'':'; sin negocio, tampoco el flujo de efectivo'}.</div>`:''}
+        ${E.simplificada?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);background:var(--n200);padding:8px 10px;border-radius:3px;margin-bottom:10px">Evaluación simplificada: monto menor a ${mx(this.state.params.montoEvalSimplificada)}. Solo se evalúan Carácter, Capacidad y Colateral.</div>`:''}
         ${[
           {l:'Carácter',p:pct(E.pesosC.caracter),v:pct(E.caracter)},
           {l:'Capacidad de pago',p:pct(E.pesosC.capacidad),v:pct(E.capacidad)},
@@ -1218,6 +1266,11 @@ const APP={
 
   renderTabDatos(s,E){
     const d=s.datos,cfg=this.state.config;
+    const cat=cfg.ocupaciones||OCUPACIONES_DEFAULT,tipoAct=tipoActividad(d,cat),ocups=ocupacionesDeTipo(tipoAct,cat);
+    const siNo=path=>`<select class="input" data-action="updBool" data-path="${path}">
+        <option value="false" ${!path.split('.').reduce((o,p)=>o[p],s)?'selected':''}>No</option>
+        <option value="true" ${path.split('.').reduce((o,p)=>o[p],s)?'selected':''}>Sí</option>
+      </select>`;
     const prodSel=d.producto?cfg.productos.find(p=>p.nombre===d.producto):null;
     const productoOpts=cfg.productos.map(p=>`<option value="${esc(p.nombre)}" ${d.producto===p.nombre?'selected':''}>${esc(p.nombre)} (hasta ${p.plazoMax} meses, ${p.tasaAnual}%)</option>`).join('');
 
@@ -1237,9 +1290,16 @@ const APP={
         <option value="false" ${!d.tieneDiscapacidad?'selected':''}>No</option>
         <option value="true" ${d.tieneDiscapacidad?'selected':''}>Sí</option>
       </select>`,E.bonusDiscapacidad)+
-      this.renderField('Ocupación','Actividad principal del solicitante · '+(E.tieneNegocio?'Activa el modelo CANVAS':'No activa el modelo CANVAS'),`<select class="input" data-action="updText" data-path="datos.ocupacion">
-        ${(cfg.ocupaciones||OCUPACIONES_DEFAULT).map(o=>`<option value="${o[0]}" ${d.ocupacion===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+      this.renderField('Tipo de actividad','Negocio o empresa activa el flujo de efectivo y el modelo CANVAS',`<select class="input" data-action="updTipoActividad">
+        ${TIPOS_ACTIVIDAD.map(t=>`<option value="${t[0]}" ${tipoAct===t[0]?'selected':''}>${t[1]}</option>`).join('')}
       </select>`)+
+      this.renderField('Ocupación','Actividad principal del solicitante',`<select class="input" data-action="updText" data-path="datos.ocupacion">
+        ${ocups.some(o=>o[0]===d.ocupacion)?'':'<option value="" selected>Seleccione...</option>'}
+        ${ocups.map(o=>`<option value="${esc(o[0])}" ${d.ocupacion===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}
+      </select>`)+
+      this.renderField('¿Obtiene ingresos relevantes variables durante el año?','Cosechas, temporadas altas, ventas por estación, aguinaldos o comisiones · Sí activa el flujo de efectivo',siNo('datos.ingresosVariables'))+
+      this.renderField('¿Tiene algún gasto importante programado en el año?','Inscripciones, fiestas, reparaciones, compra de insumos o de equipo · Sí activa el flujo de efectivo',siNo('datos.gastoImportante'))+
+      this.renderField('Análisis que se activan','Según el tipo de actividad y las dos preguntas anteriores',`<strong>Flujo de efectivo: ${E.flujoAplica?'Sí':'No'} · CANVAS: ${E.tieneNegocio?'Sí':'No'}</strong>`)+
       this.renderField('Clasificación IFRS9','Tipo de crédito según las Normas Internacionales de Información Financiera',`<select class="input" data-action="updText" data-path="datos.clasificacionIFRS9">
         <option value="" ${!d.clasificacionIFRS9?'selected':''}>Seleccione...</option>
         ${CLASIFICACION_IFRS9.map(c2=>`<option value="${c2[0]}" ${d.clasificacionIFRS9===c2[0]?'selected':''}>${c2[1]}</option>`).join('')}
@@ -1480,10 +1540,14 @@ const APP={
     let mesesOpts='';
     for(let m=0;m<meses;m++)mesesOpts+=`<option value="${m}" ${num(s.flujoMesPago)===m?'selected':''}>${MESES[m%12]} — año ${Math.floor(m/12)+1}</option>`;
 
-    const esAnualOUnico=['anual','pago_unico','pago_unico_periodico'].includes(s.datos.periodicidad);
     return `
-    ${E.flujoRequerido?'<div style="background:var(--a2100);border:1px solid var(--accent2);padding:10px 14px;margin-bottom:16px;border-radius:3px;font:400 13px/1.5 var(--font);color:var(--a2800)"><strong>Flujo de efectivo requerido:</strong> El solicitante tiene ingresos o gastos variables en el año, o su plan de pagos es anual / pago único. Complete el flujo mensual para una evaluación precisa.</div>':''}
-    ${esAnualOUnico?'<div style="margin-bottom:14px"><button class="btn btn-p" data-action="autoPopularFlujo">Autopoblar préstamo de la Institución en el flujo</button><span style="font:400 12px/1.4 var(--font);color:var(--n700);margin-left:10px">Coloca el monto del préstamo como ingreso y los pagos como egreso según el plan.</span></div>':''}
+    <div style="background:var(--a2100);border:1px solid var(--accent2);padding:10px 14px;margin-bottom:12px;border-radius:3px;font:400 13px/1.5 var(--font);color:var(--a2800)"><strong>Flujo de efectivo requerido:</strong> ${E.tieneNegocio?'el solicitante tiene un negocio o empresa':'el solicitante tiene ingresos variables o un gasto importante programado en el año'}. Complete el flujo mensual para una evaluación precisa.</div>
+    <div style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin-bottom:14px">Los datos de Capacidad se cargan solos: ingresos por trabajo en <strong>${E.tieneNegocio?'Ventas':'Sueldos'}</strong>, rentas, intereses y transferencias en <strong>Otros ingresos</strong>, gastos familiares en <strong>Egresos familiares</strong> y deudas en <strong>Pago a otras Entidades Financieras</strong>. Si modifica un mes de esos renglones, el renglón deja de actualizarse.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      <button class="btn btn-s" data-action="recargarFlujo">Recargar desde Capacidad</button>
+      <button class="btn btn-p" data-action="autoPopularFlujo">Autopoblar préstamo de la Institución</button>
+      <span style="font:400 12px/1.4 var(--font);color:var(--n700);align-self:center">Coloca el monto del préstamo como ingreso del primer mes y los pagos como egreso según el plan.</span>
+    </div>
     <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:24px;margin-bottom:22px">
       <div><label style="display:block;font:400 13px/1.4 var(--font);margin-bottom:5px">Años analizados</label>
         <select class="input" data-action="updFlujoProp" data-prop="flujoAnios" style="width:130px">
@@ -1845,7 +1909,7 @@ const APP={
     ${st.configTab==='ocupaciones'?`
     <div class="config-card">
       <h3>Catálogo de ocupaciones</h3>
-      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Personalice las ocupaciones disponibles para seleccionar en la solicitud. La columna CANVAS indica qué ocupaciones activan el modelo CANVAS. Por omisión lo activan todas las actividades productivas; no lo activan empleados, amas de casa, estudiantes, pensionados ni personas sin ocupación. Haga clic en Sí / No para cambiarlo.</p>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Personalice las ocupaciones disponibles para seleccionar en la solicitud. La columna CANVAS indica qué ocupaciones se ofrecen cuando el tipo de actividad es «Negocio o empresa», que activa el flujo de efectivo y el modelo CANVAS; las que tienen No aparecen en Empleado, Ama de casa o Dependiente económico. Haga clic en Sí / No para cambiarlo.</p>
       <table class="table" style="margin-bottom:20px">
         <thead><tr><th>Clave</th><th>Nombre</th><th>CANVAS</th><th></th></tr></thead>
         <tbody>
@@ -2118,6 +2182,15 @@ const APP={
       }
       else if(a==='updNum')this.upd(el.dataset.path,num(el.value));
       else if(a==='updBool')this.upd(el.dataset.path,el.value==='true');
+      else if(a==='updTipoActividad'){
+        const sol=this.actual();
+        if(sol){
+          // Si la ocupación no corresponde al nuevo tipo, se limpia (o se elige la única posible).
+          const lista=ocupacionesDeTipo(el.value,this.state.config.ocupaciones||OCUPACIONES_DEFAULT);
+          if(!lista.some(o=>o[0]===sol.datos.ocupacion))this.upd('datos.ocupacion',lista.length===1?lista[0][0]:'');
+          this.upd('datos.tipoActividad',el.value);
+        }
+      }
       else if(a==='updFlujoProp')this.upd(el.dataset.prop,num(el.value));
       else if(a==='updActivoFijo'){const sol=this.actual();if(sol){const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}}
       this.render();
@@ -2144,8 +2217,15 @@ const APP={
         this.set({vista:el.dataset.vista,avisoAccion:''});
         break;
       case 'tab':
+        if(el.dataset.tab==='flujo'){const id=st.idActual;this.state.solicitudes=st.solicitudes.map(s=>s.id===id?this.sincronizarFlujo(s):s);this.persist()}
         this.set({tab:el.dataset.tab,avisoAccion:''});
         break;
+      case 'recargarFlujo':{
+        const id=st.idActual;
+        this.state.solicitudes=st.solicitudes.map(s=>s.id===id?this.sincronizarFlujo(s,true):s);
+        this.persist();this.render();
+        break;
+      }
       case 'configTab':
         this.set({configTab:el.dataset.tab});
         break;
@@ -2260,6 +2340,9 @@ const APP={
           for(let m=0;m<mesesFlujo;m++)pagoArr[m]=Math.round(intMensual+ivaInt);
           const mesFin=Math.min(mesesFlujo-1,Math.max(0,num(sol.datos.plazo)-1));
           pagoArr[mesFin]=Math.round(num(sol.datos.monto)+intMensual+ivaInt);
+        }else{
+          // Pagos periódicos: la cuota mensual equivalente durante el plazo.
+          for(let m=0;m<Math.min(mesesFlujo,num(sol.datos.plazo));m++)pagoArr[m]=Math.round(pl.cuotaMensual);
         }
         this.upd('flujo.prestamoInst',prestamoArr);
         this.upd('flujo.pagoInst',pagoArr);
