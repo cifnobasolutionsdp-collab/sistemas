@@ -285,7 +285,8 @@ const OCUPACIONES_DEFAULT=[
   ['zapatero','Zapatero']
 ];
 const OCUPACIONES_VER=2;
-function migrarConfig(c){
+function migrarConfig(c,u){
+  if(!Array.isArray(c.garantias)||!c.garantias.length)c.garantias=garantiasIniciales(u);
   if(c.ocupacionesVer!==OCUPACIONES_VER&&Array.isArray(c.ocupaciones)){
     const claves=new Set(c.ocupaciones.map(o=>o[0]));
     c.ocupaciones=c.ocupaciones.concat(OCUPACIONES_DEFAULT.filter(o=>!claves.has(o[0]))).sort((a,b)=>a[1].localeCompare(b[1],'es'));
@@ -372,12 +373,30 @@ const OPC={
   entorno:[['Entorno favorable',10],['Entorno regular',7],['Entorno adverso (riesgo climático o social)',3]],
   antigNegocio:[['Más de 3 años de operación',10],['De 1 a 3 años de operación',8],['Menos de 1 año de operación',5]]
 };
-const GARANTIAS=[
-  ['garantes','Garantía personal — dos garantes'],['aval','Aval o codeudor u obligado solidario'],
-  ['prenda','Prenda'],['hipoteca','Hipoteca'],
-  ['ahorro_garantia','Ahorros o inversiones depositadas como garantía en la Institución'],
-  ['sin_aval_garantia_liquida','Sin aval pero con garantía líquida'],['ninguna','Sin garantía']
+// Catálogo inicial de garantías; cada institución lo ajusta en Configuración › Garantías.
+// medida «cuota»: los ingresos mensuales de cada garante entre la cuota mensual del crédito.
+// medida «monto»: el valor de la garantía entre el monto del crédito. «ninguna»: no aporta cobertura.
+// Con la cobertura requerida califica al 100%; con la parcial (si es mayor que cero), con puntajeParcial.
+const GARANTIAS_DEFAULT=[
+  {clave:'garantes',nombre:'Garantía personal — dos garantes',medida:'cuota',personas:2,cobertura:0.5,parcial:0,puntajeParcial:0.7,activa:true},
+  {clave:'aval',nombre:'Aval o codeudor u obligado solidario',medida:'cuota',personas:1,cobertura:2,parcial:1,puntajeParcial:0.7,activa:true},
+  {clave:'prenda',nombre:'Prenda',medida:'monto',personas:1,cobertura:2,parcial:0,puntajeParcial:0.7,activa:true},
+  {clave:'hipoteca',nombre:'Hipoteca',medida:'monto',personas:1,cobertura:2,parcial:0,puntajeParcial:0.7,activa:true},
+  {clave:'ahorro_garantia',nombre:'Ahorros o inversiones depositadas como garantía en la Institución',medida:'monto',personas:1,cobertura:1,parcial:0,puntajeParcial:0.7,activa:true},
+  {clave:'sin_aval_garantia_liquida',nombre:'Sin aval pero con garantía líquida',medida:'monto',personas:1,cobertura:1,parcial:0,puntajeParcial:0.7,activa:true},
+  {clave:'ninguna',nombre:'Sin garantía',medida:'ninguna',personas:1,cobertura:0,parcial:0,puntajeParcial:0,activa:true}
 ];
+const MEDIDAS_GARANTIA=[['cuota','Ingresos contra la cuota'],['monto','Valor contra el monto'],['ninguna','No aporta cobertura']];
+// Las coberturas de prenda, hipoteca y ahorro estaban en los parámetros; se conservan al crear el catálogo.
+function garantiasIniciales(u){
+  const g=JSON.parse(JSON.stringify(GARANTIAS_DEFAULT));
+  if(u){
+    const cov={prenda:u.covPrenda,hipoteca:u.covHipoteca,ahorro_garantia:u.covAhorro,sin_aval_garantia_liquida:u.covAhorro};
+    g.forEach(x=>{if(cov[x.clave]!=null&&isFinite(parseFloat(cov[x.clave])))x.cobertura=parseFloat(cov[x.clave])});
+  }
+  return g;
+}
+function garantiaDe(clave,catalogo){return (catalogo||GARANTIAS_DEFAULT).find(x=>x.clave===clave)||null}
 const CANVAS_BLOQUES=[
   ['aliados','Aliados Clave','¿Quiénes son los proveedores, acopiadores, cooperativas e intermediarios clave?'],
   ['actividades','Actividades Clave (implica el crédito)','Lo que el negocio hace todos los días para operar y cómo el crédito impulsa estas actividades.'],
@@ -508,7 +527,7 @@ const APP={
         const d=JSON.parse(raw);
         Object.assign(this.state,{
           users:d.users||USUARIOS_INICIALES,sucursales:d.sucursales||SUCURSALES_INICIALES,
-          params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{})),
+          params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{}),(d.params||{}).u),
           solicitudes:d.solicitudes||[],auditoria:d.auditoria||[],folioSeq:d.folioSeq||1001
         });
       }
@@ -532,6 +551,22 @@ const APP={
 
   actual(){return this.state.solicitudes.find(s=>s.id===this.state.idActual)||null},
 
+  garantias(){const c=this.state.config.garantias;return Array.isArray(c)&&c.length?c:garantiasIniciales(this.state.params.u)},
+
+  updGarantia(i,prop,val){
+    const cfg=JSON.parse(JSON.stringify(this.state.config));
+    cfg.garantias=JSON.parse(JSON.stringify(this.garantias()));
+    const g=cfg.garantias[i];if(!g)return null;
+    if(prop==='nombre')g.nombre=String(val);
+    else if(prop==='medida')g.medida=['cuota','monto','ninguna'].includes(val)?val:'monto';
+    else if(prop==='personas')g.personas=num(val)>=2?2:1;
+    else if(prop==='puntajeParcial')g.puntajeParcial=Math.min(100,Math.max(0,num(val)))/100;
+    else if(prop==='cobertura'||prop==='parcial')g[prop]=Math.max(0,num(val));
+    else return null;
+    this.state.config=cfg;this.persist();
+    return g;
+  },
+
   upd(path,value){
     const id=this.state.idActual;
     this.state.solicitudes=this.state.solicitudes.map(s=>{
@@ -540,7 +575,7 @@ const APP={
       let ref=c;const parts=path.split('.');
       for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];
       ref[parts[parts.length-1]]=value;
-      return /^(capacidad|datos)\./.test(path)?this.sincronizarFlujo(c):c;
+      return /^(capacidad\.|datos\.|flujoAnios$|flujoMesPago$)/.test(path)?this.sincronizarFlujo(c):c;
     });
     this.persist();
   },
@@ -550,6 +585,7 @@ const APP={
   sincronizarFlujo(sol,forzar){
     const cat=this.state.config.ocupaciones||OCUPACIONES_DEFAULT;
     if(!flujoActivo(sol.datos,cat))return sol;
+    sol=this.sincronizarPrestamo(sol);
     // Solicitudes guardadas antes de la carga automática: solo se cargan si su flujo está vacío.
     if(!forzar&&!sol.flujoAuto&&Object.values(sol.flujo||{}).some(arr=>(arr||[]).some(v=>num(v)!==0)))return sol;
     const k=sol.capacidad,neg=tipoActividad(sol.datos,cat)==='negocio';
@@ -572,6 +608,47 @@ const APP={
       }
     });
     return cambio?{...sol,flujo,flujoAuto:nuevoAuto}:sol;
+  },
+
+  // Renglones del préstamo de la Institución según monto, plazo, tasa y periodicidad de la solicitud.
+  prestamoFlujo(sol){
+    const d=sol.datos,pl=this.plan(d),per=d.periodicidad;
+    const mesesFlujo=this.aniosFlujo(sol)*12,plazo=num(d.plazo);
+    const prestamoInst=new Array(96).fill(0),pagoInst=new Array(96).fill(0);
+    prestamoInst[0]=num(d.monto);
+    if(per==='anual'){
+      pagoInst[Math.min(mesesFlujo-1,Math.max(0,num(sol.flujoMesPago)))]=Math.round(pl.cuotaIva);
+    }else if(per==='pago_unico'){
+      pagoInst[Math.min(mesesFlujo-1,Math.max(0,plazo-1))]=Math.round(pl.total);
+    }else if(per==='pago_unico_periodico'){
+      const intMensual=num(d.monto)*(num(d.tasaPct)/100/12);
+      const ivaInt=intMensual*this.state.params.u.ivaInteres;
+      for(let m=0;m<Math.min(mesesFlujo,plazo);m++)pagoInst[m]=Math.round(intMensual+ivaInt);
+      pagoInst[Math.min(mesesFlujo-1,Math.max(0,plazo-1))]=Math.round(num(d.monto)+intMensual+ivaInt);
+    }else{
+      // Pagos periódicos: la cuota mensual equivalente durante el plazo.
+      for(let m=0;m<Math.min(mesesFlujo,plazo);m++)pagoInst[m]=Math.round(pl.cuotaMensual);
+    }
+    return {prestamoInst,pagoInst};
+  },
+
+  // Después de «Autopoblar préstamo», los renglones del préstamo siguen al monto, plazo y periodicidad
+  // mientras el analista no los modifique a mano; el botón (forzar) los vuelve a generar completos.
+  sincronizarPrestamo(sol,forzar){
+    const auto=sol.flujoAutoPrestamo;
+    if(!auto&&!forzar)return sol;
+    const calc=this.prestamoFlujo(sol),flujo={...sol.flujo},nuevoAuto={...(auto||{})};
+    let cambio=false;
+    ['prestamoInst','pagoInst'].forEach(r=>{
+      const arr=flujo[r]||[],prev=auto&&auto[r];
+      let intacto=!!forzar;
+      if(!intacto&&Array.isArray(prev)){intacto=true;for(let m=0;m<96;m++)if(num(arr[m])!==num(prev[m])){intacto=false;break}}
+      if(!intacto)return;
+      let distinto=!!forzar;
+      for(let m=0;m<96&&!distinto;m++)if(num(arr[m])!==calc[r][m])distinto=true;
+      if(distinto){flujo[r]=calc[r];nuevoAuto[r]=calc[r].slice();cambio=true}
+    });
+    return cambio?{...sol,flujo,flujoAutoPrestamo:nuevoAuto}:sol;
   },
 
   _scheduleRender(){clearTimeout(this._rt);this._rt=setTimeout(()=>this._renderSafe(),600)},
@@ -778,28 +855,22 @@ const APP={
 
     // COLATERAL
     const g=s.colateral;let colateral=0;let colTxt='';
-    const grado=x=>x<0.5?1:x<1?2:x<2?3:4;
-    if(g.tipo==='garantes'){
-      const c1=pl.cuotaMensual>0?num(g.ingGarante1)/pl.cuotaMensual:0;
-      const c2=pl.cuotaMensual>0?num(g.ingGarante2)/pl.cuotaMensual:0;
-      const g1=grado(c1),g2=grado(c2);
-      colateral=(g1===1||g2===1)?0:(g1+g2>=4?1:0);
-      colTxt='Garantes: cobertura de cuota '+c1.toFixed(2)+' y '+c2.toFixed(2)+(colateral?' — aceptable':' — no aceptable');
-    }else if(g.tipo==='aval'){
-      const cAval=pl.cuotaMensual>0?num(g.ingAval)/pl.cuotaMensual:0;
-      colateral=cAval>=2?1:cAval>=1?0.7:0;
-      colTxt='Aval/codeudor: cobertura de cuota '+cAval.toFixed(2)+(colateral>=0.7?' — aceptable':' — insuficiente');
-    }else if(g.tipo==='sin_aval_garantia_liquida'){
+    const gar=garantiaDe(g.tipo,this.garantias());
+    const califica=x=>x>=num(gar.cobertura)?1:(num(gar.parcial)>0&&x>=num(gar.parcial)?Math.min(1,Math.max(0,num(gar.puntajeParcial))):0);
+    const resultado=()=>colateral>=1?' — aceptable':colateral>0?' — cobertura parcial ('+pct(colateral)+')':' — insuficiente';
+    if(!gar){
+      colTxt='Garantía no configurada en el catálogo';
+    }else if(gar.medida==='cuota'){
+      const ingG=num(gar.personas)>=2?[num(g.ingGarante1),num(g.ingGarante2)]:[num(g.ingAval)];
+      const cobs=ingG.map(x=>pl.cuotaMensual>0?x/pl.cuotaMensual:0);
+      colateral=Math.min(...cobs.map(califica));
+      colTxt=gar.nombre+': cobertura de cuota '+cobs.map(x=>x.toFixed(2)).join(' y ')+'; se requiere '+num(gar.cobertura).toFixed(2)+(cobs.length>1?' cada uno':'')+resultado();
+    }else if(gar.medida==='monto'){
       const cov=pl.monto>0?num(g.avaluo)/pl.monto:0;
-      colateral=cov>=P.u.covAhorro?1:0;
-      colTxt='Garantía líquida sin aval: cobertura '+cov.toFixed(2)+' veces el crédito; se requiere '+P.u.covAhorro.toFixed(2)+(colateral?' — adecuada':' — insuficiente');
-    }else if(g.tipo==='ninguna'){
-      colateral=0;colTxt='Sin garantía';
+      colateral=califica(cov);
+      colTxt=gar.nombre+': cobertura '+cov.toFixed(2)+' veces el crédito; se requiere '+num(gar.cobertura).toFixed(2)+resultado();
     }else{
-      const req=g.tipo==='prenda'?P.u.covPrenda:g.tipo==='hipoteca'?P.u.covHipoteca:P.u.covAhorro;
-      const cov=pl.monto>0?num(g.avaluo)/pl.monto:0;
-      colateral=cov>=req?1:0;
-      colTxt='Cobertura del avalúo '+cov.toFixed(2)+' veces el crédito; se requiere '+req.toFixed(2)+(colateral?' — adecuada':' — insuficiente');
+      colTxt=gar.nombre;
     }
 
     const B=P.bloques;
@@ -1346,20 +1417,22 @@ const APP={
   },
 
   renderTabColateral(s,E){
-    const g=s.colateral,P=this.state.params;
-    let campos=this.renderField('Tipo de garantía requerida','Define cómo se mide la cobertura',`<select class="input" data-action="updText" data-path="colateral.tipo">
-      ${GARANTIAS.map(x=>`<option value="${x[0]}" ${g.tipo===x[0]?'selected':''}>${x[1]}</option>`).join('')}
+    const g=s.colateral,cat=this.garantias(),gar=garantiaDe(g.tipo,cat);
+    const opciones=cat.filter(x=>x.activa!==false||x.clave===g.tipo);
+    let campos=this.renderField('Tipo de garantía requerida','Define cómo se mide la cobertura · el catálogo se configura en Configuración › Garantías',`<select class="input" data-action="updText" data-path="colateral.tipo">
+      ${gar?'':`<option value="${esc(g.tipo||'')}" selected>${esc(g.tipo||'Seleccione...')} — no configurada</option>`}
+      ${opciones.map(x=>`<option value="${esc(x.clave)}" ${g.tipo===x.clave?'selected':''}>${esc(x.nombre)}${x.activa===false?' (inactiva)':''}</option>`).join('')}
     </select>`);
-    if(g.tipo==='garantes'){
-      campos+=this.renderField('Ingresos mensuales del primer garante','Se compara contra la cuota mensual',`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante1}" data-action="updNum" data-path="colateral.ingGarante1" min="0">`);
-      campos+=this.renderField('Ingresos mensuales del segundo garante','Se compara contra la cuota mensual',`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante2}" data-action="updNum" data-path="colateral.ingGarante2" min="0">`);
-    }else if(g.tipo==='aval'){
-      campos+=this.renderField('Ingresos mensuales del aval/codeudor','Debe cubrir al menos 2 veces la cuota',`<input class="input" type="text" inputmode="decimal" value="${g.ingAval}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
-    }else if(g.tipo==='sin_aval_garantia_liquida'){
-      campos+=this.renderField('Monto de la garantía líquida','Cobertura exigida: '+P.u.covAhorro+' veces el crédito',`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
-    }else if(g.tipo!=='ninguna'){
-      const req=g.tipo==='prenda'?P.u.covPrenda:g.tipo==='hipoteca'?P.u.covHipoteca:P.u.covAhorro;
-      campos+=this.renderField('Valor del avalúo o del colateral','Cobertura exigida: '+req+' veces el crédito',`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
+    const veces=v=>num(v).toLocaleString('es-MX',{maximumFractionDigits:2});
+    const parcialTxt=gar&&num(gar.parcial)>0?' · desde '+veces(gar.parcial)+' veces califica con '+pct(num(gar.puntajeParcial)):'';
+    if(gar&&gar.medida==='cuota'&&num(gar.personas)>=2){
+      const ayuda='Cada garante debe cubrir al menos '+veces(gar.cobertura)+' veces la cuota mensual'+parcialTxt;
+      campos+=this.renderField('Ingresos mensuales del primer garante',ayuda,`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante1}" data-action="updNum" data-path="colateral.ingGarante1" min="0">`);
+      campos+=this.renderField('Ingresos mensuales del segundo garante',ayuda,`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante2}" data-action="updNum" data-path="colateral.ingGarante2" min="0">`);
+    }else if(gar&&gar.medida==='cuota'){
+      campos+=this.renderField('Ingresos mensuales del aval, codeudor o garante','Debe cubrir al menos '+veces(gar.cobertura)+' veces la cuota mensual'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${g.ingAval}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
+    }else if(gar&&gar.medida==='monto'){
+      campos+=this.renderField('Valor de la garantía','Avalúo, depósito o valor del colateral · cobertura exigida: '+veces(gar.cobertura)+' veces el monto del crédito'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
     }
     campos+=this.renderField('Calificación de la garantía',E.colTxt,`<strong>${E.colateral>=0.7?'Aceptable':'No aceptable'}</strong>`,pct(E.colateral));
     return this.renderSection('Colateral',pct(E.pesosC.colateral)+' del score 5C',campos);
@@ -1388,7 +1461,7 @@ const APP={
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
       <button class="btn btn-s" data-action="recargarFlujo">Recargar desde Capacidad</button>
       <button class="btn btn-p" data-action="autoPopularFlujo">Autopoblar préstamo de la Institución</button>
-      <span style="font:400 12px/1.4 var(--font);color:var(--n700);align-self:center">Coloca el monto del préstamo como ingreso del primer mes y los pagos como egreso según el plan.</span>
+      <span style="font:400 12px/1.4 var(--font);color:var(--n700);align-self:center">Coloca el monto del préstamo como ingreso del primer mes y los pagos como egreso según el plan. Después se actualiza solo si cambian monto, plazo, tasa o periodicidad, mientras no modifique esos renglones a mano.</span>
     </div>
     <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:24px;margin-bottom:22px">
       <div><label style="display:block;font:400 13px/1.4 var(--font);margin-bottom:5px">Años analizados</label>
@@ -1581,7 +1654,7 @@ const APP={
     const cp=s.capital,cd=s.condiciones,g=s.colateral;
     const activos=E.activos;
     const pasivos=E.pasivos;
-    const garantia=GARANTIAS.find(x=>x[0]===g.tipo);
+    const garantia=garantiaDe(g.tipo,this.garantias());
     const per=PERIODICIDADES.find(p=>p[0]===s.datos.periodicidad);
     return `<div style="font:400 10px/1.3 Arial,sans-serif;color:#000;padding:8px 15px;max-width:800px;margin:0 auto">
       <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
@@ -1610,7 +1683,7 @@ const APP={
           <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Fuente de ingresos</td><td style="padding:1px 4px;text-align:right">${OPC.fuente[cd.fuente]?esc(OPC.fuente[cd.fuente][0]):'—'}</td></tr><tr><td style="padding:1px 4px">Sector y mercado</td><td style="padding:1px 4px;text-align:right">${OPC.sector[cd.sector]?esc(OPC.sector[cd.sector][0].substring(0,25)):'—'}</td></tr><tr><td style="padding:1px 4px">Entorno</td><td style="padding:1px 4px;text-align:right">${OPC.entorno[cd.entorno]?esc(OPC.entorno[cd.entorno][0].substring(0,25)):'—'}</td></tr><tr><td style="padding:1px 4px">Antigüedad negocio</td><td style="padding:1px 4px;text-align:right">${OPC.antigNegocio[cd.antigNegocio]?esc(OPC.antigNegocio[cd.antigNegocio][0].substring(0,25)):'—'}</td></tr></table>
         </div>
       </div>
-      <div style="border:1px solid #999;margin-bottom:4px"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C5 COLATERAL — ${pct(E.colateral)}</div><div style="padding:2px 4px;font-size:8.5px">Tipo: ${garantia?esc(garantia[1]):'—'} · ${esc(E.colTxt)}</div></div>
+      <div style="border:1px solid #999;margin-bottom:4px"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C5 COLATERAL — ${pct(E.colateral)}</div><div style="padding:2px 4px;font-size:8.5px">Tipo: ${garantia?esc(garantia.nombre):'—'} · ${esc(E.colTxt)}</div></div>
       <div style="border:2px solid #000;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:12px">
         <div style="flex:1;font:700 9.5px/1.3 Arial,sans-serif"><div>CALIFICACIÓN CREDITICIA</div><div style="font-weight:400;margin-top:1px">5C${E.simplificada?' simplificada (C1, C3, C5)':''}: ${pct(E.score5c)} (${pct(E.pesos.cincoC)}) · Flujo: ${E.flujoAplica?pct(E.scoreFlujo)+' ('+pct(E.pesos.flujo)+')':'No aplica'}${E.tieneNegocio?' · CANVAS: '+pct(E.scoreCanvas)+' ('+pct(E.pesos.canvas)+')':''}</div></div>
         <div style="font:700 22px/1 Arial,sans-serif">${E.global.toFixed(1)}</div>
@@ -1679,6 +1752,55 @@ const APP={
     </div>`;
   },
 
+  renderConfigGarantias(){
+    const st=this.state,cat=this.garantias();
+    const enUso=clave=>st.solicitudes.filter(s=>s.colateral&&s.colateral.tipo===clave).length;
+    const inp=(i,prop,v,w)=>`<input class="input" type="text" inputmode="decimal" value="${esc(String(v))}" data-action="updGarantia" data-idx="${i}" data-prop="${prop}" style="width:${w}px;text-align:right">`;
+    const selMedida=(attrs,v,w)=>`<select class="input" ${attrs} style="width:${w||'100%'}">${MEDIDAS_GARANTIA.map(m=>`<option value="${m[0]}" ${v===m[0]?'selected':''}>${m[1]}</option>`).join('')}</select>`;
+    const selPersonas=(attrs,v,w)=>`<select class="input" ${attrs} style="width:${w||'100%'}"><option value="1" ${num(v)<2?'selected':''}>1</option><option value="2" ${num(v)>=2?'selected':''}>2</option></select>`;
+    const ng=st.nuevaGarantia||{nombre:'',medida:'monto',personas:1,cobertura:1,parcial:0,puntajeParcial:70};
+    return `
+    <div class="config-card">
+      <h3>Garantías y coberturas</h3>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 8px">Defina los tipos de garantía que se ofrecen en la pestaña Colateral y la cobertura que exige cada uno.</p>
+      <ul style="font:400 13px/1.55 var(--font);color:var(--n700);margin:0 0 14px;padding-left:18px">
+        <li><strong>Ingresos contra la cuota:</strong> los ingresos mensuales de cada garante, aval o codeudor se dividen entre la cuota mensual del crédito. Con dos garantes, ambos deben cumplir.</li>
+        <li><strong>Valor contra el monto:</strong> el avalúo, depósito o valor del bien se divide entre el monto solicitado.</li>
+        <li>Con la <strong>cobertura requerida</strong> la garantía califica al 100%. Con la <strong>cobertura parcial</strong> (0 = no aplica) califica con el porcentaje indicado; debajo, con 0%.</li>
+      </ul>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Los cambios se aplican de inmediato al score de las solicitudes. Una garantía que ya usa alguna solicitud no se puede quitar: desactívela para que no se ofrezca en solicitudes nuevas.</p>
+      ${st.avisoGarantias?`<div style="font:400 13px/1.4 var(--font);color:var(--a2700);margin-bottom:12px">${esc(st.avisoGarantias)}</div>`:''}
+      <div style="overflow-x:auto">
+      <table class="table" style="margin-bottom:20px;min-width:1040px">
+        <thead><tr><th>Garantía</th><th>Cómo se mide</th><th style="text-align:right">Garantes</th><th style="text-align:right">Cobertura requerida (veces)</th><th style="text-align:right">Cobertura parcial (veces)</th><th style="text-align:right">Calificación parcial (%)</th><th>Activa</th><th style="text-align:right">En uso</th><th></th></tr></thead>
+        <tbody>
+          ${cat.map((g,i)=>{const n=enUso(g.clave),cub=g.medida!=='ninguna';return `<tr>
+            <td><input class="input" type="text" value="${esc(g.nombre)}" data-action="updGarantia" data-idx="${i}" data-prop="nombre" style="min-width:300px"></td>
+            <td>${selMedida(`data-action="updGarantia" data-idx="${i}" data-prop="medida"`,g.medida,'205px')}</td>
+            <td style="text-align:right">${g.medida==='cuota'?selPersonas(`data-action="updGarantia" data-idx="${i}" data-prop="personas"`,g.personas,'70px'):'—'}</td>
+            <td style="text-align:right">${cub?inp(i,'cobertura',g.cobertura,80):'—'}</td>
+            <td style="text-align:right">${cub?inp(i,'parcial',g.parcial,80):'—'}</td>
+            <td style="text-align:right">${cub?inp(i,'puntajeParcial',Math.round(num(g.puntajeParcial)*1000)/10,70):'—'}</td>
+            <td><button class="btn btn-g" data-action="toggleGarantia" data-idx="${i}" style="padding:4px 9px;font-size:12px">${g.activa===false?'No':'Sí'}</button></td>
+            <td style="text-align:right">${n}</td>
+            <td style="text-align:right"><button class="btn btn-g" data-action="borrarGarantia" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
+          </tr>`}).join('')}
+        </tbody>
+      </table></div>
+      <h4 style="font:600 15px/1.3 var(--font);margin:0 0 10px">Agregar garantía</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;max-width:1000px">
+        <div class="field" style="grid-column:span 2"><label>Nombre de la garantía</label><input class="input" type="text" id="nuevaGarantiaNombre" value="${esc(ng.nombre)}"></div>
+        <div class="field"><label>Cómo se mide</label>${selMedida('id="nuevaGarantiaMedida"',ng.medida)}</div>
+        <div class="field"><label>Garantes (contra la cuota)</label>${selPersonas('id="nuevaGarantiaPersonas"',ng.personas)}</div>
+        <div class="field"><label>Cobertura requerida (veces)</label><input class="input" type="text" inputmode="decimal" id="nuevaGarantiaCobertura" value="${ng.cobertura}"></div>
+        <div class="field"><label>Cobertura parcial (veces)</label><input class="input" type="text" inputmode="decimal" id="nuevaGarantiaParcial" value="${ng.parcial}"></div>
+        <div class="field"><label>Calificación parcial (%)</label><input class="input" type="text" inputmode="decimal" id="nuevaGarantiaPuntaje" value="${ng.puntajeParcial}"></div>
+        <button class="btn btn-p" data-action="agregarGarantia">Agregar</button>
+      </div>
+      <div style="margin-top:16px"><button class="btn btn-s" data-action="resetGarantias">Restaurar catálogo por defecto</button></div>
+    </div>`;
+  },
+
   renderConfig(){
     const st=this.state,cfg=st.config;
     return `
@@ -1686,7 +1808,7 @@ const APP={
     <p style="font:400 15px/1.5 var(--font);color:var(--n700);margin:0 0 30px">Solo el superadministrador puede modificar la configuración del sistema.</p>
 
     <div style="display:flex;gap:3px;border-bottom:1px solid var(--text);margin-bottom:26px;flex-wrap:wrap">
-      ${[['institucion','Institución'],['logotipo','Logotipo'],['productos','Productos de crédito'],['niveles','Niveles de operación'],['ocupaciones','Catálogo de ocupaciones'],['personal','Personal'],['regulatorio','Regulatorio']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
+      ${[['institucion','Institución'],['logotipo','Logotipo'],['productos','Productos de crédito'],['garantias','Garantías'],['niveles','Niveles de operación'],['ocupaciones','Catálogo de ocupaciones'],['personal','Personal'],['regulatorio','Regulatorio']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
     </div>
 
     ${st.configTab==='institucion'?`
@@ -1725,6 +1847,8 @@ const APP={
         <button class="btn btn-p" data-action="agregarProducto">Agregar</button>
       </div>
     </div>`:''}
+
+    ${st.configTab==='garantias'?this.renderConfigGarantias():''}
 
     ${st.configTab==='niveles'?`
     <div class="config-card">
@@ -1993,6 +2117,7 @@ const APP={
       else if(a==='updFlujo'){const s=this.actual();if(!s)return;const arr=(s.flujo[el.dataset.key]||[]).slice();arr[parseInt(el.dataset.mes)]=num(el.value);this.upd('flujo.'+el.dataset.key,arr)}
       else if(a==='updCanvasNota')this.upd('canvas.'+el.dataset.key+'.nota',el.value);
       else if(a==='updActivoFijo'){const sol=this.actual();if(!sol)return;const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};if(el.dataset.prop==='monto')af[el.dataset.key].monto=num(el.value);else af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}
+      else if(a==='updGarantia'){this.updGarantia(parseInt(el.dataset.idx),el.dataset.prop,el.value);return}
       else if(a==='updNivelPlazo'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.nivelesOperacion[parseInt(el.dataset.idx)].plazoMax=num(el.value);this.state.config=cfg;this.persist()}
       else if(a==='updParam'){const p=JSON.parse(JSON.stringify(this.state.params));const parts=el.dataset.path.split('.');let ref=p;for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];ref[parts[parts.length-1]]=num(el.value);this.state.params=p}
       else return;
@@ -2006,6 +2131,12 @@ const APP={
         const pr=sol&&sol.datos.producto?this.state.config.productos.find(p=>p.nombre===sol.datos.producto):null;
         if(pr&&pr.montoMin&&num(el.value)<pr.montoMin){this.upd('datos.monto',pr.montoMin);this.render()}
         return;
+      }
+      if(el&&el.dataset.action==='updGarantia'){
+        let g=el.tagName==='SELECT'?this.updGarantia(parseInt(el.dataset.idx),el.dataset.prop,el.value):this.garantias()[parseInt(el.dataset.idx)];
+        if(g&&el.dataset.prop==='nombre'&&!g.nombre.trim())g=this.updGarantia(parseInt(el.dataset.idx),'nombre',g.clave);
+        if(g)this.log('Garantía modificada',g.nombre);
+        this.render();return;
       }
       if(!el||el.tagName!=='SELECT')return;
       const a=el.dataset.action;
@@ -2074,6 +2205,8 @@ const APP={
       case 'nuevaSolicitud':{
         const folio=(st.config.nombreInstitucion.substring(0,3).toUpperCase()||'SAC')+'-'+st.folioSeq;
         const s=nuevaSolicitud(folio,st.sesion);
+        const gIni=this.garantias().filter(x=>x.activa!==false);
+        if(gIni.length&&!gIni.some(x=>x.clave===s.colateral.tipo))s.colateral.tipo=gIni[0].clave;
         const lista=[s,...st.solicitudes];
         this.state.solicitudes=lista;this.state.folioSeq=st.folioSeq+1;
         this.persist();this.log('Nueva solicitud',folio);
@@ -2161,34 +2294,10 @@ const APP={
         break;
       }
       case 'autoPopularFlujo':{
-        const sol=this.actual();if(!sol)break;
-        const pl=this.plan(sol.datos);
-        const per=sol.datos.periodicidad;
-        const mesesFlujo=this.aniosFlujo(sol)*12;
-        const prestamoArr=(sol.flujo.prestamoInst||[]).slice();
-        const pagoArr=(sol.flujo.pagoInst||[]).slice();
-        while(prestamoArr.length<96)prestamoArr.push(0);
-        while(pagoArr.length<96)pagoArr.push(0);
-        prestamoArr[0]=num(sol.datos.monto);
-        if(per==='anual'){
-          const mesPago=Math.min(mesesFlujo-1,Math.max(0,num(sol.flujoMesPago)));
-          pagoArr[mesPago]=Math.round(pl.cuotaIva);
-        }else if(per==='pago_unico'){
-          const mesFin=Math.min(mesesFlujo-1,Math.max(0,num(sol.datos.plazo)-1));
-          pagoArr[mesFin]=Math.round(pl.total);
-        }else if(per==='pago_unico_periodico'){
-          const intMensual=num(sol.datos.monto)*(num(sol.datos.tasaPct)/100/12);
-          const ivaInt=intMensual*this.state.params.u.ivaInteres;
-          for(let m=0;m<mesesFlujo;m++)pagoArr[m]=Math.round(intMensual+ivaInt);
-          const mesFin=Math.min(mesesFlujo-1,Math.max(0,num(sol.datos.plazo)-1));
-          pagoArr[mesFin]=Math.round(num(sol.datos.monto)+intMensual+ivaInt);
-        }else{
-          // Pagos periódicos: la cuota mensual equivalente durante el plazo.
-          for(let m=0;m<Math.min(mesesFlujo,num(sol.datos.plazo));m++)pagoArr[m]=Math.round(pl.cuotaMensual);
-        }
-        this.upd('flujo.prestamoInst',prestamoArr);
-        this.upd('flujo.pagoInst',pagoArr);
-        this.render();
+        const id=st.idActual;if(!this.actual())break;
+        // Se generan los renglones completos: no quedan pagos de un monto, plazo o periodicidad anteriores.
+        this.state.solicitudes=st.solicitudes.map(s=>s.id===id?this.sincronizarPrestamo(s,true):s);
+        this.persist();this.render();
         break;
       }
       case 'guardarNombreInst':{
@@ -2271,6 +2380,50 @@ const APP={
         if(!cfg.ocupaciones)cfg.ocupaciones=[...OCUPACIONES_DEFAULT];
         cfg.ocupaciones.splice(parseInt(el.dataset.idx),1);
         this.state.config=cfg;this.persist();this.log('Ocupación eliminada','');this.render();
+        break;
+      }
+      case 'toggleGarantia':{
+        const cat=JSON.parse(JSON.stringify(this.garantias()));
+        const g=cat[parseInt(el.dataset.idx)];if(!g)break;
+        if(g.activa!==false&&cat.filter(x=>x.activa!==false).length<=1){this.set({avisoGarantias:'Debe quedar al menos una garantía activa.'});break}
+        g.activa=g.activa===false;
+        this.state.config=Object.assign({},st.config,{garantias:cat});this.persist();
+        this.log('Garantía '+(g.activa?'activada':'desactivada'),g.nombre);this.set({avisoGarantias:''});
+        break;
+      }
+      case 'borrarGarantia':{
+        const cat=JSON.parse(JSON.stringify(this.garantias()));
+        const i=parseInt(el.dataset.idx),g=cat[i];if(!g)break;
+        const n=st.solicitudes.filter(s=>s.colateral&&s.colateral.tipo===g.clave).length;
+        if(n){this.set({avisoGarantias:'«'+g.nombre+'» se usa en '+n+' solicitud'+(n>1?'es':'')+'; desactívela en lugar de quitarla.'});break}
+        if(cat.length<=1||(g.activa!==false&&cat.filter(x=>x.activa!==false).length<=1)){this.set({avisoGarantias:'Debe quedar al menos una garantía activa.'});break}
+        cat.splice(i,1);
+        this.state.config=Object.assign({},st.config,{garantias:cat});this.persist();
+        this.log('Garantía eliminada',g.nombre);this.set({avisoGarantias:''});
+        break;
+      }
+      case 'agregarGarantia':{
+        const nombre=document.getElementById('nuevaGarantiaNombre')?.value?.trim();
+        const ng={nombre:nombre||'',medida:document.getElementById('nuevaGarantiaMedida')?.value||'monto',
+          personas:num(document.getElementById('nuevaGarantiaPersonas')?.value)>=2?2:1,
+          cobertura:Math.max(0,num(document.getElementById('nuevaGarantiaCobertura')?.value)),
+          parcial:Math.max(0,num(document.getElementById('nuevaGarantiaParcial')?.value)),
+          puntajeParcial:Math.min(100,Math.max(0,num(document.getElementById('nuevaGarantiaPuntaje')?.value)))};
+        if(!nombre){this.set({nuevaGarantia:ng,avisoGarantias:'Escriba el nombre de la garantía.'});break}
+        const cat=JSON.parse(JSON.stringify(this.garantias()));
+        const base=nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'garantia';
+        let clave=base,k=2;while(cat.some(x=>x.clave===clave))clave=base+'_'+(k++);
+        cat.push({clave,nombre,medida:ng.medida,personas:ng.personas,cobertura:ng.cobertura,parcial:ng.parcial,puntajeParcial:ng.puntajeParcial/100,activa:true});
+        this.state.config=Object.assign({},st.config,{garantias:cat});this.persist();
+        this.log('Garantía agregada',nombre);this.set({nuevaGarantia:null,avisoGarantias:''});
+        break;
+      }
+      case 'resetGarantias':{
+        // Se conservan las garantías propias que ya usan solicitudes, para no dejarlas sin catálogo.
+        const ini=garantiasIniciales(st.params.u);
+        const propias=this.garantias().filter(x=>!ini.some(y=>y.clave===x.clave)&&st.solicitudes.some(s=>s.colateral&&s.colateral.tipo===x.clave));
+        this.state.config=Object.assign({},st.config,{garantias:ini.concat(propias)});this.persist();
+        this.log('Catálogo de garantías restaurado','');this.set({avisoGarantias:''});
         break;
       }
       case 'resetOcupaciones':{
@@ -2448,7 +2601,7 @@ const APP={
               const merged=(d.solicitudes||[]).concat(st.solicitudes.filter(x=>!(d.solicitudes||[]).some(y=>y.id===x.id)));
               Object.assign(this.state,{
                 users:d.users||st.users,sucursales:d.sucursales||st.sucursales,
-                params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{})),
+                params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{}),(d.params||{}).u),
                 solicitudes:merged,auditoria:(d.auditoria||[]).concat(st.auditoria).slice(0,400),
                 folioSeq:Math.max(d.folioSeq||1001,st.folioSeq)
               });
