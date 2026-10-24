@@ -166,7 +166,7 @@ const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','
 // index.html y la carpeta publicada conservan la clave original para no perder los datos ya capturados.
 const LS_KEY=(()=>{const base='sac_sistema_2_0';try{const n=decodeURIComponent((location.pathname||'').split('/').pop()||'').replace(/\.html?$/i,'').trim().toLowerCase();return (!n||n==='index')?base:base+'::'+n}catch(e){return base}})();
 // Institución con la que arranca este archivo antes de configurarlo.
-const INSTITUCION_INICIAL={nombre:'',logotipo:''};
+const INSTITUCION_INICIAL={nombre:'',logotipo:'',reglas:{}};
 const mx=n=>(n<0?'-$':'$')+Math.abs(Math.round(n||0)).toLocaleString('es-MX');
 const pct=n=>(isFinite(n)?(n*100).toFixed(1):'0.0')+'%';
 const num=v=>{const n=parseFloat(typeof v==='string'?v.replace(/[$,\s]/g,''):v);return isFinite(n)?n:0};
@@ -285,8 +285,12 @@ const OCUPACIONES_DEFAULT=[
   ['zapatero','Zapatero']
 ];
 const OCUPACIONES_VER=2;
+// Reglas que cada institución activa en Configuración › Reglas de análisis; INSTITUCION_INICIAL.reglas las precarga.
+const REGLAS_DEFAULT={ocultarScore:false,tipoIngreso:false,margenUtilidad:false,gastoMinimoPct:0};
 function migrarConfig(c,u){
   if(!Array.isArray(c.garantias)||!c.garantias.length)c.garantias=garantiasIniciales(u);
+  c.reglas=Object.assign({},REGLAS_DEFAULT,c.reglas||{});
+  if(!c.margenesGiro||typeof c.margenesGiro!=='object')c.margenesGiro={};
   if(c.ocupacionesVer!==OCUPACIONES_VER&&Array.isArray(c.ocupaciones)){
     const claves=new Set(c.ocupaciones.map(o=>o[0]));
     c.ocupaciones=c.ocupaciones.concat(OCUPACIONES_DEFAULT.filter(o=>!claves.has(o[0]))).sort((a,b)=>a[1].localeCompare(b[1],'es'));
@@ -373,6 +377,51 @@ const OPC={
   entorno:[['Entorno favorable',10],['Entorno regular',7],['Entorno adverso (riesgo climático o social)',3]],
   antigNegocio:[['Más de 3 años de operación',10],['De 1 a 3 años de operación',8],['Menos de 1 año de operación',5]]
 };
+// Con la regla «tipoIngreso» se ofrecen además estas dos fuentes de ingreso; se agregan al final para no mover las anteriores.
+const OPC_ACTIVIDAD_INGRESO=[['Jornalero (trabajo por día o por temporada)',5],['Ingresos formales comprobables (nómina, recibos de honorarios o facturas)',10]];
+const ACTIVIDADES_TODAS=OPC.actividad.concat(OPC_ACTIVIDAD_INGRESO);
+// Margen de utilidad promedio de referencia por giro: estimaciones iniciales que cada institución ajusta en Configuración.
+const MARGEN_GIRO_DEFAULT={
+  comerciante_agropecuario:0.15,comerciante_de_abarrotes:0.15,comerciante_de_artesanias:0.35,comerciante_de_articulos_para_el_hogar:0.25,
+  comerciante_de_articulos_recreativos_culturales_y_de_entretenimiento:0.30,comerciante_de_articulos_varios_no_especificados:0.25,
+  comerciante_de_combustibles:0.08,comerciante_de_equipo_medico:0.25,comerciante_de_ferreteria:0.20,comerciante_de_maquinaria_y_equipo:0.18,
+  comerciante_de_otras_materias_primas:0.15,comerciante_de_productos_de_origen_animal:0.18,comerciante_de_ropa_y_calzado:0.30,
+  comerciante_de_vehiculos_y_refacciones:0.20,
+  agricultor:0.25,ganadero:0.25,avicultor:0.15,apicultor:0.35,acuicultor:0.25,pescador:0.30,silvicultor:0.30,cazador:0.30,
+  tabacalero:0.20,florista:0.30,productor_de_lacteos_y_derivados:0.20,
+  panadero_repostero:0.30,tortillero:0.20,molinero:0.20,heladero:0.30,prestador_de_servicios_de_alimentos_y_bebidas:0.25,
+  abogado:0.50,contador:0.50,arquitecto:0.45,ingeniero:0.45,profesional_de_la_salud:0.45,veterinario:0.40,docente:0.45,
+  editor:0.35,artista:0.40,instructor_deportivo:0.45,organizador_de_eventos:0.30,agente_de_viajes:0.20,agente_inmobiliario:0.40,
+  servicios_financieros:0.35,prestador_de_otros_servicios_profesionales_y_tecnicos:0.45,prestador_de_otros_servicios_recreativos:0.35,
+  prestador_de_servicios_de_hospedaje:0.30,prestador_de_servicios_funerarios:0.30,
+  prestador_de_servicios_de_mantenimiento_y_reparacion_de_vehiculos_maquinaria_y_equipo:0.35,
+  albanil:0.35,carpintero:0.35,electricista:0.40,plomero:0.40,herrero:0.35,pintor:0.40,zapatero:0.35,talabartero:0.35,vidriero:0.30,
+  costurero_confeccionista:0.35,estilista_peluquero:0.45,joyero:0.30,impresor:0.25,constructor:0.20,artesano:0.35,textilero:0.20,
+  tecnico_en_mantenimiento_y_reparacion_de_equipos_electricos_y_electronicos:0.40,tecnico_en_telecomunicaciones_y_sistemas:0.40,
+  chofer_transportista:0.25,transportista_aereo:0.15,transportista_maritimo:0.15,mensajero:0.35,operador_de_grua:0.30,
+  arrendador:0.60,minero:0.20,petrolero:0.15,negocio_rural:0.25,negocio_urbano:0.25,
+  servicios_de_estacionamiento_y_lavado_automotriz:0.35,operador_de_juegos_con_apuestas_concursos_y_sorteos:0.30
+};
+const MARGEN_GIRO_GENERICO=0.25;
+function margenGiroRef(clave,config){
+  const m=(config&&config.margenesGiro)||{};
+  if(m[clave]!=null&&isFinite(parseFloat(m[clave])))return parseFloat(m[clave]);
+  if(MARGEN_GIRO_DEFAULT[clave]!=null)return MARGEN_GIRO_DEFAULT[clave];
+  if((clave||'').startsWith('fabricante_'))return 0.22;
+  if((clave||'').startsWith('comerciante_'))return 0.20;
+  return MARGEN_GIRO_GENERICO;
+}
+const FILAS_ING_NEGOCIO=['agricolas','ganaderos','ventas'];
+// Margen de utilidad del negocio en el periodo del flujo: (ingresos del negocio − gastos del negocio) ÷ ingresos del negocio.
+function margenNegocio(s,meses){
+  const n=meses||Math.max(...FILAS_ING_NEGOCIO.concat(['gastosNegocio']).map(k=>((s.flujo||{})[k]||[]).length),0);
+  let ing=0,gas=0;
+  for(let m=0;m<n;m++){
+    FILAS_ING_NEGOCIO.forEach(k=>{ing+=num(((s.flujo||{})[k]||[])[m])});
+    gas+=num(((s.flujo||{}).gastosNegocio||[])[m]);
+  }
+  return {ing,gas,margen:ing>0?(ing-gas)/ing:null};
+}
 // Catálogo inicial de garantías; cada institución lo ajusta en Configuración › Garantías.
 // medida «cuota»: los ingresos mensuales de cada garante entre la cuota mensual del crédito.
 // medida «monto»: el valor de la garantía entre el monto del crédito. «ninguna»: no aporta cobertura.
@@ -465,6 +514,8 @@ function defaultConfig(){
       {nombre:'Nivel IV - Especial',plazoMax:96}
     ],
     personal:[],
+    reglas:Object.assign({},REGLAS_DEFAULT,INSTITUCION_INICIAL.reglas||{}),
+    margenesGiro:{},
     regulatorio:{rfc:'',registroCNBV:'',representanteLegal:'',domicilioFiscal:'',telefonoOficina:'',correoOficial:'',clabe:'',razonSocial:''}
   };
 }
@@ -519,6 +570,10 @@ const APP={
     nuevoNivel:{nombre:'',plazoMax:24},
     nuevoPersonal:{nombre:'',cargo:'',tipo:'analista'}
   },
+
+  // Con «Ocultar score» activo, analistas y gerentes no ven el score, sus puntajes ni las causales de rechazo.
+  verScore(){const u=this.state.sesion;return !(this.state.config.reglas||{}).ocultarScore||!!(u&&u.rol==='superadmin')},
+  reglas(){return Object.assign({},REGLAS_DEFAULT,this.state.config.reglas||{})},
 
   init(){
     try{
@@ -762,7 +817,7 @@ const APP={
     const dom=clamp10(pVi*P.arraigoDom.vivienda+pRe*P.arraigoDom.residencia);
 
     const esPrimerEmpleo=!!s.datos.esPrimerEmpleo;
-    const pAc=OPC.actividad[c.actividad]?OPC.actividad[c.actividad][1]:OPC.actividad[0][1];
+    const pAc=ACTIVIDADES_TODAS[c.actividad]?ACTIVIDADES_TODAS[c.actividad][1]:OPC.actividad[0][1];
     let pAn;
     if(esPrimerEmpleo){
       pAn=10;
@@ -812,6 +867,13 @@ const APP={
     const capacidad=(r1*P.capacidad.coberturaCuota+r2*P.capacidad.gastosIngresos+r3*P.capacidad.gastosCuotaIng)/10;
     const gastoRef=num(s.datos.dependientes)*P.u.gastoBasicoPersona;
     const alertaGastos=fam>0&&fam<gastoRef;
+    // Alertas informativas: no restan puntos ni son causal de rechazo.
+    const alertas=[];
+    if(alertaGastos)alertas.push('Capacidad: los gastos familiares declarados ('+mx(fam)+') son menores a la referencia de '+mx(gastoRef)+' por '+num(s.datos.dependientes)+' dependientes.');
+    const gastoMinPct=num(this.reglas().gastoMinimoPct);
+    const ratioGastoFam=ingresos>0?fam/ingresos:0;
+    const alertaGastoMin=gastoMinPct>0&&ingresos>0&&ratioGastoFam<gastoMinPct;
+    if(alertaGastoMin)alertas.push('Capacidad: los gastos familiares declarados son '+pct(ratioGastoFam)+' de los ingresos, menos del mínimo esperado de '+pct(gastoMinPct)+'. Verifique que no se hayan subdeclarado.');
     const LIM_CAP=0.30;
     const capMaxPago=ingresos*LIM_CAP;
     const capDisponible=capMaxPago-deudas;
@@ -908,6 +970,7 @@ const APP={
     else{f2=0;if(flujoAplica)vetos.push('Flujo de efectivo: la cobertura del mes de pago es '+pct(cobFlujo)+', igual o menor al 100% exigido.')}
     const f3=mesesNeg===0?10:mesesNeg<=2?6:2;
     const capturado=totIng>0||totEgr>0;
+    const margenNeg=margenNegocio(s,mesesFlujo);
     const scoreFlujo=capturado?(f1*P.flujoPeso.ratioGastos+f2*P.flujoPeso.cobertura+f3*P.flujoPeso.acumulado)/10:0;
     if(!capturado&&flujoAplica)vetos.push('Flujo de efectivo: no se ha capturado el flujo mensual.');
 
@@ -931,7 +994,7 @@ const APP={
       score5c,scoreFlujo,scoreCanvas,
       caracter,caracterBase,capacidad,capital,condiciones,colateral,colTxt,
       sub:{dom,lab,exp,com,pVi,pRe,pAc,pAn,pHi,pAt,pCo,pRf,r1,r2,r3,q1,q2},
-      ingresos,egresosTot,disponible,cobCuota,ratioGI,ratioGCI,alertaGastos,gastoRef,
+      ingresos,egresosTot,disponible,cobCuota,ratioGI,ratioGCI,alertaGastos,gastoRef,alertas,alertaGastoMin,ratioGastoFam,gastoMinPct,margenNeg,
       deudas,LIM_CAP,capMaxPago,capDisponible,pctCuotaIng,ratioCompromisos,plazoIdeal,
       bonusDiscapacidad,bonusGenero,
       flujo:{ing,egr,res,acum,ratio:ratioFlujo,cobertura:cobFlujo,mesesNeg,mesesFlujo,ingMesPago,compromisoMes,acumPrevio,ingDisponibleMes,f1,f2,f3},
@@ -1042,6 +1105,7 @@ const APP={
     const aprob=evs.filter(x=>x.s.estado==='APROBADA');
     const montoAprob=aprob.reduce((a,x)=>a+num(x.s.datos.monto),0);
     const prom=evs.length?evs.reduce((a,x)=>a+x.e.global,0)/evs.length:0;
+    const ver=this.verScore();
 
     return `
     <h1 style="margin:0 0 4px">Tablero de cartera</h1>
@@ -1050,7 +1114,7 @@ const APP={
       <div><div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:7px">En análisis</div><div style="font:600 33px/1 var(--fonth)">${evs.filter(x=>['BORRADOR','ENVIADA','ESCALADA'].includes(x.s.estado)).length}</div></div>
       <div><div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:7px">Aprobadas</div><div style="font:600 33px/1 var(--fonth)">${aprob.length}</div><div style="font:400 12.5px/1.4 var(--font);color:var(--n700);margin-top:4px">${mx(montoAprob)} colocados</div></div>
       <div><div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:7px">Rechazadas</div><div style="font:600 33px/1 var(--fonth)">${evs.filter(x=>x.s.estado==='RECHAZADA').length}</div></div>
-      <div><div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:7px">Score promedio</div><div style="font:600 33px/1 var(--fonth)">${prom.toFixed(1)}</div></div>
+      ${ver?`<div><div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:7px">Score promedio</div><div style="font:600 33px/1 var(--fonth)">${prom.toFixed(1)}</div></div>`:''}
     </div>
     <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px">
       <h2 style="margin:0">Solicitudes</h2><span style="flex:1"></span>
@@ -1058,14 +1122,14 @@ const APP={
     </div>
     <div style="overflow-x:auto">
     <table class="table" style="min-width:760px">
-      <thead><tr><th>Folio</th><th>Solicitante</th><th>Sucursal</th><th style="text-align:right">Monto</th><th style="text-align:right">Score</th><th>Riesgo 5C</th><th>Estado</th><th>Analista</th><th></th></tr></thead>
+      <thead><tr><th>Folio</th><th>Solicitante</th><th>Sucursal</th><th style="text-align:right">Monto</th>${ver?'<th style="text-align:right">Score</th><th>Riesgo 5C</th>':''}<th>Estado</th><th>Analista</th><th></th></tr></thead>
       <tbody>${evs.map(x=>`<tr>
         <td style="font-variant-numeric:tabular-nums">${esc(x.s.folio)}</td>
         <td>${esc(x.s.datos.nombre||'(sin nombre)')}</td>
         <td style="color:var(--n700)">${esc(x.s.sucursal)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${mx(x.s.datos.monto)}</td>
-        <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${x.e.global.toFixed(1)}</td>
-        <td>${esc(x.e.banda)}</td>
+        ${ver?`<td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${x.e.global.toFixed(1)}</td>
+        <td>${esc(x.e.banda)}</td>`:''}
         <td><span class="tag tag-o">${esc(x.s.estado)}</span></td>
         <td style="color:var(--n700)">${esc(x.s.analista)}</td>
         <td style="text-align:right"><button class="btn btn-g" data-action="abrirSolicitud" data-id="${x.s.id}" style="padding:4px 9px;font-size:13px">Abrir</button></td>
@@ -1092,8 +1156,13 @@ const APP={
     else if(activeTab==='canvas')tabContent=this.renderTabCanvas(s,E);
     else if(activeTab==='dictamen')tabContent=this.renderTabDictamen(s,E);
 
+    const ver=this.verScore();
+    const alertasHtml=E.alertas.length?`<div style="margin-top:22px;border-top:3px solid #ff90b1;padding-top:12px">
+        <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--a2800);margin-bottom:8px">Alertas informativas</div>
+        ${E.alertas.map(v=>`<div style="font:400 13px/1.45 var(--font);padding:5px 0;border-bottom:1px solid var(--div)">${esc(v)}</div>`).join('')}
+      </div>`:'';
     const sidebar=`<aside style="flex:1 1 270px;min-width:0">
-      <div style="border-top:3px solid var(--text);padding-top:12px">
+      ${ver?`<div style="border-top:3px solid var(--text);padding-top:12px">
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:12px">Desglose del score</div>
         ${E.simplificada?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);background:var(--n200);padding:8px 10px;border-radius:3px;margin-bottom:10px">Evaluación simplificada: monto menor a ${mx(this.state.params.montoEvalSimplificada)}. Solo se evalúan Carácter, Capacidad y Colateral.</div>`:''}
         ${[
@@ -1118,7 +1187,8 @@ const APP={
       ${E.vetos.length?`<div style="margin-top:22px;border-top:3px solid var(--accent2);padding-top:12px">
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--a2700);margin-bottom:8px">Causales de rechazo</div>
         ${E.vetos.map(v=>`<div style="font:400 13px/1.45 var(--font);padding:5px 0;border-bottom:1px solid var(--div)">${esc(v)}</div>`).join('')}
-      </div>`:''}
+      </div>`:''}`:`<div style="border-top:3px solid var(--text);padding-top:12px;font:400 13px/1.5 var(--font);color:var(--n700)">El score y las causales de rechazo están reservados al superadministrador.</div>`}
+      ${alertasHtml}
       <div style="margin-top:22px;display:flex;flex-direction:column;gap:7px">
         <button class="btn btn-s" data-action="guardar">Guardar avance</button>
         <button class="btn btn-g" data-action="irDictamen">Ir al dictamen</button>
@@ -1132,11 +1202,11 @@ const APP={
         <h1 style="margin:4px 0 0">${esc(s.datos.nombre||'Solicitante sin nombre')}</h1>
       </div>
       <span style="flex:1"></span>
-      <div style="text-align:right">
+      ${ver?`<div style="text-align:right">
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600)">Score global</div>
         <div style="font:600 46px/1 var(--fonth)">${E.global.toFixed(1)}</div>
         <div style="font:400 13px/1.3 var(--font);color:var(--n700)">${E.vetos.length?'No autorizable':E.dictamen==='APROBADO'?'Viable':E.dictamen==='CONDICIONADO'?'Viable con condiciones':'Debajo del mínimo'}</div>
-      </div>
+      </div>`:''}
     </div>
     <div class="no-print" style="display:flex;flex-wrap:wrap;gap:3px;border-bottom:1px solid var(--text);margin:24px 0 26px">
       ${tabs.map(t=>`<button data-action="tab" data-tab="${t[0]}" style="border:0;${activeTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}${t[0]==='flujo'&&E.flujoRequerido?'<span style="color:var(--accent2);margin-left:3px" title="Flujo requerido">●</span>':''}</button>`).join('')}
@@ -1154,7 +1224,7 @@ const APP={
         ${hint?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:3px">${hint}</div>`:''}
       </div>
       <div style="flex:2 1 240px;min-width:0">${inputHtml}</div>
-      <div style="flex:0 0 46px;text-align:right;font:400 14px/1.5 var(--font);color:var(--n700)">${puntaje!=null?puntaje:''}</div>
+      <div style="flex:0 0 46px;text-align:right;font:400 14px/1.5 var(--font);color:var(--n700)">${puntaje!=null&&this.verScore()?puntaje:''}</div>
     </div>`;
   },
 
@@ -1172,7 +1242,7 @@ const APP={
     return `<div style="display:flex;flex-direction:column;gap:4px">
       ${options.map((o,i)=>`<label style="display:flex;gap:8px;align-items:flex-start;font:400 13.5px/1.4 var(--font);cursor:pointer">
         <input type="radio" name="${name}" ${selected===i?'checked':''} data-action="updRadio" data-path="${path}" data-val="${i}" style="margin:3px 0 0;accent-color:var(--accent)">
-        <span>${esc(o[0])} · ${o[1]}</span>
+        <span>${esc(o[0])}${this.verScore()?' · '+o[1]:''}</span>
       </label>`).join('')}
     </div>`;
   },
@@ -1185,6 +1255,7 @@ const APP={
         <option value="true" ${path.split('.').reduce((o,p)=>o[p],s)?'selected':''}>Sí</option>
       </select>`;
     const prodSel=d.producto?cfg.productos.find(p=>p.nombre===d.producto):null;
+    const ver=this.verScore();
     const productoOpts=cfg.productos.map(p=>`<option value="${esc(p.nombre)}" ${d.producto===p.nombre?'selected':''}>${esc(p.nombre)} (${p.tasaAnual}%, ${p.plazoMax}m, ${mx(p.montoMin||0)}–${mx(p.montoMax||0)})</option>`).join('');
 
     return this.renderSection('Solicitante',s.sucursal+' · '+s.analista,
@@ -1195,11 +1266,11 @@ const APP={
         <option value="mujer" ${d.genero==='mujer'?'selected':''}>Mujer</option>
         <option value="hombre" ${d.genero==='hombre'?'selected':''}>Hombre</option>
       </select>`)+
-      this.renderField('¿Es el(la) único(a) que sostiene a su familia?','Suma al score de Carácter. Mujer: +3 pts · Mujer única sostén: +10 pts · Hombre único sostén: +5 pts',`<select class="input" data-action="updBool" data-path="datos.esUnicoSosten">
+      this.renderField('¿Es el(la) único(a) que sostiene a su familia?',ver?'Suma al score de Carácter. Mujer: +3 pts · Mujer única sostén: +10 pts · Hombre único sostén: +5 pts':'',`<select class="input" data-action="updBool" data-path="datos.esUnicoSosten">
         <option value="false" ${!d.esUnicoSosten?'selected':''}>No</option>
         <option value="true" ${d.esUnicoSosten?'selected':''}>Sí</option>
       </select>`,E.bonusGenero)+
-      this.renderField('¿Tiene alguna discapacidad?','Bonificación de +7 puntos al score de carácter',`<select class="input" data-action="updBool" data-path="datos.tieneDiscapacidad">
+      this.renderField('¿Tiene alguna discapacidad?',ver?'Bonificación de +7 puntos al score de carácter':'',`<select class="input" data-action="updBool" data-path="datos.tieneDiscapacidad">
         <option value="false" ${!d.tieneDiscapacidad?'selected':''}>No</option>
         <option value="true" ${d.tieneDiscapacidad?'selected':''}>Sí</option>
       </select>`,E.bonusDiscapacidad)+
@@ -1251,6 +1322,9 @@ const APP={
     const d=s.datos;
     const bonus=E.bonusGenero+E.bonusDiscapacidad;
     const txtGenero=(d.genero==='mujer'?'Mujer':d.genero==='hombre'?'Hombre':'Género sin capturar')+(d.esUnicoSosten?' · único(a) sostén de su familia':'');
+    const ver=this.verScore();
+    const meta=t=>ver?t:'';
+    const actividades=OPC.actividad.concat(this.reglas().tipoIngreso||c.actividad>=OPC.actividad.length?OPC_ACTIVIDAD_INGRESO:[]);
     const rubros=[['Arraigo domiciliario',P.caracter.arraigoDom,E.sub.dom],['Arraigo laboral o estabilidad económica',P.caracter.arraigoLab,E.sub.lab],['Experiencia crediticia',P.caracter.expCred,E.sub.exp],['Compromiso con la institución',P.caracter.compromiso,E.sub.com]];
 
     let expFields=this.renderField('Experiencia crediticia','Determina si se evalúa el comportamiento de pago',this.renderRadio('historial',OPC.historial,c.historial,'caracter.historial'),E.sub.pHi);
@@ -1266,7 +1340,7 @@ const APP={
       }
       expFields+=this.renderField('Comportamiento de pago','Atraso máximo registrado',this.renderRadio('comportamiento',OPC.comportamiento,c.comportamiento,'caracter.comportamiento'),E.sub.pCo);
     }else{
-      expFields+=this.renderField('Atrasos y comportamiento','Sin historial: se califica con el puntaje máximo',`<strong>No aplica</strong>`,'10');
+      expFields+=this.renderField('Atrasos y comportamiento',ver?'Sin historial: se califica con el puntaje máximo':'Sin historial crediticio',`<strong>No aplica</strong>`,'10');
     }
     expFields+=this.renderField('Referencias personales y comerciales','Verificadas por el analista',this.renderRadio('referencias',OPC.referencias,c.referencias,'caracter.referencias'),E.sub.pRf);
 
@@ -1276,13 +1350,13 @@ const APP={
       <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.resMeses}" data-action="updNum" data-path="caracter.resMeses" min="0" max="11"></div>
     </div>`,E.sub.pRe.toFixed(0));
     if(totalResMeses<6){
-      domFields+=this.renderField('Tiempo en vivienda anterior','Menos de 6 meses en vivienda actual: se evalúa la anterior. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts',`<div style="display:flex;gap:10px">
+      domFields+=this.renderField('Tiempo en vivienda anterior','Menos de 6 meses en vivienda actual: se evalúa la anterior'+(ver?'. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts':''),`<div style="display:flex;gap:10px">
         <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.resPrevAnios}" data-action="updNum" data-path="caracter.resPrevAnios" min="0"></div>
         <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.resPrevMeses}" data-action="updNum" data-path="caracter.resPrevMeses" min="0" max="11"></div>
       </div>`);
     }
 
-    let labFields=this.renderField('Actividad o fuente de ingresos','Principal fuente de ingresos del solicitante',this.renderRadio('actividad',OPC.actividad,c.actividad,'caracter.actividad'),E.sub.pAc);
+    let labFields=this.renderField('Actividad o fuente de ingresos','Principal fuente de ingresos del solicitante',this.renderRadio('actividad',actividades,c.actividad,'caracter.actividad'),E.sub.pAc);
     if(d.esPrimerEmpleo){
       labFields+=this.renderField('Tiempo en la actividad actual','<strong>Primer empleo:</strong> no se evalúa antigüedad laboral',`<strong>No aplica (primer empleo)</strong>`,'10');
     }else{
@@ -1291,7 +1365,7 @@ const APP={
         <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.labMeses}" data-action="updNum" data-path="caracter.labMeses" min="0" max="11"></div>
       </div>`,E.sub.pAn.toFixed(0));
       if(totalLabMeses<6){
-        labFields+=this.renderField('Tiempo en actividad anterior','Menos de 6 meses: se evalúa la anterior. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts',`<div style="display:flex;gap:10px">
+        labFields+=this.renderField('Tiempo en actividad anterior','Menos de 6 meses: se evalúa la anterior'+(ver?'. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts':''),`<div style="display:flex;gap:10px">
           <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.labPrevAnios}" data-action="updNum" data-path="caracter.labPrevAnios" min="0"></div>
           <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.labPrevMeses}" data-action="updNum" data-path="caracter.labPrevMeses" min="0" max="11"></div>
         </div>`);
@@ -1302,13 +1376,13 @@ const APP={
       labFields+=this.renderField('¿Tiene alguna actividad económica?','Ventas por catálogo, micronegocio propio, etc.',`<input class="input" type="text" value="${esc(d.actividadSecundaria||'')}" data-action="updText" data-path="datos.actividadSecundaria">`);
     }
 
-    return this.renderSection('Arraigo domiciliario',pct(P.caracter.arraigoDom)+' del carácter · '+E.sub.dom.toFixed(1)+'/10',domFields)+
-      this.renderSection('Arraigo laboral o estabilidad económica',pct(P.caracter.arraigoLab)+' del carácter · '+E.sub.lab.toFixed(1)+'/10',labFields)+
-      this.renderSection('Experiencia crediticia',pct(P.caracter.expCred)+' del carácter · '+E.sub.exp.toFixed(1)+'/10',expFields)+
-      this.renderSection('Compromiso con la institución',pct(P.caracter.compromiso)+' del carácter · '+E.sub.com.toFixed(1)+'/10',
+    return this.renderSection('Arraigo domiciliario',meta(pct(P.caracter.arraigoDom)+' del carácter · '+E.sub.dom.toFixed(1)+'/10'),domFields)+
+      this.renderSection('Arraigo laboral o estabilidad económica',meta(pct(P.caracter.arraigoLab)+' del carácter · '+E.sub.lab.toFixed(1)+'/10'),labFields)+
+      this.renderSection('Experiencia crediticia',meta(pct(P.caracter.expCred)+' del carácter · '+E.sub.exp.toFixed(1)+'/10'),expFields)+
+      this.renderSection('Compromiso con la institución',meta(pct(P.caracter.compromiso)+' del carácter · '+E.sub.com.toFixed(1)+'/10'),
         this.renderField('Antigüedad como socio','',this.renderRadio('antigSocio',OPC.antigSocio,c.antigSocio,'caracter.antigSocio'),OPC.antigSocio[c.antigSocio]?OPC.antigSocio[c.antigSocio][1]:'')+
         this.renderField('Cultura de ahorro','Aportaciones y compromiso de ahorro al día',this.renderRadio('ahorro',OPC.ahorro,c.ahorro,'caracter.ahorro'),OPC.ahorro[c.ahorro]?OPC.ahorro[c.ahorro][1]:'')
-      )+
+      )+(ver?
       this.renderSection('Bonificaciones del solicitante','Se capturan en la pestaña Datos · +'+bonus+' pts',
         this.renderField('Género y sostén económico','Mujer: +3 pts · Mujer única sostén: +10 pts · Hombre único sostén: +5 pts',`<strong>${esc(txtGenero)}</strong>`,'+'+E.bonusGenero)+
         this.renderField('Discapacidad','Bonificación de +7 puntos',`<strong>${d.tieneDiscapacidad?'Sí':'No'}</strong>`,'+'+E.bonusDiscapacidad)
@@ -1319,13 +1393,14 @@ const APP={
         this.renderField('Bonificaciones','Capturadas en la pestaña Datos',`<strong>+${bonus} pts</strong>`)+
         this.renderField('Score de carácter',E.caracterBase+bonus/100>1?'Carácter base más bonificaciones, con tope de 100%':'Carácter base más bonificaciones',`<strong>${pct(E.caracter)}</strong>`)+
         this.renderField('Aporte al score global','Carácter × '+pct(E.pesosC.caracter)+' del 5C × '+pct(E.pesos.cincoC)+' del score global',`<strong>${(100*E.caracter*E.pesosC.caracter*E.pesos.cincoC).toFixed(1)} pts</strong>`)
-      );
+      ):'');
   },
 
   renderTabCapacidad(s,E){
     const k=s.capacidad,P=this.state.params;
     const prodSel=s.datos.producto?this.state.config.productos.find(p=>p.nombre===s.datos.producto):null;
     const dentro=v=>v<=E.LIM_CAP?'Dentro del límite':'Excede el 30%';
+    const ver=this.verScore();
     let plazoTxt;
     if(E.ingresos<=0)plazoTxt='Capture los ingresos para calcularlo';
     else if(E.capDisponible<=0)plazoTxt='Sin capacidad: sus deudas actuales ya ocupan el 30% de sus ingresos';
@@ -1348,7 +1423,9 @@ const APP={
       this.renderField('Vestido y calzado','',`<input class="input" type="text" inputmode="decimal" value="${k.gVestido}" data-action="updNum" data-path="capacidad.gVestido" min="0">`)+
       this.renderField('Salud','Médicos, medicamentos, seguros',`<input class="input" type="text" inputmode="decimal" value="${k.gSalud}" data-action="updNum" data-path="capacidad.gSalud" min="0">`)+
       this.renderField('Transferencias y otros gastos','',`<input class="input" type="text" inputmode="decimal" value="${k.gOtrosGastos}" data-action="updNum" data-path="capacidad.gOtrosGastos" min="0">`)+
-      this.renderField('Alerta de subdeclaración','Regla de gastos básicos mínimos por persona',`<strong>${E.alertaGastos?'Revisar: declara menos que el valor de referencia':'Sin observación'}</strong>`)
+      this.renderField('Alerta de subdeclaración','Regla de gastos básicos mínimos por persona',`<strong>${E.alertaGastos?'Revisar: declara menos que el valor de referencia':'Sin observación'}</strong>`)+
+      (E.gastoMinPct>0?this.renderField('Alerta de gasto mínimo','Gastos familiares declarados ÷ ingresos; se espera al menos '+pct(E.gastoMinPct)+' · solo informativa, no afecta el score',
+        E.ingresos>0?`<strong>${pct(E.ratioGastoFam)}</strong> · ${E.alertaGastoMin?'<strong style="color:var(--a2700)">Revisar: posible subdeclaración de gastos</strong>':'Sin observación'}`:'<strong>Capture los ingresos para calcularla</strong>'):'')
     )+
     this.renderSection('Deudas con terceros','',
       this.renderField('Pagos a cooperativas, cajas o financieras','',`<input class="input" type="text" inputmode="decimal" value="${k.dCajas}" data-action="updNum" data-path="capacidad.dCajas" min="0">`)+
@@ -1356,12 +1433,12 @@ const APP={
       this.renderField('Arrendamientos y factorajes','',`<input class="input" type="text" inputmode="decimal" value="${k.dArrendamiento}" data-action="updNum" data-path="capacidad.dArrendamiento" min="0">`)+
       this.renderField('Prestamistas y préstamos familiares','',`<input class="input" type="text" inputmode="decimal" value="${k.dPrestamistas}" data-action="updNum" data-path="capacidad.dPrestamistas" min="0">`)
     )+
-    this.renderSection('Indicadores de capacidad de pago',pct(E.pesosC.capacidad)+' del score 5C · '+pct(E.capacidad),
+    this.renderSection('Indicadores de capacidad de pago',ver?pct(E.pesosC.capacidad)+' del score 5C · '+pct(E.capacidad):'',
       this.renderField('Disponible mensual','Ingresos menos egresos con margen',`<strong>${mx(E.disponible)}</strong>`)+
       this.renderField('Cuota mensual equivalente','Del plan de pagos propuesto',`<strong>${mx(E.pl.cuotaMensual)}</strong>`)+
-      this.renderField('Cobertura de la cuota','Mínimo '+P.u.cobCuotaMin.toFixed(2),`<strong>${E.cobCuota.toFixed(2)}</strong>`,E.sub.r1.toFixed(0))+
-      this.renderField('Gastos sobre ingresos','Debajo de '+pct(P.u.gastosIngBueno)+' es óptimo',`<strong>${pct(E.ratioGI)}</strong>`,E.sub.r2.toFixed(0))+
-      this.renderField('Gastos más cuota sobre ingresos','Debajo de '+pct(P.u.gastosCuotaBueno)+' es óptimo',`<strong>${pct(E.ratioGCI)}</strong>`,E.sub.r3.toFixed(0))+
+      this.renderField('Cobertura de la cuota',ver?'Mínimo '+P.u.cobCuotaMin.toFixed(2):'Disponible mensual ÷ cuota mensual',`<strong>${E.cobCuota.toFixed(2)}</strong>`,E.sub.r1.toFixed(0))+
+      this.renderField('Gastos sobre ingresos',ver?'Debajo de '+pct(P.u.gastosIngBueno)+' es óptimo':'Egresos con margen ÷ ingresos',`<strong>${pct(E.ratioGI)}</strong>`,E.sub.r2.toFixed(0))+
+      this.renderField('Gastos más cuota sobre ingresos',ver?'Debajo de '+pct(P.u.gastosCuotaBueno)+' es óptimo':'(Egresos con margen + cuota) ÷ ingresos',`<strong>${pct(E.ratioGCI)}</strong>`,E.sub.r3.toFixed(0))+
       this.renderField('Capacidad máxima de pago','Hasta el 30% de los ingresos mensuales ('+mx(E.ingresos)+')',`<strong>${mx(E.capMaxPago)}</strong>`)+
       this.renderField('Cuota solicitada sobre ingresos','La mensualidad no debe superar el 30% de los ingresos',`<strong>${pct(E.pctCuotaIng)}</strong> · ${dentro(E.pctCuotaIng)}`)+
       this.renderField('Nivel de compromisos financieros','Deudas actuales ('+mx(E.deudas)+') más la cuota solicitada ('+mx(E.pl.cuotaMensual)+'); máximo 30% de los ingresos',`<strong>${pct(E.ratioCompromisos)}</strong> · ${dentro(E.ratioCompromisos)}`)+
@@ -1370,7 +1447,7 @@ const APP={
   },
 
   renderTabCapital(s,E){
-    const cp=s.capital,P=this.state.params;
+    const cp=s.capital,P=this.state.params,ver=this.verScore();
     const af=cp.activosFijos||{};
     let activoFijoFields='';
     ACTIVOS_FIJOS.forEach(a=>{
@@ -1390,22 +1467,22 @@ const APP={
       this.renderField('Pasivo de corto plazo','Vencimientos dentro de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoCorto}" data-action="updNum" data-path="capital.pasivoCorto" min="0">`)+
       this.renderField('Pasivo de largo plazo','Vencimientos a más de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoLargo}" data-action="updNum" data-path="capital.pasivoLargo" min="0">`)
     )+
-    this.renderSection('Indicadores de capital',pct(P.bloques.capital)+' del score 5C · '+pct(E.capital),
+    this.renderSection('Indicadores de capital',ver?pct(P.bloques.capital)+' del score 5C · '+pct(E.capital):'',
       this.renderField('Activos totales','Activo circulante más activo fijo',`<strong>${mx(E.activos)}</strong>`)+
       this.renderField('Pasivos totales','Corto más largo plazo',`<strong>${mx(E.pasivos)}</strong>`)+
       this.renderField('Capital contable','Activos totales menos pasivos totales',`<strong style="color:${E.capitalContable<0?'var(--a2700)':'inherit'}">${mx(E.capitalContable)}</strong>`)+
-      this.renderField('Endeudamiento actual','Pasivos ÷ activos · hasta '+pct(P.u.endActBueno)+' óptimo · arriba de '+pct(P.u.endActVeto)+' es rechazo',`<strong>${isFinite(E.endAct)?pct(E.endAct):'Sin activos'}</strong>`,E.sub.q1.toFixed(0))+
-      this.renderField('Endeudamiento con el crédito','(Pasivos + crédito) ÷ (activos + crédito) · arriba de '+pct(P.u.endProyVeto)+' es rechazo',`<strong>${pct(E.endProy)}</strong>`,E.sub.q2.toFixed(0))
+      this.renderField('Endeudamiento actual','Pasivos ÷ activos'+(ver?' · hasta '+pct(P.u.endActBueno)+' óptimo · arriba de '+pct(P.u.endActVeto)+' es rechazo':''),`<strong>${isFinite(E.endAct)?pct(E.endAct):'Sin activos'}</strong>`,E.sub.q1.toFixed(0))+
+      this.renderField('Endeudamiento con el crédito','(Pasivos + crédito) ÷ (activos + crédito)'+(ver?' · arriba de '+pct(P.u.endProyVeto)+' es rechazo':''),`<strong>${pct(E.endProy)}</strong>`,E.sub.q2.toFixed(0))
     );
   },
 
   renderTabCondiciones(s,E){
-    const cd=s.condiciones,P=this.state.params;
-    let html=this.renderSection('Fuente principal de ingresos',pct(P.condiciones.fuente)+' de las condiciones',
+    const cd=s.condiciones,P=this.state.params,ver=this.verScore();
+    let html=this.renderSection('Fuente principal de ingresos',ver?pct(P.condiciones.fuente)+' de las condiciones':'',
       this.renderField('Estabilidad de la fuente','Cómo se comporta el ingreso a lo largo del año',this.renderRadio('fuente',OPC.fuente,cd.fuente,'condiciones.fuente'))
     );
     if(E.tieneOVaEmprender){
-      html+=this.renderSection('Del negocio',pct(P.condiciones.negocio)+' de las condiciones',
+      html+=this.renderSection('Del negocio',ver?pct(P.condiciones.negocio)+' de las condiciones':'',
         this.renderField('Sector y mercado','Demanda del producto o servicio',this.renderRadio('sector',OPC.sector,cd.sector,'condiciones.sector'))+
         this.renderField('Ubicación y entorno','Riesgo climático, social y de acceso',this.renderRadio('entorno',OPC.entorno,cd.entorno,'condiciones.entorno'))+
         this.renderField('Antigüedad del negocio','',this.renderRadio('antigNegocio',OPC.antigNegocio,cd.antigNegocio,'condiciones.antigNegocio'))
@@ -1435,11 +1512,11 @@ const APP={
       campos+=this.renderField('Valor de la garantía','Avalúo, depósito o valor del colateral · cobertura exigida: '+veces(gar.cobertura)+' veces el monto del crédito'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
     }
     campos+=this.renderField('Calificación de la garantía',E.colTxt,`<strong>${E.colateral>=0.7?'Aceptable':'No aceptable'}</strong>`,pct(E.colateral));
-    return this.renderSection('Colateral',pct(E.pesosC.colateral)+' del score 5C',campos);
+    return this.renderSection('Colateral',this.verScore()?pct(E.pesosC.colateral)+' del score 5C':'',campos);
   },
 
   renderTabFlujo(s,E){
-    const meses=E.flujo.mesesFlujo;
+    const meses=E.flujo.mesesFlujo,ver=this.verScore();
     const colLabel=m=>MESES[m%12].slice(0,3)+' A'+(Math.floor(m/12)+1);
     const mkRow=(key,label)=>{
       const arr=s.flujo[key]||[];
@@ -1494,28 +1571,46 @@ const APP={
       <div>
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:6px">Egresos sobre ingresos</div>
         <div style="font:600 28px/1 var(--fonth)">${pct(E.flujo.ratio)}</div>
-        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Regla: 90% o menos es viable.</div>
-        <div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.ratio<=this.state.params.u.flujoGastosMax?'Viable · '+E.flujo.f1+'/10':'Negado'}</div>
+        ${ver?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Regla: 90% o menos es viable.</div>
+        <div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.ratio<=this.state.params.u.flujoGastosMax?'Viable · '+E.flujo.f1+'/10':'Negado'}</div>`:''}
       </div>
       <div>
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:6px">Cobertura del mes de pago</div>
         <div style="font:600 28px/1 var(--fonth)">${pct(E.flujo.cobertura)}</div>
-        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Ingreso del mes analizado ${mx(E.flujo.ingMesPago)}${E.flujo.acumPrevio<0?' menos el acumulado negativo de meses anteriores ('+mx(-E.flujo.acumPrevio)+')':''} entre compromisos ${mx(E.flujo.compromisoMes)}. Debe superar el 100%.</div>
-        <div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.cobertura>this.state.params.u.flujoCoberturaMin?'Viable · '+E.flujo.f2+'/10':'Negado'}</div>
+        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Ingreso del mes analizado ${mx(E.flujo.ingMesPago)}${E.flujo.acumPrevio<0?' menos el acumulado negativo de meses anteriores ('+mx(-E.flujo.acumPrevio)+')':''} entre compromisos ${mx(E.flujo.compromisoMes)}.${ver?' Debe superar el 100%.':''}</div>
+        ${ver?`<div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.cobertura>this.state.params.u.flujoCoberturaMin?'Viable · '+E.flujo.f2+'/10':'Negado'}</div>`:''}
       </div>
       <div>
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:6px">Meses con acumulado negativo</div>
         <div style="font:600 28px/1 var(--fonth)">${E.flujo.mesesNeg} de ${meses}</div>
-        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Ninguno: 10 · 1 a 2 meses: 6 · 3 o más: 2.</div>
-        <div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.f3}/10</div>
+        ${ver?`<div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Ninguno: 10 · 1 a 2 meses: 6 · 3 o más: 2.</div>
+        <div style="font:600 13px/1.4 var(--font);margin-top:4px">${E.flujo.f3}/10</div>`:''}
       </div>
-      <div>
+      ${ver?`<div>
         <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:6px">Score del flujo</div>
         <div style="font:600 28px/1 var(--fonth)">${pct(E.scoreFlujo)}</div>
         <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">Pesa ${pct(E.pesos.flujo)} del score global.</div>
-      </div>
+      </div>`:''}
+      ${this.reglas().margenUtilidad?this.renderMargenUtilidad(s,E):''}
     </div>
     <div class="no-print" style="margin-top:24px"><button class="btn btn-s" data-action="imprimirFlujo">Imprimir flujo de efectivo</button></div>`;
+  },
+
+  // Margen de utilidad del negocio frente al promedio de referencia del giro y al de las solicitudes del mismo giro.
+  renderMargenUtilidad(s,E){
+    const M=E.margenNeg,cfg=this.state.config,clave=s.datos.ocupacion||'';
+    const ocu=(cfg.ocupaciones||OCUPACIONES_DEFAULT).find(o=>o[0]===clave);
+    const ref=margenGiroRef(clave,cfg);
+    const otros=this.state.solicitudes.filter(x=>x.id!==s.id&&(x.datos||{}).ocupacion===clave&&clave).map(x=>margenNegocio(x).margen).filter(x=>x!=null);
+    const promInst=otros.length?otros.reduce((a,b)=>a+b,0)/otros.length:null;
+    const dif=M.margen!=null?(M.margen-ref)*100:null;
+    return `<div>
+        <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:6px">Margen de utilidad del negocio</div>
+        <div style="font:600 28px/1 var(--fonth)">${M.margen!=null?pct(M.margen):'—'}</div>
+        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:5px">${M.margen!=null?'(Ingresos del negocio '+mx(M.ing)+' − gastos del negocio '+mx(M.gas)+') ÷ ingresos del negocio. Ingresos del negocio: agrícolas, ganaderos y ventas.':'Capture ingresos agrícolas, ganaderos o de ventas y los gastos del negocio.'}</div>
+        <div style="font:400 12.5px/1.45 var(--font);margin-top:6px">Promedio de referencia del giro${ocu?' «'+esc(ocu[1])+'»':''}: <strong>${pct(ref)}</strong>${dif!=null?' · '+(Math.abs(dif)<0.05?'igual al promedio':Math.abs(dif).toFixed(1)+' puntos '+(dif>0?'arriba':'abajo')+' del promedio'):''}</div>
+        <div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:3px">${promInst!=null?'Promedio de '+otros.length+' solicitud'+(otros.length>1?'es':'')+' del mismo giro en la institución: '+pct(promInst):'Aún no hay otras solicitudes del mismo giro con flujo capturado.'}</div>
+      </div>`;
   },
 
   renderTabCanvas(s,E){
@@ -1555,7 +1650,7 @@ const APP={
       ${this.renderCanvasBlock('dictamenCanvas',cv,0,0,0,0,true)}
     </div>
 
-    <div style="margin-top:20px;font:600 16px/1.3 var(--fonth)">Score CANVAS: ${pct(E.scoreCanvas)} · Pesa ${pct(E.pesos.canvas)} del score global</div>
+    ${this.verScore()?`<div style="margin-top:20px;font:600 16px/1.3 var(--fonth)">Score CANVAS: ${pct(E.scoreCanvas)} · Pesa ${pct(E.pesos.canvas)} del score global</div>`:''}
     <div class="no-print" style="margin-top:16px"><button class="btn btn-s" data-action="imprimirCanvas">Imprimir CANVAS</button></div>`;
   },
 
@@ -1579,6 +1674,7 @@ const APP={
     const esSuper=u.rol==='superadmin',esGer=u.rol==='gerente';
     const dentroTope=num(s.datos.monto)<=num(u.tope);
     const ocupacion=(cfg.ocupaciones||OCUPACIONES_DEFAULT).find(o=>o[0]===s.datos.ocupacion);
+    const ver=this.verScore();
 
     let acciones='';
     if(u.rol==='analista')acciones=`<button class="btn btn-p" data-action="resolver" data-estado="ENVIADA" data-etiqueta="Expediente enviado a resolución">Enviar a resolución del gerente</button>`;
@@ -1603,20 +1699,22 @@ const APP={
             ['Socio',s.datos.socio||'—'],['Sucursal',s.sucursal],
             ['Analista',s.analista],['Ocupación',ocupacion?ocupacion[1]:s.datos.ocupacion],
             ['Monto solicitado',mx(s.datos.monto)],['Plazo',s.datos.plazo+' meses · '+s.datos.periodicidad],
-            ['Destino',s.datos.destino||'—'],['Riesgo 5C',E.banda],
+            ['Destino',s.datos.destino||'—']].concat(ver?[['Riesgo 5C',E.banda]]:[]).concat([
             ['Producto',s.datos.producto||'No especificado'],['Tasa',s.datos.tasaPct+'%']
-          ].map(d=>`<div><div style="font:400 11.5px/1.4 var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--n600)">${d[0]}</div><div style="font:400 16px/1.35 var(--font);margin-top:3px">${esc(d[1])}</div></div>`).join('')}
+          ]).map(d=>`<div><div style="font:400 11.5px/1.4 var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--n600)">${d[0]}</div><div style="font:400 16px/1.35 var(--font);margin-top:3px">${esc(d[1])}</div></div>`).join('')}
         </div>
 
-        ${E.dictamen==='APROBADO'?`<div style="border:2px solid var(--accent);background:var(--a100);padding:20px 22px;margin-bottom:30px">
+        ${!ver?`<div style="border:1px solid var(--div);background:var(--n200);padding:14px 18px;margin-bottom:30px;font:400 14px/1.5 var(--font);color:var(--n700)">El score, el resultado del modelo y las causales de rechazo están reservados al superadministrador. Resuelva con base en la información del expediente.</div>`:''}
+        ${E.alertas.length?`<div style="border:2px solid #ff90b1;background:var(--a2100);padding:14px 18px;margin-bottom:30px"><div style="font:600 14px/1.3 var(--font);color:var(--a2800);margin-bottom:4px">Alertas informativas</div>${E.alertas.map(v=>`<div style="font:400 13.5px/1.5 var(--font);color:var(--a2900)">${esc(v)}</div>`).join('')}</div>`:''}
+        ${ver&&E.dictamen==='APROBADO'?`<div style="border:2px solid var(--accent);background:var(--a100);padding:20px 22px;margin-bottom:30px">
           <div style="font:600 30px/1.05 var(--fonth);color:var(--a800)">Viable — Aprobado</div>
           <div style="font:400 14.5px/1.5 var(--font);color:var(--a900);margin-top:5px">Score ${E.global.toFixed(1)} de 100 · Riesgo 5C ${E.banda}.</div>
         </div>`:''}
-        ${E.dictamen==='CONDICIONADO'?`<div style="border:2px solid #ff90b1;background:var(--a2100);padding:20px 22px;margin-bottom:30px">
+        ${ver&&E.dictamen==='CONDICIONADO'?`<div style="border:2px solid #ff90b1;background:var(--a2100);padding:20px 22px;margin-bottom:30px">
           <div style="font:600 30px/1.05 var(--fonth);color:var(--a2800)">Viable con condiciones</div>
           <div style="font:400 14.5px/1.5 var(--font);color:var(--a2900);margin-top:5px">Score ${E.global.toFixed(1)} de 100 · Riesgo 5C ${E.banda}. Requiere garantía adicional, ajuste de monto o plazo.</div>
         </div>`:''}
-        ${E.dictamen==='RECHAZADO'?`<div style="border:2px solid var(--accent2);background:var(--a2100);padding:20px 22px;margin-bottom:30px">
+        ${ver&&E.dictamen==='RECHAZADO'?`<div style="border:2px solid var(--accent2);background:var(--a2100);padding:20px 22px;margin-bottom:30px">
           <div style="font:600 30px/1.05 var(--fonth);color:var(--a2700)">No autorizable</div>
           <div style="font:400 14.5px/1.5 var(--font);color:var(--a2900);margin-top:5px">${esc(E.vetos.length?E.vetos[0]:'Score global de '+E.global.toFixed(1)+', debajo del mínimo de '+P.dictamen.condicionado)}</div>
         </div>`:''}
@@ -1640,7 +1738,7 @@ const APP={
         <div style="border-top:3px solid var(--text);padding-top:12px">
           <div style="font:400 11.5px/1.4 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--n600);margin-bottom:10px">Bitácora de la solicitud</div>
           ${(s.bitacora||[]).slice().reverse().map(b=>`<div style="padding:7px 0;border-bottom:1px solid var(--div)">
-            <div style="font:400 13px/1.4 var(--font)">${esc(b.accion)}</div>
+            <div style="font:400 13px/1.4 var(--font)">${esc(ver?b.accion:(b.accion||'').replace(/ — score [\d.]+$/,''))}</div>
             <div style="font:400 11.5px/1.4 var(--font);color:var(--n600)">${new Date(b.ts).toLocaleString('es-MX')} · ${esc(b.quien)}</div>
           </div>`).join('')}
         </div>
@@ -1656,6 +1754,11 @@ const APP={
     const pasivos=E.pasivos;
     const garantia=garantiaDe(g.tipo,this.garantias());
     const per=PERIODICIDADES.find(p=>p[0]===s.datos.periodicidad);
+    const ver=this.verScore(),c=s.caracter;
+    const sc=t=>ver?t:'';
+    const opc=(lista,i)=>lista[i]?esc(lista[i][0]):'—';
+    const fila=(l,v,b)=>'<tr><td style="padding:1px 4px">'+l+'</td><td style="padding:1px 4px;text-align:right'+(b?';font-weight:700':'')+'">'+v+'</td></tr>';
+    const tablaCaracter=ver?'':'<table style="width:100%;border-collapse:collapse;font-size:8.5px">'+fila('Vivienda',opc(OPC.vivienda,c.vivienda))+fila('Actividad',opc(ACTIVIDADES_TODAS,c.actividad))+fila('Experiencia crediticia',opc(OPC.historial,c.historial))+fila('Referencias',opc(OPC.referencias,c.referencias))+'</table>';
     return `<div style="font:400 10px/1.3 Arial,sans-serif;color:#000;padding:8px 15px;max-width:800px;margin:0 auto">
       <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
         ${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:40px;max-width:180px;object-fit:contain;margin-bottom:3px">`:''}
@@ -1670,26 +1773,27 @@ const APP={
         <tr><td style="border:1px solid #999;padding:2px 4px;background:#eee;font-weight:700">Tasa anual</td><td style="border:1px solid #999;padding:2px 4px">${s.datos.tasaPct}%</td><td style="border:1px solid #999;padding:2px 4px;background:#eee;font-weight:700">Cuota mensual eq.</td><td style="border:1px solid #999;padding:2px 4px">${mx(E.pl.cuotaMensual)}</td></tr>
       </table>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px">
-        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C1 CARÁCTER — ${(E.caracter*100).toFixed(1)}%</div>
-          <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Arraigo domiciliario</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.dom.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Arraigo laboral</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.lab.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Experiencia crediticia</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.exp.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Compromiso institucional</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.com.toFixed(1)}/10</td></tr></table>
+        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C1 CARÁCTER${sc(' — '+(E.caracter*100).toFixed(1)+'%')}</div>
+          ${ver?`<table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Arraigo domiciliario</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.dom.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Arraigo laboral</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.lab.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Experiencia crediticia</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.exp.toFixed(1)}/10</td></tr><tr><td style="padding:1px 4px">Compromiso institucional</td><td style="padding:1px 4px;text-align:right;font-weight:700">${E.sub.com.toFixed(1)}/10</td></tr></table>`:tablaCaracter}
         </div>
-        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C2 CAPITAL — ${E.simplificada?'NO APLICA':(E.capital*100).toFixed(1)+'%'}</div>
-          <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Activos totales</td><td style="padding:1px 4px;text-align:right">${mx(activos)}</td></tr><tr><td style="padding:1px 4px">Pasivos totales</td><td style="padding:1px 4px;text-align:right">${mx(pasivos)}</td></tr><tr><td style="padding:1px 4px">Capital contable</td><td style="padding:1px 4px;text-align:right;font-weight:700">${mx(activos-pasivos)}</td></tr><tr><td style="padding:1px 4px">Endeudamiento actual</td><td style="padding:1px 4px;text-align:right">${E.sub.q1.toFixed(0)}/10</td></tr><tr><td style="padding:1px 4px">Endeudamiento proyectado</td><td style="padding:1px 4px;text-align:right">${E.sub.q2.toFixed(0)}/10</td></tr></table>
+        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C2 CAPITAL${E.simplificada?' — NO APLICA':sc(' — '+(E.capital*100).toFixed(1)+'%')}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Activos totales</td><td style="padding:1px 4px;text-align:right">${mx(activos)}</td></tr><tr><td style="padding:1px 4px">Pasivos totales</td><td style="padding:1px 4px;text-align:right">${mx(pasivos)}</td></tr><tr><td style="padding:1px 4px">Capital contable</td><td style="padding:1px 4px;text-align:right;font-weight:700">${mx(activos-pasivos)}</td></tr><tr><td style="padding:1px 4px">Endeudamiento actual</td><td style="padding:1px 4px;text-align:right">${ver?E.sub.q1.toFixed(0)+'/10':(isFinite(E.endAct)?pct(E.endAct):'Sin activos')}</td></tr><tr><td style="padding:1px 4px">Endeudamiento proyectado</td><td style="padding:1px 4px;text-align:right">${ver?E.sub.q2.toFixed(0)+'/10':pct(E.endProy)}</td></tr></table>
         </div>
-        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C3 CAPACIDAD DE PAGO — ${(E.capacidad*100).toFixed(1)}%</div>
-          <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Ingresos mensuales</td><td style="padding:1px 4px;text-align:right">${mx(E.ingresos)}</td></tr><tr><td style="padding:1px 4px">Egresos mensuales</td><td style="padding:1px 4px;text-align:right">${mx(E.egresosTot)}</td></tr><tr><td style="padding:1px 4px">Disponible mensual</td><td style="padding:1px 4px;text-align:right;font-weight:700">${mx(E.disponible)}</td></tr><tr><td style="padding:1px 4px">Cobertura de cuota</td><td style="padding:1px 4px;text-align:right">${E.cobCuota.toFixed(2)} · ${E.sub.r1.toFixed(0)}/10</td></tr><tr><td style="padding:1px 4px">Gastos/Ingresos</td><td style="padding:1px 4px;text-align:right">${pct(E.ratioGI)} · ${E.sub.r2.toFixed(0)}/10</td></tr></table>
+        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C3 CAPACIDAD DE PAGO${sc(' — '+(E.capacidad*100).toFixed(1)+'%')}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Ingresos mensuales</td><td style="padding:1px 4px;text-align:right">${mx(E.ingresos)}</td></tr><tr><td style="padding:1px 4px">Egresos mensuales</td><td style="padding:1px 4px;text-align:right">${mx(E.egresosTot)}</td></tr><tr><td style="padding:1px 4px">Disponible mensual</td><td style="padding:1px 4px;text-align:right;font-weight:700">${mx(E.disponible)}</td></tr><tr><td style="padding:1px 4px">Cobertura de cuota</td><td style="padding:1px 4px;text-align:right">${E.cobCuota.toFixed(2)}${sc(' · '+E.sub.r1.toFixed(0)+'/10')}</td></tr><tr><td style="padding:1px 4px">Gastos/Ingresos</td><td style="padding:1px 4px;text-align:right">${pct(E.ratioGI)}${sc(' · '+E.sub.r2.toFixed(0)+'/10')}</td></tr></table>
         </div>
-        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C4 CONDICIONES — ${E.simplificada?'NO APLICA':(E.condiciones*100).toFixed(1)+'%'}</div>
+        <div style="border:1px solid #999"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C4 CONDICIONES${E.simplificada?' — NO APLICA':sc(' — '+(E.condiciones*100).toFixed(1)+'%')}</div>
           <table style="width:100%;border-collapse:collapse;font-size:8.5px"><tr><td style="padding:1px 4px">Fuente de ingresos</td><td style="padding:1px 4px;text-align:right">${OPC.fuente[cd.fuente]?esc(OPC.fuente[cd.fuente][0]):'—'}</td></tr><tr><td style="padding:1px 4px">Sector y mercado</td><td style="padding:1px 4px;text-align:right">${OPC.sector[cd.sector]?esc(OPC.sector[cd.sector][0].substring(0,25)):'—'}</td></tr><tr><td style="padding:1px 4px">Entorno</td><td style="padding:1px 4px;text-align:right">${OPC.entorno[cd.entorno]?esc(OPC.entorno[cd.entorno][0].substring(0,25)):'—'}</td></tr><tr><td style="padding:1px 4px">Antigüedad negocio</td><td style="padding:1px 4px;text-align:right">${OPC.antigNegocio[cd.antigNegocio]?esc(OPC.antigNegocio[cd.antigNegocio][0].substring(0,25)):'—'}</td></tr></table>
         </div>
       </div>
-      <div style="border:1px solid #999;margin-bottom:4px"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C5 COLATERAL — ${pct(E.colateral)}</div><div style="padding:2px 4px;font-size:8.5px">Tipo: ${garantia?esc(garantia.nombre):'—'} · ${esc(E.colTxt)}</div></div>
-      <div style="border:2px solid #000;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:12px">
+      <div style="border:1px solid #999;margin-bottom:4px"><div style="background:#d0d0d0;padding:2px 4px;font:700 9px/1.2 Arial,sans-serif">C5 COLATERAL${sc(' — '+pct(E.colateral))}</div><div style="padding:2px 4px;font-size:8.5px">Tipo: ${garantia?esc(garantia.nombre):'—'} · ${esc(E.colTxt)}</div></div>
+      ${ver?`<div style="border:2px solid #000;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:12px">
         <div style="flex:1;font:700 9.5px/1.3 Arial,sans-serif"><div>CALIFICACIÓN CREDITICIA</div><div style="font-weight:400;margin-top:1px">5C${E.simplificada?' simplificada (C1, C3, C5)':''}: ${pct(E.score5c)} (${pct(E.pesos.cincoC)}) · Flujo: ${E.flujoAplica?pct(E.scoreFlujo)+' ('+pct(E.pesos.flujo)+')':'No aplica'}${E.tieneNegocio?' · CANVAS: '+pct(E.scoreCanvas)+' ('+pct(E.pesos.canvas)+')':''}</div></div>
         <div style="font:700 22px/1 Arial,sans-serif">${E.global.toFixed(1)}</div>
         <div style="font:700 10px/1.2 Arial,sans-serif;padding:3px 8px;border:1px solid #000">${E.dictamen}</div>
       </div>
-      ${E.vetos.length?'<div style="font:400 8.5px/1.3 Arial,sans-serif;margin-bottom:3px"><strong>Causales de rechazo:</strong> '+E.vetos.map(v=>esc(v)).join(' · ')+'</div>':''}
+      ${E.vetos.length?'<div style="font:400 8.5px/1.3 Arial,sans-serif;margin-bottom:3px"><strong>Causales de rechazo:</strong> '+E.vetos.map(v=>esc(v)).join(' · ')+'</div>':''}`:''}
+      ${E.alertas.length?'<div style="font:400 8.5px/1.3 Arial,sans-serif;margin-bottom:3px"><strong>Alertas informativas:</strong> '+E.alertas.map(v=>esc(v)).join(' · ')+'</div>':''}
       <div style="border:1px solid #999;padding:3px 6px;margin-bottom:4px">
         <div style="font:700 9px/1.2 Arial,sans-serif;margin-bottom:2px">DICTAMEN DEL ANALISTA</div>
         <div style="font:400 8.5px/1.4 Arial,sans-serif">${s.resolucion?esc(s.resolucion.comentario):'(Pendiente de resolución)'}</div>
@@ -1700,14 +1804,15 @@ const APP={
         <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${s.resolucion?esc(s.resolucion.por):'&nbsp;'}<br>Nombre y firma de quien autoriza</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6px;padding-top:4px;border-top:1px solid #999">
-        <div style="font:400 8px/1.3 Arial,sans-serif;color:#666">Analista: ${esc(s.analista)}<br>Banda de riesgo 5C: ${E.banda}</div>
+        <div style="font:400 8px/1.3 Arial,sans-serif;color:#666">Analista: ${esc(s.analista)}${sc('<br>Banda de riesgo 5C: '+E.banda)}</div>
         <div style="font:400 8px/1.3 Arial,sans-serif;color:#666;text-align:right">SAC 2.0 · ${esc(cfg.nombreInstitucion)}<br>${new Date().toLocaleString('es-MX')}</div>
       </div>
     </div>`;
   },
 
   renderFlujoImprimible(s,E){
-    const meses=E.flujo.mesesFlujo,anios=Math.ceil(meses/12);
+    const meses=E.flujo.mesesFlujo,anios=Math.ceil(meses/12),ver=this.verScore();
+    const margenTxt=this.reglas().margenUtilidad&&E.margenNeg.margen!=null?' · Margen de utilidad del negocio: '+pct(E.margenNeg.margen)+' (promedio del giro '+pct(margenGiroRef(s.datos.ocupacion,this.state.config))+')':'';
     const cfg=this.state.config;
     const th='border:1px solid #999;padding:2px 3px;font:700 7px/1.1 Arial,sans-serif;white-space:nowrap;background:#eee';
     const tot='border:1px solid #999;padding:1px 3px;text-align:right;font:700 7.5px/1.1 Arial,sans-serif;background:#e0e0e0';
@@ -1732,7 +1837,7 @@ const APP={
     return `<div style="font:400 9px/1.2 Arial,sans-serif;color:#000;padding:8px 10px">
       <div style="text-align:center;margin-bottom:6px">${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:35px;max-width:160px;object-fit:contain;margin-bottom:2px">`:''}<div style="font:700 12px/1.2 Arial,sans-serif">${esc(cfg.nombreInstitucion)}</div><div style="font:700 10px/1.2 Arial,sans-serif">FLUJO DE EFECTIVO — ${esc(s.datos.nombre||'—')} · Folio ${esc(s.folio)} · ${anios} año${anios>1?'s':''}</div></div>
       ${Array.from({length:anios},(_,y)=>tablaAnio(y)).join('')}
-      <div style="margin-top:6px;font:400 8px/1.3 Arial,sans-serif;color:#666">Egresos/Ingresos: ${pct(E.flujo.ratio)} · Cobertura mes pago: ${pct(E.flujo.cobertura)} · Meses negativos: ${E.flujo.mesesNeg} · Score flujo: ${pct(E.scoreFlujo)} · ${new Date().toLocaleString('es-MX')}</div>
+      <div style="margin-top:6px;font:400 8px/1.3 Arial,sans-serif;color:#666">Egresos/Ingresos: ${pct(E.flujo.ratio)} · Cobertura mes pago: ${pct(E.flujo.cobertura)} · Meses negativos: ${E.flujo.mesesNeg}${margenTxt}${ver?' · Score flujo: '+pct(E.scoreFlujo):''} · ${new Date().toLocaleString('es-MX')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:50px;margin:34px 30px 8px;break-inside:avoid;page-break-inside:avoid">
         <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${esc(s.datos.nombre||'&nbsp;')}<br>Nombre y firma del solicitante</div>
         <div style="text-align:center;border-top:1px solid #000;padding-top:3px;font:400 8.5px/1.3 Arial,sans-serif">${esc(s.analista)}<br>Nombre y firma del analista</div>
@@ -1747,8 +1852,28 @@ const APP={
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
         ${CANVAS_BLOQUES.map(b=>{const val=cv[b[0]]||{p:3,nota:''};return '<div style="border:1px solid #999;padding:4px 6px"><div style="font:700 8.5px/1.2 Arial,sans-serif;margin-bottom:2px">'+esc(b[1])+' — '+val.p+'/5</div><div style="font:400 8px/1.35 Arial,sans-serif;color:#333">'+esc(val.nota||'Sin observaciones')+'</div></div>'}).join('')}
       </div>
-      <div style="font:700 10px/1.2 Arial,sans-serif;text-align:center;padding:4px;border:1px solid #000">Score CANVAS: ${pct(E.scoreCanvas)}</div>
+      ${this.verScore()?`<div style="font:700 10px/1.2 Arial,sans-serif;text-align:center;padding:4px;border:1px solid #000">Score CANVAS: ${pct(E.scoreCanvas)}</div>`:''}
       <div style="margin-top:6px;font:400 8px/1.3 Arial,sans-serif;color:#666;text-align:center">SAC 2.0 · ${esc(cfg.nombreInstitucion)} · ${new Date().toLocaleString('es-MX')}</div>
+    </div>`;
+  },
+
+  renderConfigReglas(){
+    const R=this.reglas();
+    const siNo=(k,v)=>`<select class="input" data-action="updRegla" data-regla="${k}" style="max-width:120px">
+        <option value="false" ${!v?'selected':''}>No</option><option value="true" ${v?'selected':''}>Sí</option>
+      </select>`;
+    const fila=(titulo,texto,control)=>`<div style="display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--div)">
+        <div style="flex:1 1 320px;min-width:0"><div style="font:400 15px/1.35 var(--font)">${titulo}</div><div style="font:400 12.5px/1.45 var(--font);color:var(--n700);margin-top:3px">${texto}</div></div>
+        <div style="flex:0 0 140px">${control}</div>
+      </div>`;
+    return `
+    <div class="config-card">
+      <h3>Reglas de análisis</h3>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Reglas que la institución decide aplicar. Los cambios se aplican de inmediato a todas las solicitudes.</p>
+      ${fila('Ocultar el score y las causales de rechazo','Analistas y gerentes de sucursal no ven el score global, el desglose por C, los puntajes de cada respuesta, el resultado del modelo ni las causales de rechazo, en pantalla ni en los impresos. El superadministrador ve todo.',siNo('ocultarScore',R.ocultarScore))}
+      ${fila('Calificar jornaleros e ingresos formales','Agrega dos opciones en Carácter › Actividad o fuente de ingresos: jornalero (5 puntos) e ingresos formales comprobables (10 puntos).',siNo('tipoIngreso',R.tipoIngreso))}
+      ${fila('Margen de utilidad en el flujo de efectivo','Muestra el margen de utilidad del negocio y lo compara con el promedio de referencia del giro (editable en Catálogo de ocupaciones) y con el promedio de las solicitudes del mismo giro. Es informativo.',siNo('margenUtilidad',R.margenUtilidad))}
+      ${fila('Gasto mínimo esperado (% del ingreso)','Si los gastos familiares declarados en Capacidad son menores a este porcentaje de los ingresos, se muestra una alerta. Solo informativa: no resta puntos ni es causal de rechazo. Use 0 para desactivarla.',`<input class="input" type="text" inputmode="decimal" value="${+(num(R.gastoMinimoPct)*100).toFixed(1)}" data-action="updReglaPct" data-regla="gastoMinimoPct" style="width:100px;text-align:right">`)}
     </div>`;
   },
 
@@ -1808,7 +1933,7 @@ const APP={
     <p style="font:400 15px/1.5 var(--font);color:var(--n700);margin:0 0 30px">Solo el superadministrador puede modificar la configuración del sistema.</p>
 
     <div style="display:flex;gap:3px;border-bottom:1px solid var(--text);margin-bottom:26px;flex-wrap:wrap">
-      ${[['institucion','Institución'],['logotipo','Logotipo'],['productos','Productos de crédito'],['garantias','Garantías'],['niveles','Niveles de operación'],['ocupaciones','Catálogo de ocupaciones'],['personal','Personal'],['regulatorio','Regulatorio']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
+      ${[['institucion','Institución'],['logotipo','Logotipo'],['productos','Productos de crédito'],['garantias','Garantías'],['niveles','Niveles de operación'],['ocupaciones','Catálogo de ocupaciones'],['reglas','Reglas de análisis'],['personal','Personal'],['regulatorio','Regulatorio']].map(t=>`<button data-action="configTab" data-tab="${t[0]}" style="border:0;${st.configTab===t[0]?'background:var(--text);color:var(--bg);font:600 13.5px/1 var(--font)':'background:transparent;color:var(--n800);font:400 13.5px/1 var(--font)'};padding:10px 13px;cursor:pointer">${t[1]}</button>`).join('')}
     </div>
 
     ${st.configTab==='institucion'?`
@@ -1850,6 +1975,8 @@ const APP={
 
     ${st.configTab==='garantias'?this.renderConfigGarantias():''}
 
+    ${st.configTab==='reglas'?this.renderConfigReglas():''}
+
     ${st.configTab==='niveles'?`
     <div class="config-card">
       <h3>Niveles de operación</h3>
@@ -1877,12 +2004,13 @@ const APP={
       <h3>Catálogo de ocupaciones</h3>
       <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Personalice las ocupaciones disponibles para seleccionar en la solicitud. La columna CANVAS indica qué ocupaciones se ofrecen cuando el tipo de actividad es «Negocio o empresa», que activa el flujo de efectivo y el modelo CANVAS; las que tienen No aparecen en Empleado, Ama de casa o Dependiente económico. Haga clic en Sí / No para cambiarlo.</p>
       <table class="table" style="margin-bottom:20px">
-        <thead><tr><th>Clave</th><th>Nombre</th><th>CANVAS</th><th></th></tr></thead>
+        <thead><tr><th>Clave</th><th>Nombre</th><th>CANVAS</th>${(cfg.reglas||{}).margenUtilidad?'<th style="text-align:right">Margen promedio del giro (%)</th>':''}<th></th></tr></thead>
         <tbody>
           ${(cfg.ocupaciones||OCUPACIONES_DEFAULT).map((o,i)=>`<tr>
             <td><code>${esc(o[0])}</code></td>
             <td>${esc(o[1])}</td>
             <td><button class="btn btn-g" data-action="toggleCanvasOcupacion" data-idx="${i}" style="padding:4px 9px;font-size:12px">${usaCanvas(o[0],[o])?'Sí':'No'}</button></td>
+            ${(cfg.reglas||{}).margenUtilidad?`<td style="text-align:right">${usaCanvas(o[0],[o])?`<input class="input" type="text" inputmode="decimal" value="${+(margenGiroRef(o[0],cfg)*100).toFixed(1)}" data-action="updMargenGiro" data-clave="${esc(o[0])}" style="width:90px;text-align:right">`:'—'}</td>`:''}
             <td style="text-align:right"><button class="btn btn-g" data-action="borrarOcupacion" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
           </tr>`).join('')}
         </tbody>
@@ -2118,6 +2246,8 @@ const APP={
       else if(a==='updCanvasNota')this.upd('canvas.'+el.dataset.key+'.nota',el.value);
       else if(a==='updActivoFijo'){const sol=this.actual();if(!sol)return;const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};if(el.dataset.prop==='monto')af[el.dataset.key].monto=num(el.value);else af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}
       else if(a==='updGarantia'){this.updGarantia(parseInt(el.dataset.idx),el.dataset.prop,el.value);return}
+      else if(a==='updReglaPct'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.reglas=Object.assign({},REGLAS_DEFAULT,cfg.reglas||{});cfg.reglas[el.dataset.regla]=Math.max(0,Math.min(100,num(el.value)))/100;this.state.config=cfg;this.persist();return}
+      else if(a==='updMargenGiro'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.margenesGiro=Object.assign({},cfg.margenesGiro||{});cfg.margenesGiro[el.dataset.clave]=num(el.value)/100;this.state.config=cfg;this.persist();return}
       else if(a==='updNivelPlazo'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.nivelesOperacion[parseInt(el.dataset.idx)].plazoMax=num(el.value);this.state.config=cfg;this.persist()}
       else if(a==='updParam'){const p=JSON.parse(JSON.stringify(this.state.params));const parts=el.dataset.path.split('.');let ref=p;for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];ref[parts[parts.length-1]]=num(el.value);this.state.params=p}
       else return;
@@ -2131,6 +2261,11 @@ const APP={
         const pr=sol&&sol.datos.producto?this.state.config.productos.find(p=>p.nombre===sol.datos.producto):null;
         if(pr&&pr.montoMin&&num(el.value)<pr.montoMin){this.upd('datos.monto',pr.montoMin);this.render()}
         return;
+      }
+      if(el&&el.tagName==='INPUT'&&(el.dataset.action==='updReglaPct'||el.dataset.action==='updMargenGiro')){
+        if(el.dataset.action==='updReglaPct')this.log('Regla de análisis modificada','Gasto mínimo esperado: '+pct(this.reglas().gastoMinimoPct));
+        else this.log('Margen promedio del giro modificado',el.dataset.clave+': '+pct(margenGiroRef(el.dataset.clave,this.state.config)));
+        this.render();return;
       }
       if(el&&el.dataset.action==='updGarantia'){
         let g=el.tagName==='SELECT'?this.updGarantia(parseInt(el.dataset.idx),el.dataset.prop,el.value):this.garantias()[parseInt(el.dataset.idx)];
@@ -2165,6 +2300,12 @@ const APP={
         }
       }
       else if(a==='updFlujoProp')this.upd(el.dataset.prop,num(el.value));
+      else if(a==='updRegla'){
+        const cfg=JSON.parse(JSON.stringify(this.state.config));
+        cfg.reglas=Object.assign({},REGLAS_DEFAULT,cfg.reglas||{});cfg.reglas[el.dataset.regla]=el.value==='true';
+        this.state.config=cfg;this.persist();
+        this.log('Regla de análisis '+(el.value==='true'?'activada':'desactivada'),{ocultarScore:'Ocultar score y causales',tipoIngreso:'Jornaleros e ingresos formales',margenUtilidad:'Margen de utilidad'}[el.dataset.regla]||el.dataset.regla);
+      }
       else if(a==='updActivoFijo'){const sol=this.actual();if(sol){const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}}
       this.render();
     };
