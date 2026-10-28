@@ -627,6 +627,16 @@ const APP={
     return cambio?{...sol,flujo,flujoAutoPrestamo:nuevoAuto}:sol;
   },
 
+  // El nombre del PDF lo toma el navegador del título de la página: «SAC 001-000123», «CANVAS …», «Flujo de efectivo …».
+  imprimirComo(prefijo,sol){
+    const anterior=this._tituloPagina||(this._tituloPagina=document.title);
+    const id=((sol.datos||{}).socio||'').trim()||sol.folio||'';
+    const restaurar=()=>{document.title=anterior;document.body.classList.remove('printing');window.removeEventListener('afterprint',restaurar)};
+    document.title=(prefijo+' '+id).trim().replace(/[\\/:*?"<>|]+/g,'-');
+    window.addEventListener('afterprint',restaurar);
+    setTimeout(()=>{window.print();setTimeout(restaurar,1000)},100);
+  },
+
   _scheduleRender(){clearTimeout(this._rt);this._rt=setTimeout(()=>this._renderSafe(),600)},
   _renderSafe(){
     const ae=document.activeElement;
@@ -2455,7 +2465,7 @@ const APP={
         if(!area){area=document.createElement('div');area.id='print-area';document.body.appendChild(area)}
         area.innerHTML=this.renderDictamenImprimible(sol,ev);
         document.body.classList.add('printing');
-        setTimeout(()=>{window.print();document.body.classList.remove('printing')},100);
+        this.imprimirComo('SAC',sol);
         break;
       }
       case 'imprimirFlujo':{
@@ -2465,7 +2475,7 @@ const APP={
         if(!area){area=document.createElement('div');area.id='print-area';document.body.appendChild(area)}
         area.innerHTML=this.renderFlujoImprimible(sol,ev);
         document.body.classList.add('printing');
-        setTimeout(()=>{window.print();document.body.classList.remove('printing')},100);
+        this.imprimirComo('Flujo de efectivo',sol);
         break;
       }
       case 'imprimirCanvas':{
@@ -2475,7 +2485,7 @@ const APP={
         if(!area){area=document.createElement('div');area.id='print-area';document.body.appendChild(area)}
         area.innerHTML=this.renderCanvasImprimible(sol,ev);
         document.body.classList.add('printing');
-        setTimeout(()=>{window.print();document.body.classList.remove('printing')},100);
+        this.imprimirComo('CANVAS',sol);
         break;
       }
       case 'autoPopularFlujo':{
