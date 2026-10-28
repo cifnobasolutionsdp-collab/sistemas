@@ -333,6 +333,20 @@ const mx=n=>(n<0?'-$':'$')+Math.abs(Math.round(n||0)).toLocaleString('es-MX');
 const pct=n=>(isFinite(n)?(n*100).toFixed(1):'0.0')+'%';
 const num=v=>{const n=parseFloat(typeof v==='string'?v.replace(/[$,\s]/g,''):v);return isFinite(n)?n:0};
 const clamp10=n=>Math.max(0,Math.min(10,n));
+// Valor de un campo numérico con separador de miles («30,000»); num() quita las comas al leerlo.
+const fnum=v=>v===''||v==null?'':num(v).toLocaleString('es-MX',{maximumFractionDigits:4});
+const hoyISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+// Fechas de pago a partir de la fecha de disposición: meses de calendario, o 15 y 7 días en quincenal y semanal.
+function fechaPago(iso,periodicidad,k){
+  const [y,m,d]=iso.split('-').map(Number);
+  const dias={quincenal:15,semanal:7}[periodicidad];
+  if(dias)return new Date(Date.UTC(y,m-1,d+dias*k));
+  const meses=({mensual:1,bimestral:2,semestral:6,anual:12}[periodicidad]||1)*k;
+  const ult=new Date(Date.UTC(y,m-1+meses+1,0)).getUTCDate();
+  return new Date(Date.UTC(y,m-1+meses,Math.min(d,ult)));
+}
+const fechaValida=iso=>typeof iso==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(iso)&&!isNaN(Date.parse(iso));
+const fechaTxt=dt=>dt.toLocaleDateString('es-MX',{timeZone:'UTC',day:'2-digit',month:'short',year:'numeric'});
 const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 const PERIODICIDADES=[
@@ -627,7 +641,7 @@ const CANVAS_BLOQUES=[
   ['dictamenCanvas','Dictamen de Viabilidad del Negocio','Evaluación integral de la viabilidad y sostenibilidad del modelo de negocio.']
 ];
 const FILAS_ING=[['agricolas','Agrícolas'],['ganaderos','Ganaderos'],['ventas','Ventas'],['sueldos','Sueldos'],['remesas','Otros ingresos (remesas, transferencias, apoyos)'],['prestamoInst','Préstamo de la Institución'],['prestamoOtra','Préstamo con otra Entidad Financiera']];
-const FILAS_EGR=[['egresosFam','Egresos familiares'],['gastosNegocio','Gastos del negocio'],['pagoIntereses','Pago de intereses'],['pagoInst','Pago a la Institución'],['pagoOtras','Pago a otras Entidades Financieras'],['ahorroFlujo','Compromiso de ahorro'],['otrosGastos','Otros gastos']];
+const FILAS_EGR=[['egresosFam','Egresos familiares'],['gastosNegocio','Gastos del negocio'],['pagoIntereses','Pago de intereses'],['pagoInst','Pago a la Institución'],['pagoOtras','Pago a otras Entidades Financieras'],['ahorroFlujo','Compromiso de ahorro'],['otrosGastos','Otros gastos'],['reservaGastos','Reserva destinada para compromisos o gastos (en negativo)']];
 const ROL_NOMBRE={superadmin:'Superadministrador',gerente:'Gerente de sucursal',analista:'Analista de crédito'};
 
 function defaultParams(){
@@ -657,7 +671,7 @@ function defaultParams(){
       margenGastos:0.10,gastoBasicoPersona:2000,
       flujoGastosMax:0.90,flujoCoberturaMin:1.0,
       covPrenda:2,covHipoteca:2,covAhorro:1,
-      ivaInteres:0.16
+      ivaInteres:0.16,baseDias:360
     },
     dictamen:{aprobado:80,condicionado:60},
     bandas:[[0.9,'IRRELEVANTE'],[0.8,'TOLERABLE'],[0.7,'MODERADO'],[0.6,'RELEVANTE'],[0.5,'INTOLERABLE']]
@@ -706,7 +720,7 @@ function nuevaSolicitud(folio,user){
     folio,estado:'BORRADOR',creada:Date.now(),
     analista:user.nombre,analistaId:user.usuario,sucursal:user.sucursal,
     datos:{nombre:'',socio:'',ocupacion:'empleado_formal',destino:'',dependientes:4,
-      monto:50000,plazo:24,tasaPct:24,periodicidad:'mensual',plan:'fijo',
+      monto:50000,plazo:24,tasaPct:24,periodicidad:'mensual',plan:'fijo',fechaDisposicion:hoyISO(),
       producto:'',genero:'',esUnicoSosten:false,tieneDiscapacidad:false,
       fuenteIngresos:'',proveedorIngresos:'',actividadSecundaria:'',
       clasificacionIFRS9:'',esPrimerEmpleo:false,nombreNegocio:'',tipoActividad:'empleado',ingresosVariables:false,gastoImportante:false},
@@ -814,13 +828,15 @@ const APP={
     if(!forzar&&!sol.flujoAuto&&Object.values(sol.flujo||{}).some(arr=>(arr||[]).some(v=>num(v)!==0)))return sol;
     const k=sol.capacidad,neg=tipoActividad(sol.datos,cat)==='negocio';
     const suma=campos=>campos.reduce((a,x)=>a+num(k[x]),0);
-    const objetivo={
-      ventas:neg?num(k.ingTrabajo):0,
-      sueldos:neg?0:num(k.ingTrabajo),
-      remesas:suma(['ingArrendamiento','ingIntereses','ingTransferencias','ingOtros']),
+    // Con negocio los ingresos se capturan directamente en el flujo; solo se cargan gastos familiares y deudas.
+    const objetivo=neg?{}:{
+      sueldos:num(k.ingTrabajo),
+      remesas:suma(['ingArrendamiento','ingIntereses','ingTransferencias','ingOtros'])
+    };
+    Object.assign(objetivo,{
       egresosFam:suma(['gAlimentos','gTransporte','gEducacion','gVivienda','gPersonal','gLimpieza','gVestido','gSalud','gOtrosGastos']),
       pagoOtras:suma(['dCajas','dBancos','dArrendamiento','dPrestamistas'])
-    };
+    });
     const auto=sol.flujoAuto||{},flujo={...sol.flujo},nuevoAuto={...auto};
     let cambio=false;
     Object.keys(objetivo).forEach(r=>{
@@ -891,8 +907,11 @@ const APP={
     if(num(s.datos.plazo)>prod.plazoMax)this.upd('datos.plazo',prod.plazoMax);
   },
 
-  plan(datos,montoOv,plazoOv){
-    const P=this.state.params;
+  // IVA de los intereses: el del parámetro, salvo que el producto elegido sea sin IVA.
+  ivaDe(datos){const pr=datos.producto?this.state.config.productos.find(p=>p.nombre===datos.producto):null;return pr&&pr.sinIva?0:num(this.state.params.u.ivaInteres)},
+
+  plan(datos,montoOv,plazoOv,aprox){
+    const P=this.state.params,IVA=this.ivaDe(datos);
     const monto=montoOv!=null?montoOv:num(datos.monto);
     const meses=Math.max(1,plazoOv!=null?plazoOv:num(datos.plazo));
     const tasaAnual=num(datos.tasaPct)/100;
@@ -903,23 +922,36 @@ const APP={
       const intTotal=monto*tasaAnual*(meses/12);
       const cuotaUnica=monto+intTotal;
       const cuotaMensual=cuotaUnica/Math.max(1,meses);
-      const cuotaIva=cuotaUnica+intTotal*P.u.ivaInteres;
-      return {monto,meses,n:1,porAnio:0,cuota:cuotaUnica,cuotaIva,ultimoPago:cuotaIva,cuotaMensual:cuotaMensual+intTotal*P.u.ivaInteres/Math.max(1,meses),totalInt:intTotal,iva:intTotal*P.u.ivaInteres,total:cuotaIva,mesesPlan:meses};
+      const cuotaIva=cuotaUnica+intTotal*IVA;
+      return {monto,meses,n:1,porAnio:0,cuota:cuotaUnica,cuotaIva,ultimoPago:cuotaIva,cuotaMensual:cuotaMensual+intTotal*IVA/Math.max(1,meses),totalInt:intTotal,iva:intTotal*IVA,total:cuotaIva,mesesPlan:meses,ivaPct:IVA};
     }
     if(datos.periodicidad==='pago_unico_periodico'){
       const iPeriodo=tasaAnual/12;
       const intMensual=monto*iPeriodo;
       const totalInt=intMensual*meses;
       const cuotaInt=intMensual;
-      const cuotaMensual=intMensual+intMensual*P.u.ivaInteres+monto/Math.max(1,meses);
-      return {monto,meses,n:meses,porAnio:12,cuota:cuotaInt,cuotaIva:cuotaInt+cuotaInt*P.u.ivaInteres,ultimoPago:monto+cuotaInt+cuotaInt*P.u.ivaInteres,cuotaMensual,totalInt,iva:totalInt*P.u.ivaInteres,total:monto+totalInt+totalInt*P.u.ivaInteres,mesesPlan:meses};
+      const cuotaMensual=intMensual+intMensual*IVA+monto/Math.max(1,meses);
+      return {monto,meses,n:meses,porAnio:12,cuota:cuotaInt,cuotaIva:cuotaInt+cuotaInt*IVA,ultimoPago:monto+cuotaInt+cuotaInt*IVA,cuotaMensual,totalInt,iva:totalInt*IVA,total:monto+totalInt+totalInt*IVA,mesesPlan:meses,ivaPct:IVA};
     }
 
     // Pagos periódicos: la tasa del periodo es la anual entre los pagos por año y el IVA se cobra sobre el interés de cada pago.
-    const IVA=num(P.u.ivaInteres);
     const n=Math.max(1,Math.round(meses/12*porAnio));
     const i=tasaAnual/porAnio,iIva=i*(1+IVA);
     let primerPago,ultimoPago,totalInt;
+    if(datos.plan==='insolutos'&&!aprox&&fechaValida(datos.fechaDisposicion)){
+      // Saldos insolutos con días transcurridos entre pagos: interés = saldo × tasa ÷ base × días.
+      const base=num(P.u.baseDias)||360,cap=monto/n;
+      let saldo=monto,ant=fechaPago(datos.fechaDisposicion,datos.periodicidad,0),maxPago=0;totalInt=0;
+      for(let k=1;k<=n;k++){
+        const f=fechaPago(datos.fechaDisposicion,datos.periodicidad,k),dias=Math.round((f-ant)/864e5);
+        const interes=saldo*tasaAnual/base*dias,pago=cap+interes*(1+IVA);
+        if(k===1)primerPago=pago;
+        if(pago>maxPago)maxPago=pago;
+        totalInt+=interes;saldo-=cap;ant=f;ultimoPago=pago;
+      }
+      const iva=totalInt*IVA;
+      return {monto,meses,n,porAnio,cuota:primerPago,cuotaIva:primerPago,ultimoPago,pagoMaximo:maxPago,cuotaMensual:maxPago*porAnio/12,totalInt,iva,total:monto+totalInt+iva,mesesPlan:n*12/porAnio,ivaPct:IVA,porDias:true};
+    }
     if(datos.plan==='insolutos'){
       // Capital igual en cada pago e interés con IVA sobre el saldo: el primer pago es el más alto.
       const cap=monto/n;
@@ -931,24 +963,27 @@ const APP={
       totalInt=(primerPago*n-monto)/(1+IVA);
     }
     const iva=totalInt*IVA;
-    return {monto,meses,n,porAnio,cuota:primerPago-monto*i*IVA,cuotaIva:primerPago,ultimoPago,cuotaMensual:primerPago*porAnio/12,totalInt,iva,total:monto+totalInt+iva,mesesPlan:n*12/porAnio};
+    return {monto,meses,n,porAnio,cuota:primerPago-monto*i*IVA,cuotaIva:primerPago,ultimoPago,pagoMaximo:primerPago,cuotaMensual:primerPago*porAnio/12,totalInt,iva,total:monto+totalInt+iva,mesesPlan:n*12/porAnio,ivaPct:IVA};
   },
 
   // Tabla de amortización. «mes» es el mes del flujo (0 = primer mes) en que cae cada pago; con pagos
   // anuales el primero cae en mesAnual (el mes del pago analizado) y los siguientes cada doce meses.
   tablaPagos(datos,mesAnual){
-    const pl=this.plan(datos),IVA=num(this.state.params.u.ivaInteres),tasa=num(datos.tasaPct)/100;
+    const pl=this.plan(datos),IVA=pl.ivaPct,tasa=num(datos.tasaPct)/100,base=num(this.state.params.u.baseDias)||360;
+    const conFecha=fechaValida(datos.fechaDisposicion)&&!/^pago_unico/.test(datos.periodicidad);
     const filas=[];let saldo=pl.monto;
-    const fila=(mes,capital,interes)=>{const iva=interes*IVA;filas.push({k:filas.length+1,mes,saldoIni:saldo,capital,interes,iva,pago:capital+interes+iva,saldoFin:saldo-capital});saldo-=capital};
+    const fila=(mes,capital,interes,fecha,dias)=>{const iva=interes*IVA;filas.push({k:filas.length+1,mes,fecha,dias,saldoIni:saldo,capital,interes,iva,pago:capital+interes+iva,saldoFin:saldo-capital});saldo-=capital};
     if(datos.periodicidad==='pago_unico')fila(pl.meses-1,pl.monto,pl.totalInt);
     else if(datos.periodicidad==='pago_unico_periodico'){const im=pl.monto*tasa/12;for(let m=0;m<pl.meses;m++)fila(m,m===pl.meses-1?pl.monto:0,im)}
     else{
       const i=tasa/pl.porAnio;
       for(let k=1;k<=pl.n;k++){
-        const interes=saldo*i;
+        const f=conFecha?fechaPago(datos.fechaDisposicion,datos.periodicidad,k):null;
+        const dias=f?Math.round((f-fechaPago(datos.fechaDisposicion,datos.periodicidad,k-1))/864e5):null;
+        const interes=pl.porDias?saldo*tasa/base*dias:saldo*i;
         const capital=k===pl.n?saldo:datos.plan==='insolutos'?pl.monto/pl.n:pl.cuotaIva-interes*(1+IVA);
         const mes=datos.periodicidad==='anual'&&mesAnual!=null?mesAnual%12+12*(k-1):Math.ceil(k*12/pl.porAnio)-1;
-        fila(mes,capital,interes);
+        fila(mes,capital,interes,f,dias);
       }
     }
     return filas;
@@ -1031,7 +1066,14 @@ const APP={
 
     // CAPACIDAD
     const k=s.capacidad;
-    const ingresos=num(k.ingTrabajo)+num(k.ingArrendamiento)+num(k.ingIntereses)+num(k.ingTransferencias)+num(k.ingOtros);
+    // Con negocio los ingresos salen del flujo: promedio mensual de los ingresos sin préstamos menos los gastos del negocio.
+    let ingresos;
+    if(tieneNegocio){
+      const mf=this.aniosFlujo(s)*12;let t=0;
+      FILAS_ING.filter(f=>f[0]!=='prestamoInst'&&f[0]!=='prestamoOtra').forEach(f=>{for(let m=0;m<mf;m++)t+=num((s.flujo[f[0]]||[])[m])});
+      for(let m=0;m<mf;m++)t-=num((s.flujo.gastosNegocio||[])[m]);
+      ingresos=Math.max(0,t/mf);
+    }else ingresos=num(k.ingTrabajo)+num(k.ingArrendamiento)+num(k.ingIntereses)+num(k.ingTransferencias)+num(k.ingOtros);
     const fam=num(k.gAlimentos)+num(k.gTransporte)+num(k.gEducacion)+num(k.gVivienda)+num(k.gPersonal)+num(k.gLimpieza)+num(k.gVestido)+num(k.gSalud)+num(k.gOtrosGastos);
     const deudas=num(k.dCajas)+num(k.dBancos)+num(k.dArrendamiento)+num(k.dPrestamistas);
     const egresosTot=fam*(1+P.u.margenGastos)+deudas;
@@ -1039,7 +1081,7 @@ const APP={
     const cobCuota=pl.cuotaMensual>0?disponible/pl.cuotaMensual:0;
     let r1=0;
     if(cobCuota>=P.u.cobCuotaBuena)r1=10;else if(cobCuota>=P.u.cobCuotaMin)r1=5;
-    else vetos.push('Capacidad de pago: la cobertura de la cuota es '+(isFinite(cobCuota)?cobCuota.toFixed(2):'0.00')+', menor al mínimo de '+P.u.cobCuotaMin.toFixed(2)+'.');
+    else if(!tieneNegocio)vetos.push('Capacidad de pago: la cobertura de la cuota es '+(isFinite(cobCuota)?cobCuota.toFixed(2):'0.00')+', menor al mínimo de '+P.u.cobCuotaMin.toFixed(2)+'.');
     const ratioGI=ingresos>0?egresosTot/ingresos:1;
     const r2=ratioGI<P.u.gastosIngBueno?10:ratioGI<P.u.gastosIngMedio?3:0;
     const ratioGCI=ingresos>0?(egresosTot+pl.cuotaMensual)/ingresos:1;
@@ -1060,7 +1102,7 @@ const APP={
     const pctCuotaIng=ingresos>0?pl.cuotaMensual/ingresos:1;
     const ratioCompromisos=ingresos>0?(deudas+pl.cuotaMensual)/ingresos:1;
     let plazoIdeal=null;
-    if(capDisponible>0&&pl.monto>0){for(let m=1;m<=360;m++){if(this.plan(s.datos,pl.monto,m).cuotaMensual<=capDisponible){plazoIdeal=m;break}}}
+    if(capDisponible>0&&pl.monto>0){for(let m=1;m<=360;m++){if(this.plan(s.datos,pl.monto,m,true).cuotaMensual<=capDisponible){plazoIdeal=m;break}}}
 
     // CAPITAL
     const cp=s.capital;
@@ -1451,7 +1493,7 @@ const APP={
       </select>`;
     const prodSel=d.producto?cfg.productos.find(p=>p.nombre===d.producto):null;
     const ver=this.verScore();
-    const productoOpts=cfg.productos.map(p=>`<option value="${esc(p.nombre)}" ${d.producto===p.nombre?'selected':''}>${esc(p.nombre)} (hasta ${p.plazoMax} meses, ${p.tasaAnual}%)</option>`).join('');
+    const productoOpts=cfg.productos.map(p=>`<option value="${esc(p.nombre)}" ${d.producto===p.nombre?'selected':''}>${esc(p.nombre)} (hasta ${p.plazoMax} meses, ${p.tasaAnual}%${p.sinIva?' sin IVA':''})</option>`).join('');
 
     return this.renderSection('Solicitante',s.sucursal+' · '+s.analista,
       this.renderField('Nombre del solicitante','Como aparece en su identificación',`<input class="input" type="text" value="${esc(d.nombre)}" data-action="updText" data-path="datos.nombre">`)+
@@ -1488,27 +1530,29 @@ const APP={
         <option value="true" ${d.esPrimerEmpleo?'selected':''}>Sí</option>
       </select>`)+
       this.renderField('Destino del crédito','Capital de trabajo, activo fijo, ciclo agrícola...',`<input class="input" type="text" value="${esc(d.destino)}" data-action="updText" data-path="datos.destino">`)+
-      this.renderField('Dependientes económicos','Se usa para el gasto familiar de referencia',`<input class="input" type="text" inputmode="decimal" value="${d.dependientes}" data-action="updNum" data-path="datos.dependientes" min="0">`)
+      this.renderField('Dependientes económicos','Se usa para el gasto familiar de referencia',`<input class="input" type="text" inputmode="decimal" value="${fnum(d.dependientes)}" data-action="updNum" data-path="datos.dependientes" min="0">`)
     )+
     this.renderSection('Producto y condiciones del crédito','Cuota mensual equivalente '+mx(E.pl.cuotaMensual),
       this.renderField('Producto de crédito','Seleccione del catálogo de productos configurado',`<select class="input" data-action="updText" data-path="datos.producto">
         <option value="">Seleccione un producto...</option>${productoOpts}
       </select>`)+
-      this.renderField('Monto solicitado','En pesos mexicanos',`<input class="input" type="text" inputmode="decimal" value="${d.monto}" data-action="updNum" data-path="datos.monto" min="1000">`)+
-      this.renderField('Plazo en meses',prodSel?'Máximo del producto: '+prodSel.plazoMax+' meses':'Seleccione un producto para ver el límite',`<input class="input" type="text" inputmode="decimal" value="${d.plazo}" data-action="updNum" data-path="datos.plazo" min="1"${prodSel?' max="'+prodSel.plazoMax+'"':''}>`)+
-      this.renderField('Tasa de interés anual (%)',prodSel?'Máximo del producto: '+prodSel.tasaAnual+'%':'Seleccione un producto para ver el límite',`<input class="input" type="text" inputmode="decimal" value="${d.tasaPct}" data-action="updNum" data-path="datos.tasaPct" min="0" step="0.1"${prodSel?' max="'+prodSel.tasaAnual+'"':''}>`)+
+      this.renderField('Monto solicitado','En pesos mexicanos',`<input class="input" type="text" inputmode="decimal" value="${fnum(d.monto)}" data-action="updNum" data-path="datos.monto" min="1000">`)+
+      this.renderField('Plazo en meses',prodSel?'Máximo del producto: '+prodSel.plazoMax+' meses':'Seleccione un producto para ver el límite',`<input class="input" type="text" inputmode="decimal" value="${fnum(d.plazo)}" data-action="updNum" data-path="datos.plazo" min="1"${prodSel?' max="'+prodSel.plazoMax+'"':''}>`)+
+      this.renderField('Tasa de interés anual (%)',prodSel?'Máximo del producto: '+prodSel.tasaAnual+'%':'Seleccione un producto para ver el límite',`<input class="input" type="text" inputmode="decimal" value="${fnum(d.tasaPct)}" data-action="updNum" data-path="datos.tasaPct" min="0" step="0.1"${prodSel?' max="'+prodSel.tasaAnual+'"':''}>`)+
       this.renderField('Periodicidad de pago','Frecuencia de los pagos',`<select class="input" data-action="updText" data-path="datos.periodicidad">
         ${PERIODICIDADES.map(p=>`<option value="${p[0]}" ${d.periodicidad===p[0]?'selected':''}>${p[1]}</option>`).join('')}
       </select>`)+
+      this.renderField('Fecha de disposición','Fecha en que se entrega el crédito; con saldos insolutos el interés de cada pago se calcula por los días transcurridos desde el pago anterior',`<input class="input" type="date" value="${esc(d.fechaDisposicion||'')}" data-action="updText" data-path="datos.fechaDisposicion">`)+
       this.renderField('Tipo de plan','Método de amortización',`<select class="input" data-action="updText" data-path="datos.plan">
         <option value="fijo" ${d.plan==='fijo'?'selected':''}>Pagos fijos</option>
         <option value="insolutos" ${d.plan==='insolutos'?'selected':''}>Sobre saldos insolutos</option>
       </select>`)+
       this.renderField('Número de pagos',Math.abs(E.pl.mesesPlan-E.pl.meses)>0.01?'<span style="color:var(--a2700)">Con pagos '+((PERIODICIDADES.find(p=>p[0]===d.periodicidad)||[])[1]||'').toLowerCase()+'s el plazo de '+E.pl.meses+' meses no da pagos completos: se calculan '+E.pl.n+' pagos ('+(+E.pl.mesesPlan.toFixed(1))+' meses).</span>':'',(d.periodicidad==='pago_unico'?'1':String(E.pl.n)))+
       this.renderField(Math.abs(E.pl.ultimoPago-E.pl.cuotaIva)>0.005?'Primer pago con IVA':'Pago por periodo con IVA',Math.abs(E.pl.ultimoPago-E.pl.cuotaIva)>0.005?'Capital, interés e IVA · el último pago es de '+mx(E.pl.ultimoPago):'Capital, interés e IVA',`<strong>${mx(E.pl.cuotaIva)}</strong>`)+
-      this.renderField('Interés total del crédito','Más IVA de '+mx(E.pl.iva),`<strong>${mx(E.pl.totalInt)}</strong>`)+
-      this.renderField('Total a pagar','Monto más interés e IVA · el detalle está en Capacidad › Plan de pagos',`<strong>${mx(E.pl.total)}</strong>`)
-    );
+      this.renderField('IVA sobre intereses',E.pl.ivaPct>0?'Tasa con IVA: '+(num(d.tasaPct)*(1+E.pl.ivaPct)).toFixed(2)+'% anual':'El producto está configurado sin IVA',`<strong>${E.pl.ivaPct>0?pct(E.pl.ivaPct):'Sin IVA'}</strong>`)+
+      this.renderField('Interés total del crédito',E.pl.ivaPct>0?'Más IVA de '+mx(E.pl.iva):'Sin IVA',`<strong>${mx(E.pl.totalInt)}</strong>`)+
+      this.renderField('Total a pagar','Monto más interés e IVA · el detalle está en el plan de pagos',`<strong>${mx(E.pl.total)}</strong>`)
+    )+this.renderPlanPagos(s,E);
   },
 
   renderTabCaracter(s,E){
@@ -1542,13 +1586,13 @@ const APP={
 
     let domFields=this.renderField('Tipo de vivienda','Tenencia del domicilio declarado',this.renderRadio('vivienda',OPC.vivienda,c.vivienda,'caracter.vivienda'),E.sub.pVi);
     domFields+=this.renderField('Tiempo en el domicilio actual','Capture en años y meses',`<div style="display:flex;gap:10px">
-      <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.resAnios}" data-action="updNum" data-path="caracter.resAnios" min="0"></div>
-      <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.resMeses}" data-action="updNum" data-path="caracter.resMeses" min="0" max="11"></div>
+      <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.resAnios)}" data-action="updNum" data-path="caracter.resAnios" min="0"></div>
+      <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.resMeses)}" data-action="updNum" data-path="caracter.resMeses" min="0" max="11"></div>
     </div>`,E.sub.pRe.toFixed(0));
     if(totalResMeses<6){
       domFields+=this.renderField('Tiempo en vivienda anterior','Menos de 6 meses en vivienda actual: se evalúa la anterior'+(ver?'. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts':''),`<div style="display:flex;gap:10px">
-        <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.resPrevAnios}" data-action="updNum" data-path="caracter.resPrevAnios" min="0"></div>
-        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.resPrevMeses}" data-action="updNum" data-path="caracter.resPrevMeses" min="0" max="11"></div>
+        <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.resPrevAnios)}" data-action="updNum" data-path="caracter.resPrevAnios" min="0"></div>
+        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.resPrevMeses)}" data-action="updNum" data-path="caracter.resPrevMeses" min="0" max="11"></div>
       </div>`);
     }
 
@@ -1557,13 +1601,13 @@ const APP={
       labFields+=this.renderField('Tiempo en la actividad actual','<strong>Primer empleo:</strong> no se evalúa antigüedad laboral',`<strong>No aplica (primer empleo)</strong>`,'10');
     }else{
       labFields+=this.renderField('Tiempo en la actividad actual','Capture en años y meses',`<div style="display:flex;gap:10px">
-        <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.labAnios}" data-action="updNum" data-path="caracter.labAnios" min="0"></div>
-        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.labMeses}" data-action="updNum" data-path="caracter.labMeses" min="0" max="11"></div>
+        <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.labAnios)}" data-action="updNum" data-path="caracter.labAnios" min="0"></div>
+        <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.labMeses)}" data-action="updNum" data-path="caracter.labMeses" min="0" max="11"></div>
       </div>`,E.sub.pAn.toFixed(0));
       if(totalLabMeses<6){
         labFields+=this.renderField('Tiempo en actividad anterior','Menos de 6 meses: se evalúa la anterior'+(ver?'. 6+ meses: 3 pts · 12+ meses: 7 pts · 18+ meses: 10 pts':''),`<div style="display:flex;gap:10px">
-          <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${c.labPrevAnios}" data-action="updNum" data-path="caracter.labPrevAnios" min="0"></div>
-          <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${c.labPrevMeses}" data-action="updNum" data-path="caracter.labPrevMeses" min="0" max="11"></div>
+          <div class="field" style="flex:1"><label>Años</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.labPrevAnios)}" data-action="updNum" data-path="caracter.labPrevAnios" min="0"></div>
+          <div class="field" style="flex:1"><label>Meses</label><input class="input" type="text" inputmode="decimal" value="${fnum(c.labPrevMeses)}" data-action="updNum" data-path="caracter.labPrevMeses" min="0" max="11"></div>
         </div>`);
       }
     }
@@ -1602,52 +1646,55 @@ const APP={
     else if(E.capDisponible<=0)plazoTxt='Sin capacidad: sus deudas actuales ya ocupan el 30% de sus ingresos';
     else if(E.plazoIdeal==null)plazoTxt='Más de 360 meses: considere un monto menor';
     else plazoTxt=E.plazoIdeal+' meses'+(prodSel&&E.plazoIdeal>prodSel.plazoMax?' · excede el máximo del producto ('+prodSel.plazoMax+' meses)':E.plazoIdeal<=num(s.datos.plazo)?' · el plazo solicitado ('+num(s.datos.plazo)+' meses) es suficiente':' · el plazo solicitado ('+num(s.datos.plazo)+' meses) es menor al ideal');
-    return this.renderSection('Ingresos mensuales',mx(E.ingresos)+' declarados',
-      this.renderField('Ingresos por trabajo','Sueldos, salarios, honorarios',`<input class="input" type="text" inputmode="decimal" value="${k.ingTrabajo}" data-action="updNum" data-path="capacidad.ingTrabajo" min="0">`)+
-      this.renderField('Arrendamientos de vivienda o cualquier activo','Rentas que recibe',`<input class="input" type="text" inputmode="decimal" value="${k.ingArrendamiento}" data-action="updNum" data-path="capacidad.ingArrendamiento" min="0">`)+
-      this.renderField('Ingresos por intereses','Rendimientos financieros',`<input class="input" type="text" inputmode="decimal" value="${k.ingIntereses}" data-action="updNum" data-path="capacidad.ingIntereses" min="0">`)+
-      this.renderField('Transferencias','Remesas, apoyos gubernamentales, pensiones',`<input class="input" type="text" inputmode="decimal" value="${k.ingTransferencias}" data-action="updNum" data-path="capacidad.ingTransferencias" min="0">`)+
-      this.renderField('Otros ingresos','Cualquier otro ingreso recurrente',`<input class="input" type="text" inputmode="decimal" value="${k.ingOtros}" data-action="updNum" data-path="capacidad.ingOtros" min="0">`)
-    )+
+    return (E.tieneNegocio?this.renderSection('Ingresos mensuales',mx(E.ingresos)+' netos del flujo',
+      `<div style="background:var(--a100);border:1px solid var(--div);padding:12px 16px;margin:10px 0;border-radius:3px;font:400 13.5px/1.5 var(--font);color:var(--a900)">El solicitante tiene un negocio: sus ingresos se capturan en el <strong>Flujo de efectivo</strong>. Aquí se usa el promedio mensual del flujo: ingresos sin préstamos menos gastos del negocio. La capacidad no se niega por cobertura de la cuota; esa revisión se hace en el flujo. Los gastos familiares y las deudas sí se capturan aquí y pasan solos al flujo.</div>`+
+      this.renderField('Ingreso mensual neto del negocio','Promedio de los '+E.flujo.mesesFlujo+' meses del flujo',`<strong>${mx(E.ingresos)}</strong>`)
+    ):this.renderSection('Ingresos mensuales',mx(E.ingresos)+' declarados',
+      this.renderField('Ingresos por trabajo','Sueldos, salarios, honorarios',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.ingTrabajo)}" data-action="updNum" data-path="capacidad.ingTrabajo" min="0">`)+
+      this.renderField('Arrendamientos de vivienda o cualquier activo','Rentas que recibe',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.ingArrendamiento)}" data-action="updNum" data-path="capacidad.ingArrendamiento" min="0">`)+
+      this.renderField('Ingresos por intereses','Rendimientos financieros',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.ingIntereses)}" data-action="updNum" data-path="capacidad.ingIntereses" min="0">`)+
+      this.renderField('Transferencias','Remesas, apoyos gubernamentales, pensiones',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.ingTransferencias)}" data-action="updNum" data-path="capacidad.ingTransferencias" min="0">`)+
+      this.renderField('Otros ingresos','Cualquier otro ingreso recurrente',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.ingOtros)}" data-action="updNum" data-path="capacidad.ingOtros" min="0">`)
+    ))+
     this.renderSection('Egresos mensuales','Referencia mínima '+mx(E.gastoRef)+' por '+s.datos.dependientes+' dependientes',
-      this.renderField('Alimentos, bebidas y tabaco','',`<input class="input" type="text" inputmode="decimal" value="${k.gAlimentos}" data-action="updNum" data-path="capacidad.gAlimentos" min="0">`)+
-      this.renderField('Transporte y comunicaciones','Teléfono, celular, plan de celular, combustible',`<input class="input" type="text" inputmode="decimal" value="${k.gTransporte}" data-action="updNum" data-path="capacidad.gTransporte" min="0">`)+
-      this.renderField('Educación y esparcimiento','Recreación, entretenimiento, membresías de streaming',`<input class="input" type="text" inputmode="decimal" value="${k.gEducacion}" data-action="updNum" data-path="capacidad.gEducacion" min="0">`)+
-      this.renderField('Vivienda y servicios','Luz, agua, gas, renta o mantenimiento',`<input class="input" type="text" inputmode="decimal" value="${k.gVivienda}" data-action="updNum" data-path="capacidad.gVivienda" min="0">`)+
-      this.renderField('Cuidados personales','',`<input class="input" type="text" inputmode="decimal" value="${k.gPersonal}" data-action="updNum" data-path="capacidad.gPersonal" min="0">`)+
-      this.renderField('Artículos para limpieza y cuidado de la casa','',`<input class="input" type="text" inputmode="decimal" value="${k.gLimpieza}" data-action="updNum" data-path="capacidad.gLimpieza" min="0">`)+
-      this.renderField('Vestido y calzado','',`<input class="input" type="text" inputmode="decimal" value="${k.gVestido}" data-action="updNum" data-path="capacidad.gVestido" min="0">`)+
-      this.renderField('Salud','Médicos, medicamentos, seguros',`<input class="input" type="text" inputmode="decimal" value="${k.gSalud}" data-action="updNum" data-path="capacidad.gSalud" min="0">`)+
-      this.renderField('Transferencias y otros gastos','',`<input class="input" type="text" inputmode="decimal" value="${k.gOtrosGastos}" data-action="updNum" data-path="capacidad.gOtrosGastos" min="0">`)+
+      this.renderField('Alimentos, bebidas y tabaco','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gAlimentos)}" data-action="updNum" data-path="capacidad.gAlimentos" min="0">`)+
+      this.renderField('Transporte y comunicaciones','Teléfono, celular, plan de celular, combustible',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gTransporte)}" data-action="updNum" data-path="capacidad.gTransporte" min="0">`)+
+      this.renderField('Educación y esparcimiento','Recreación, entretenimiento, membresías de streaming',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gEducacion)}" data-action="updNum" data-path="capacidad.gEducacion" min="0">`)+
+      this.renderField('Vivienda y servicios','Luz, agua, gas, renta o mantenimiento',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gVivienda)}" data-action="updNum" data-path="capacidad.gVivienda" min="0">`)+
+      this.renderField('Cuidados personales','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gPersonal)}" data-action="updNum" data-path="capacidad.gPersonal" min="0">`)+
+      this.renderField('Artículos para limpieza y cuidado de la casa','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gLimpieza)}" data-action="updNum" data-path="capacidad.gLimpieza" min="0">`)+
+      this.renderField('Vestido y calzado','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gVestido)}" data-action="updNum" data-path="capacidad.gVestido" min="0">`)+
+      this.renderField('Salud','Médicos, medicamentos, seguros',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gSalud)}" data-action="updNum" data-path="capacidad.gSalud" min="0">`)+
+      this.renderField('Transferencias y otros gastos','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gOtrosGastos)}" data-action="updNum" data-path="capacidad.gOtrosGastos" min="0">`)+
       this.renderField('Alerta de subdeclaración','Regla de gastos básicos mínimos por persona',`<strong>${E.alertaGastos?'Revisar: declara menos que el valor de referencia':'Sin observación'}</strong>`)+
       (E.gastoMinPct>0?this.renderField('Alerta de gasto mínimo','Gastos familiares declarados ÷ ingresos; se espera al menos '+pct(E.gastoMinPct)+' · solo informativa, no afecta el score',
         E.ingresos>0?`<strong>${pct(E.ratioGastoFam)}</strong> · ${E.alertaGastoMin?'<strong style="color:var(--a2700)">Revisar: posible subdeclaración de gastos</strong>':'Sin observación'}`:'<strong>Capture los ingresos para calcularla</strong>'):'')
     )+
     this.renderSection('Deudas con terceros','',
-      this.renderField('Pagos a cooperativas, cajas o financieras','',`<input class="input" type="text" inputmode="decimal" value="${k.dCajas}" data-action="updNum" data-path="capacidad.dCajas" min="0">`)+
-      this.renderField('Pagos a bancos y tarjetas de crédito','',`<input class="input" type="text" inputmode="decimal" value="${k.dBancos}" data-action="updNum" data-path="capacidad.dBancos" min="0">`)+
-      this.renderField('Arrendamientos y factorajes','',`<input class="input" type="text" inputmode="decimal" value="${k.dArrendamiento}" data-action="updNum" data-path="capacidad.dArrendamiento" min="0">`)+
-      this.renderField('Prestamistas y préstamos familiares','',`<input class="input" type="text" inputmode="decimal" value="${k.dPrestamistas}" data-action="updNum" data-path="capacidad.dPrestamistas" min="0">`)
+      this.renderField('Pagos a cooperativas, cajas o financieras','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.dCajas)}" data-action="updNum" data-path="capacidad.dCajas" min="0">`)+
+      this.renderField('Pagos a bancos y tarjetas de crédito','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.dBancos)}" data-action="updNum" data-path="capacidad.dBancos" min="0">`)+
+      this.renderField('Arrendamientos y factorajes','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.dArrendamiento)}" data-action="updNum" data-path="capacidad.dArrendamiento" min="0">`)+
+      this.renderField('Prestamistas y préstamos familiares','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.dPrestamistas)}" data-action="updNum" data-path="capacidad.dPrestamistas" min="0">`)
     )+
     this.renderSection('Indicadores de capacidad de pago',ver?pct(E.pesosC.capacidad)+' del score 5C · '+pct(E.capacidad):'',
       this.renderField('Disponible mensual','Ingresos menos egresos con margen',`<strong>${mx(E.disponible)}</strong>`)+
       this.renderField('Cuota mensual equivalente',this.textoCuotaMensual(s.datos,E.pl),`<strong>${mx(E.pl.cuotaMensual)}</strong>`)+
-      this.renderField('Cobertura de la cuota',ver?'Mínimo '+P.u.cobCuotaMin.toFixed(2):'Disponible mensual ÷ cuota mensual',`<strong>${E.cobCuota.toFixed(2)}</strong>`,E.sub.r1.toFixed(0))+
+      this.renderField('Cobertura de la cuota',E.tieneNegocio?'Disponible mensual ÷ cuota mensual · informativa: con negocio se revisa en el flujo':ver?'Mínimo '+P.u.cobCuotaMin.toFixed(2):'Disponible mensual ÷ cuota mensual',`<strong>${E.cobCuota.toFixed(2)}</strong>`,E.sub.r1.toFixed(0))+
       this.renderField('Gastos sobre ingresos',ver?'Debajo de '+pct(P.u.gastosIngBueno)+' es óptimo':'Egresos con margen ÷ ingresos',`<strong>${pct(E.ratioGI)}</strong>`,E.sub.r2.toFixed(0))+
       this.renderField('Gastos más cuota sobre ingresos',ver?'Debajo de '+pct(P.u.gastosCuotaBueno)+' es óptimo':'(Egresos con margen + cuota) ÷ ingresos',`<strong>${pct(E.ratioGCI)}</strong>`,E.sub.r3.toFixed(0))+
       this.renderField('Capacidad máxima de pago','Hasta el 30% de los ingresos mensuales ('+mx(E.ingresos)+')',`<strong>${mx(E.capMaxPago)}</strong>`)+
       this.renderField('Cuota solicitada sobre ingresos','La mensualidad no debe superar el 30% de los ingresos',`<strong>${pct(E.pctCuotaIng)}</strong> · ${dentro(E.pctCuotaIng)}`)+
       this.renderField('Nivel de compromisos financieros','Deudas actuales ('+mx(E.deudas)+') más la cuota solicitada ('+mx(E.pl.cuotaMensual)+'); máximo 30% de los ingresos',`<strong>${pct(E.ratioCompromisos)}</strong> · ${dentro(E.ratioCompromisos)}`)+
       this.renderField('Plazo ideal','Plazo mínimo en que la cuota cabe en el 30% de los ingresos, descontando las deudas actuales ('+mx(Math.max(0,E.capDisponible))+' disponibles)',`<strong>${plazoTxt}</strong>`)
-    )+this.renderPlanPagos(s,E);
+    );
   },
 
   textoCuotaMensual(d,pl){
     const per=((PERIODICIDADES.find(p=>p[0]===d.periodicidad)||[])[1]||'').toLowerCase();
     if(d.periodicidad==='pago_unico')return 'Total a pagar ('+mx(pl.total)+') entre los '+pl.meses+' meses del plazo';
     if(d.periodicidad==='pago_unico_periodico')return 'Interés mensual con IVA ('+mx(pl.cuotaIva)+') más el capital entre los '+pl.meses+' meses ('+mx(pl.monto/pl.meses)+')';
-    if(pl.porAnio===12)return d.plan==='insolutos'?'Primer pago, el más alto del plan':'Pago mensual fijo con IVA';
-    return (d.plan==='insolutos'?'Primer pago '+per+', el más alto, ':'Pago '+per+' fijo ')+'de '+mx(pl.cuotaIva)+' × '+pl.porAnio+' pagos al año ÷ 12 meses';
+    if(pl.porAnio===12)return d.plan==='insolutos'?'Pago más alto del plan':'Pago mensual fijo';
+    return (d.plan==='insolutos'?'Pago '+per+' más alto ':'Pago '+per+' fijo ')+'('+mx(pl.pagoMaximo)+') × '+pl.porAnio+' pagos al año ÷ 12 meses';
   },
 
   renderPlanPagos(s,E){
@@ -1655,13 +1702,14 @@ const APP={
     const sum=k=>filas.reduce((a,f)=>a+f[k],0);
     const td='padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap';
     const mesTxt=m=>MESES[((m%12)+12)%12].slice(0,3)+' A'+(Math.floor(m/12)+1);
+    const conFecha=filas.some(f=>f.fecha),conDias=!!E.pl.porDias;
     return this.renderSection('Plan de pagos',filas.length+' pago'+(filas.length>1?'s':'')+' · total '+mx(E.pl.total),
-      `<p style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin:8px 0 10px">${s.datos.plan==='insolutos'&&!/^pago_unico/.test(s.datos.periodicidad)?'Saldos insolutos: el capital se paga en partes iguales y el interés se calcula sobre el saldo, por eso los pagos bajan.':/^pago_unico/.test(s.datos.periodicidad)?'':'Pagos fijos: el pago incluye el IVA del interés; al bajar el saldo, una parte mayor abona a capital.'} Tasa del periodo: ${(num(s.datos.tasaPct)/(E.pl.porAnio||1)).toFixed(4)}%${E.pl.porAnio&&!/^pago_unico/.test(s.datos.periodicidad)?' ('+num(s.datos.tasaPct)+'% anual ÷ '+E.pl.porAnio+' pagos)':''} · IVA ${pct(num(this.state.params.u.ivaInteres))} sobre el interés. Estos pagos son los que «Autopoblar préstamo» coloca en el flujo de efectivo.</p>
+      `<p style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin:8px 0 10px">${conDias?'Saldos insolutos: el capital se paga en partes iguales y el interés de cada pago es saldo × '+num(s.datos.tasaPct)+'% ÷ '+(num(this.state.params.u.baseDias)||360)+' × días transcurridos desde el pago anterior.':s.datos.plan==='insolutos'&&!/^pago_unico/.test(s.datos.periodicidad)?'Saldos insolutos: el capital se paga en partes iguales y el interés se calcula sobre el saldo, por eso los pagos bajan. Capture la fecha de disposición para calcularlo por días transcurridos.':/^pago_unico/.test(s.datos.periodicidad)?'':'Pagos fijos: el pago incluye el IVA del interés; al bajar el saldo, una parte mayor abona a capital.'} ${conDias?'':'Tasa del periodo: '+(num(s.datos.tasaPct)/(E.pl.porAnio||1)).toFixed(4)+'%'+(E.pl.porAnio&&!/^pago_unico/.test(s.datos.periodicidad)?' ('+num(s.datos.tasaPct)+'% anual ÷ '+E.pl.porAnio+' pagos)':'')+' · '}${E.pl.ivaPct>0?'IVA '+pct(E.pl.ivaPct)+' sobre el interés.':'Producto sin IVA.'} Estos pagos son los que «Autopoblar préstamo» coloca en el flujo de efectivo.</p>
       <div style="overflow:auto;max-height:420px;border:1px solid var(--div)">
       <table class="table" style="min-width:720px;margin:0">
-        <thead><tr><th style="text-align:right">Pago</th><th>Mes</th><th style="text-align:right">Saldo inicial</th><th style="text-align:right">Capital</th><th style="text-align:right">Interés</th><th style="text-align:right">IVA</th><th style="text-align:right">Pago total</th><th style="text-align:right">Saldo final</th></tr></thead>
-        <tbody>${filas.map(f=>`<tr><td style="${td}">${f.k}</td><td style="white-space:nowrap">${mesTxt(f.mes)}</td><td style="${td}">${mx(f.saldoIni)}</td><td style="${td}">${mx(f.capital)}</td><td style="${td}">${mx(f.interes)}</td><td style="${td}">${mx(f.iva)}</td><td style="${td};font-weight:600">${mx(f.pago)}</td><td style="${td}">${mx(Math.max(0,f.saldoFin))}</td></tr>`).join('')}
-          <tr style="background:var(--n200);font-weight:600"><td colspan="3">Totales</td><td style="${td}">${mx(sum('capital'))}</td><td style="${td}">${mx(sum('interes'))}</td><td style="${td}">${mx(sum('iva'))}</td><td style="${td}">${mx(sum('pago'))}</td><td></td></tr>
+        <thead><tr><th style="text-align:right">Pago</th>${conFecha?'<th>Fecha</th>':''}${conDias?'<th style="text-align:right">Días</th>':''}<th>Mes del flujo</th><th style="text-align:right">Saldo inicial</th><th style="text-align:right">Capital</th><th style="text-align:right">Interés</th><th style="text-align:right">IVA</th><th style="text-align:right">Pago total</th><th style="text-align:right">Saldo final</th></tr></thead>
+        <tbody>${filas.map(f=>`<tr><td style="${td}">${f.k}</td>${conFecha?`<td style="white-space:nowrap">${f.fecha?fechaTxt(f.fecha):''}</td>`:''}${conDias?`<td style="${td}">${f.dias}</td>`:''}<td style="white-space:nowrap">${mesTxt(f.mes)}</td><td style="${td}">${mx(f.saldoIni)}</td><td style="${td}">${mx(f.capital)}</td><td style="${td}">${mx(f.interes)}</td><td style="${td}">${mx(f.iva)}</td><td style="${td};font-weight:600">${mx(f.pago)}</td><td style="${td}">${mx(Math.max(0,f.saldoFin))}</td></tr>`).join('')}
+          <tr style="background:var(--n200);font-weight:600"><td colspan="${3+(conFecha?1:0)+(conDias?1:0)}">Totales</td><td style="${td}">${mx(sum('capital'))}</td><td style="${td}">${mx(sum('interes'))}</td><td style="${td}">${mx(sum('iva'))}</td><td style="${td}">${mx(sum('pago'))}</td><td></td></tr>
         </tbody>
       </table></div>`);
   },
@@ -1673,19 +1721,19 @@ const APP={
     ACTIVOS_FIJOS.forEach(a=>{
       const it=af[a[0]]||{monto:0,comprobante:'ninguno'};
       activoFijoFields+=this.renderField(a[1],'',`<div style="display:flex;gap:10px;align-items:flex-end">
-        <div class="field" style="flex:1"><label>Monto declarado</label><input class="input" type="text" inputmode="decimal" value="${it.monto}" data-action="updActivoFijo" data-key="${a[0]}" data-prop="monto" min="0"></div>
+        <div class="field" style="flex:1"><label>Monto declarado</label><input class="input" type="text" inputmode="decimal" value="${fnum(it.monto)}" data-action="updActivoFijo" data-key="${a[0]}" data-prop="monto" min="0"></div>
         <div class="field" style="flex:1.5"><label>Comprobante</label><select class="input" data-action="updActivoFijo" data-key="${a[0]}" data-prop="comprobante">
           ${COMPROBANTES_ACTIVO.map(c2=>`<option value="${c2[0]}" ${it.comprobante===c2[0]?'selected':''}>${c2[1]}</option>`).join('')}
         </select></div>
       </div>`);
     });
     return this.renderSection('Activos totales — lo que tiene','Total de activos: '+mx(E.activos),
-      this.renderField('Activo circulante','Efectivo, inventarios, cuentas por cobrar',`<input class="input" type="text" inputmode="decimal" value="${cp.activoCirculante}" data-action="updNum" data-path="capital.activoCirculante" min="0">`)
+      this.renderField('Activo circulante','Efectivo, inventarios, cuentas por cobrar',`<input class="input" type="text" inputmode="decimal" value="${fnum(cp.activoCirculante)}" data-action="updNum" data-path="capital.activoCirculante" min="0">`)
     )+
     this.renderSection('Activo fijo desglosado','Total '+mx(E.activoFijoTotal)+' · con escritura o factura: '+mx(E.activoFijoComprobado),activoFijoFields)+
     this.renderSection('Pasivos totales — lo que debe',mx(num(cp.pasivoCorto)+num(cp.pasivoLargo)),
-      this.renderField('Pasivo de corto plazo','Vencimientos dentro de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoCorto}" data-action="updNum" data-path="capital.pasivoCorto" min="0">`)+
-      this.renderField('Pasivo de largo plazo','Vencimientos a más de doce meses',`<input class="input" type="text" inputmode="decimal" value="${cp.pasivoLargo}" data-action="updNum" data-path="capital.pasivoLargo" min="0">`)
+      this.renderField('Pasivo de corto plazo','Vencimientos dentro de doce meses',`<input class="input" type="text" inputmode="decimal" value="${fnum(cp.pasivoCorto)}" data-action="updNum" data-path="capital.pasivoCorto" min="0">`)+
+      this.renderField('Pasivo de largo plazo','Vencimientos a más de doce meses',`<input class="input" type="text" inputmode="decimal" value="${fnum(cp.pasivoLargo)}" data-action="updNum" data-path="capital.pasivoLargo" min="0">`)
     )+
     this.renderSection('Indicadores de capital',ver?pct(P.bloques.capital)+' del score 5C · '+pct(E.capital):'',
       this.renderField('Activos totales','Activo circulante más activo fijo',`<strong>${mx(E.activos)}</strong>`)+
@@ -1724,16 +1772,16 @@ const APP={
     const parcialTxt=gar&&num(gar.parcial)>0?' · desde '+veces(gar.parcial)+' veces califica con '+pct(num(gar.puntajeParcial)):'';
     if(gar&&gar.medida==='cuota'&&num(gar.personas)>=2){
       const ayuda='Cada garante debe cubrir al menos '+veces(gar.cobertura)+' veces la cuota mensual'+parcialTxt;
-      campos+=this.renderField('Ingresos mensuales del primer garante',ayuda,`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante1}" data-action="updNum" data-path="colateral.ingGarante1" min="0">`);
-      campos+=this.renderField('Ingresos mensuales del segundo garante',ayuda,`<input class="input" type="text" inputmode="decimal" value="${g.ingGarante2}" data-action="updNum" data-path="colateral.ingGarante2" min="0">`);
+      campos+=this.renderField('Ingresos mensuales del primer garante',ayuda,`<input class="input" type="text" inputmode="decimal" value="${fnum(g.ingGarante1)}" data-action="updNum" data-path="colateral.ingGarante1" min="0">`);
+      campos+=this.renderField('Ingresos mensuales del segundo garante',ayuda,`<input class="input" type="text" inputmode="decimal" value="${fnum(g.ingGarante2)}" data-action="updNum" data-path="colateral.ingGarante2" min="0">`);
     }else if(gar&&gar.medida==='cuota'){
-      campos+=this.renderField('Ingresos mensuales del aval, codeudor o garante','Debe cubrir al menos '+veces(gar.cobertura)+' veces la cuota mensual'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${g.ingAval}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
+      campos+=this.renderField('Ingresos mensuales del aval, codeudor o garante','Debe cubrir al menos '+veces(gar.cobertura)+' veces la cuota mensual'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${fnum(g.ingAval)}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
     }else if(gar&&gar.medida==='monto'){
-      campos+=this.renderField('Valor de la garantía','Avalúo, depósito o valor del colateral · cobertura exigida: '+veces(gar.cobertura)+' veces el monto del crédito'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
+      campos+=this.renderField('Valor de la garantía','Avalúo, depósito o valor del colateral · cobertura exigida: '+veces(gar.cobertura)+' veces el monto del crédito'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${fnum(g.avaluo)}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
     }else if(gar&&gar.medida==='mixta'){
       const mixta=Array.isArray(g.mixta)?g.mixta:[];
       const elegibles=cat.filter(x=>(x.medida==='cuota'||x.medida==='monto')&&(x.activa!==false||mixta.some(v=>v.tipo===x.clave)));
-      const inp=(clave,prop,v)=>`<input class="input" type="text" inputmode="decimal" value="${num(v)}" data-action="updMixta" data-clave="${esc(clave)}" data-prop="${prop}" min="0">`;
+      const inp=(clave,prop,v)=>`<input class="input" type="text" inputmode="decimal" value="${fnum(num(v))}" data-action="updMixta" data-clave="${esc(clave)}" data-prop="${prop}" min="0">`;
       campos+=this.renderField('Garantías que la integran','Marque las que presenta el solicitante. Cada una aporta la parte de su cobertura requerida que cubre, hasta 100%; la suma debe llegar a '+pct(num(gar.cobertura))+' de lo requerido'+(num(gar.parcial)>0?' · desde '+pct(num(gar.parcial))+' califica con '+pct(num(gar.puntajeParcial)):''),
         `<div style="display:flex;flex-direction:column;gap:10px">${elegibles.map(x=>{
           const v=mixta.find(m=>m.tipo===x.clave);
@@ -1756,7 +1804,7 @@ const APP={
     const mkRow=(key,label)=>{
       const arr=s.flujo[key]||[];
       let cells='';
-      for(let m=0;m<meses;m++)cells+=`<td><input type="text" inputmode="decimal" value="${arr[m]||0}" data-action="updFlujo" data-key="${key}" data-mes="${m}" step="any"></td>`;
+      for(let m=0;m<meses;m++)cells+=`<td><input type="text" inputmode="decimal" value="${fnum(arr[m]||0)}" data-action="updFlujo" data-key="${key}" data-mes="${m}" step="any"></td>`;
       return `<tr><td style="position:sticky;left:0;background:var(--bg);padding:5px 10px;font:400 12.5px/1.3 var(--font);white-space:nowrap;z-index:1">${label}</td>${cells}</tr>`;
     };
     const totRow=(label,arr)=>`<tr><td style="position:sticky;left:0;background:var(--n200);padding:6px 10px;font:600 12.5px/1.3 var(--font);white-space:nowrap;z-index:1">${label}</td>${arr.slice(0,meses).map(x=>`<td style="background:var(--n200);padding:6px;font:600 12px/1.2 var(--font);text-align:right;white-space:nowrap">${mx(x)}</td>`).join('')}</tr>`;
@@ -1769,7 +1817,7 @@ const APP={
 
     return `
     <div style="background:var(--a2100);border:1px solid var(--accent2);padding:10px 14px;margin-bottom:12px;border-radius:3px;font:400 13px/1.5 var(--font);color:var(--a2800)"><strong>Flujo de efectivo requerido:</strong> ${E.tieneNegocio?'el solicitante tiene un negocio o empresa':'el solicitante tiene ingresos variables o un gasto importante programado en el año'}. Complete el flujo mensual para una evaluación precisa.</div>
-    <div style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin-bottom:14px">Los datos de Capacidad se cargan solos: ingresos por trabajo en <strong>${E.tieneNegocio?'Ventas':'Sueldos'}</strong>, rentas, intereses y transferencias en <strong>Otros ingresos</strong>, gastos familiares en <strong>Egresos familiares</strong> y deudas en <strong>Pago a otras Entidades Financieras</strong>. Si modifica un mes de esos renglones, el renglón deja de actualizarse.</div>
+    <div style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin-bottom:14px">${E.tieneNegocio?'Capture aquí los ingresos del negocio. De Capacidad se cargan solos':'Los datos de Capacidad se cargan solos: ingresos por trabajo en <strong>Sueldos</strong>, rentas, intereses y transferencias en <strong>Otros ingresos</strong>,'} gastos familiares en <strong>Egresos familiares</strong> y deudas en <strong>Pago a otras Entidades Financieras</strong>. Si modifica un mes de esos renglones, el renglón deja de actualizarse.</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
       <button class="btn btn-s" data-action="recargarFlujo">Recargar desde Capacidad</button>
       <button class="btn btn-p" data-action="autoPopularFlujo">Autopoblar préstamo de la Institución</button>
@@ -2183,10 +2231,10 @@ const APP={
     ${st.configTab==='productos'?`
     <div class="config-card">
       <h3>Catálogo de productos de crédito</h3>
-      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Defina los productos disponibles con sus tasas, plazos y montos mínimos y máximos.</p>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Defina los productos disponibles con sus tasas, plazos y montos mínimos y máximos. «Con IVA» suma el IVA de los intereses a cada pago (la tasa efectiva queda con IVA); «Sin IVA» calcula los pagos solo con la tasa de interés. Haga clic en la columna para cambiarlo.</p>
       <div style="overflow-x:auto">
       <table class="table" style="margin-bottom:20px;min-width:700px">
-        <thead><tr><th>Producto</th><th style="text-align:right">Plazo máx. (meses)</th><th style="text-align:right">Tasa anual (%)</th><th style="text-align:right">Monto mínimo</th><th style="text-align:right">Monto máximo</th><th></th></tr></thead>
+        <thead><tr><th>Producto</th><th style="text-align:right">Plazo máx. (meses)</th><th style="text-align:right">Tasa anual (%)</th><th style="text-align:right">Monto mínimo</th><th style="text-align:right">Monto máximo</th><th>IVA sobre intereses</th><th></th></tr></thead>
         <tbody>
           ${cfg.productos.map((p,i)=>`<tr>
             <td>${esc(p.nombre)}</td>
@@ -2194,6 +2242,7 @@ const APP={
             <td style="text-align:right">${p.tasaAnual}%</td>
             <td style="text-align:right">${mx(p.montoMin||0)}</td>
             <td style="text-align:right">${mx(p.montoMax||0)}</td>
+            <td><button class="btn btn-g" data-action="toggleIvaProducto" data-idx="${i}" style="padding:4px 9px;font-size:12px">${p.sinIva?'Sin IVA':'Con IVA'}</button></td>
             <td style="text-align:right"><button class="btn btn-g" data-action="borrarProducto" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
           </tr>`).join('')}
         </tbody>
@@ -2204,7 +2253,8 @@ const APP={
         <div class="field"><label>Plazo máximo (meses)</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoPlazo" value="${st.nuevoProducto.plazoMax}" min="1"></div>
         <div class="field"><label>Tasa anual (%)</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoTasa" value="${st.nuevoProducto.tasaAnual}" min="0" step="0.1"></div>
         <div class="field"><label>Monto mínimo</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoMontoMin" value="${st.nuevoProducto.montoMin}" min="0"></div>
-        <div class="field"><label>Monto máximo</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoMontoMax" value="${st.nuevoProducto.montoMax}" min="0"></div>
+        <div class="field"><label>Monto máximo</label><input class="input" type="text" inputmode="decimal" id="nuevoProductoMontoMax" value="${fnum(st.nuevoProducto.montoMax)}" min="0"></div>
+        <div class="field"><label>IVA sobre intereses</label><select class="input" id="nuevoProductoIva"><option value="con">Con IVA</option><option value="sin">Sin IVA</option></select></div>
         <button class="btn btn-p" data-action="agregarProducto">Agregar</button>
       </div>
     </div>`:''}
@@ -2366,7 +2416,8 @@ const APP={
         ${mkRow('Endeudamiento actual máximo','',''+P.u.endActVeto,'u.endActVeto')}
         ${mkRow('Endeudamiento máximo con el crédito','',''+P.u.endProyVeto,'u.endProyVeto')}
         ${mkRow('Créditos con atraso tolerados','',''+P.u.atrasosVeto,'u.atrasosVeto')}
-        ${mkRow('IVA sobre intereses','',''+P.u.ivaInteres,'u.ivaInteres')}
+        ${mkRow('IVA sobre intereses','Se aplica a los productos marcados con IVA',''+P.u.ivaInteres,'u.ivaInteres')}
+        ${mkRow('Base de días del año','Saldos insolutos: interés = saldo × tasa anual ÷ base × días transcurridos',''+(num(P.u.baseDias)||360),'u.baseDias')}
       </section>
     </div>
     ${esSuper?`<div style="display:flex;gap:8px;margin-top:34px">
@@ -2700,9 +2751,17 @@ const APP={
         const montoMax=num(document.getElementById('nuevoProductoMontoMax')?.value);
         if(!nombre)return;
         const cfg=JSON.parse(JSON.stringify(st.config));
-        cfg.productos.push({nombre,plazoMax:plazo,tasaAnual:tasa,montoMin,montoMax});
+        const sinIva=document.getElementById('nuevoProductoIva')?.value==='sin';
+        cfg.productos.push(Object.assign({nombre,plazoMax:plazo,tasaAnual:tasa,montoMin,montoMax},sinIva?{sinIva:true}:{}));
         this.state.config=cfg;this.persist();this.log('Producto agregado',nombre);
         this.set({nuevoProducto:{nombre:'',plazoMax:24,tasaAnual:18,montoMin:0,montoMax:0}});
+        break;
+      }
+      case 'toggleIvaProducto':{
+        const cfg=JSON.parse(JSON.stringify(st.config));
+        const pr=cfg.productos[parseInt(el.dataset.idx)];if(!pr)break;
+        if(pr.sinIva)delete pr.sinIva;else pr.sinIva=true;
+        this.state.config=cfg;this.persist();this.log('Producto '+(pr.sinIva?'sin':'con')+' IVA sobre intereses',pr.nombre);this.render();
         break;
       }
       case 'borrarProducto':{
