@@ -451,6 +451,8 @@ const OCUPACIONES_VER=2;
 const REGLAS_DEFAULT={ocultarScore:false,tipoIngreso:false,margenUtilidad:false,gastoMinimoPct:0};
 function migrarConfig(c,u){
   if(!Array.isArray(c.garantias)||!c.garantias.length)c.garantias=garantiasIniciales(u);
+  else if(c.garantiasVer!==GARANTIAS_VER&&!c.garantias.some(g=>g.medida==='mixta'))c.garantias=c.garantias.concat([JSON.parse(JSON.stringify(GARANTIAS_DEFAULT.find(g=>g.clave==='mixta')))]);
+  c.garantiasVer=GARANTIAS_VER;
   c.reglas=Object.assign({},REGLAS_DEFAULT,c.reglas||{});
   if(!c.margenesGiro||typeof c.margenesGiro!=='object')c.margenesGiro={};
   if(c.ocupacionesVer!==OCUPACIONES_VER&&Array.isArray(c.ocupaciones)){
@@ -595,9 +597,14 @@ const GARANTIAS_DEFAULT=[
   {clave:'hipoteca',nombre:'Hipoteca',medida:'monto',personas:1,cobertura:2,parcial:0,puntajeParcial:0.7,activa:true},
   {clave:'ahorro_garantia',nombre:'Ahorros o inversiones depositadas como garantía en la Institución',medida:'monto',personas:1,cobertura:1,parcial:0,puntajeParcial:0.7,activa:true},
   {clave:'sin_aval_garantia_liquida',nombre:'Sin aval pero con garantía líquida',medida:'monto',personas:1,cobertura:1,parcial:0,puntajeParcial:0.7,activa:true},
-  {clave:'ninguna',nombre:'Sin garantía',medida:'ninguna',personas:1,cobertura:0,parcial:0,puntajeParcial:0,activa:true}
+  {clave:'ninguna',nombre:'Sin garantía',medida:'ninguna',personas:1,cobertura:0,parcial:0,puntajeParcial:0,activa:true},
+  {clave:'mixta',nombre:'Garantía mixta (combinación de garantías)',medida:'mixta',personas:1,cobertura:1,parcial:0,puntajeParcial:0.7,activa:true}
 ];
-const MEDIDAS_GARANTIA=[['cuota','Ingresos contra la cuota'],['monto','Valor contra el monto'],['ninguna','No aporta cobertura']];
+// medida «mixta»: el analista combina varias garantías del catálogo; cada una aporta la parte de su cobertura
+// requerida que cubre (hasta 100%) y la suma se compara con la cobertura de la mixta (1 = 100% de lo requerido).
+const MEDIDAS_GARANTIA=[['cuota','Ingresos contra la cuota'],['monto','Valor contra el monto'],['mixta','Combinación de garantías'],['ninguna','No aporta cobertura']];
+const GARANTIAS_VER=2;
+const usaGarantia=(s,clave)=>!!s.colateral&&(s.colateral.tipo===clave||(s.colateral.tipo&&Array.isArray(s.colateral.mixta)&&s.colateral.mixta.some(x=>x.tipo===clave)));
 // Las coberturas de prenda, hipoteca y ahorro estaban en los parámetros; se conservan al crear el catálogo.
 function garantiasIniciales(u){
   const g=JSON.parse(JSON.stringify(GARANTIAS_DEFAULT));
@@ -711,7 +718,7 @@ function nuevaSolicitud(folio,user){
       dCajas:0,dBancos:0,dArrendamiento:0,dPrestamistas:0},
     capital:{activoCirculante:0,activosFijos:{terreno:{monto:0,comprobante:'ninguno'},inmueble:{monto:0,comprobante:'ninguno'},vehiculo:{monto:0,comprobante:'ninguno'},maquinaria:{monto:0,comprobante:'ninguno'},ganado:{monto:0,comprobante:'ninguno'},mobiliario:{monto:0,comprobante:'ninguno'},otroFijo:{monto:0,comprobante:'ninguno'}},pasivoCorto:0,pasivoLargo:0},
     condiciones:{fuente:0,sector:0,entorno:0,antigNegocio:0},
-    colateral:{tipo:'garantes',ingGarante1:0,ingGarante2:0,avaluo:0,ingAval:0},
+    colateral:{tipo:'garantes',ingGarante1:0,ingGarante2:0,avaluo:0,ingAval:0,mixta:[]},
     flujo,flujoAuto:{},flujoAnios:1,flujoMesPago:11,
     canvas,
     resolucion:null,bitacora:[{ts:Date.now(),accion:'Solicitud creada',quien:user.nombre}]
@@ -775,7 +782,7 @@ const APP={
     cfg.garantias=JSON.parse(JSON.stringify(this.garantias()));
     const g=cfg.garantias[i];if(!g)return null;
     if(prop==='nombre')g.nombre=String(val);
-    else if(prop==='medida')g.medida=['cuota','monto','ninguna'].includes(val)?val:'monto';
+    else if(prop==='medida')g.medida=['cuota','monto','mixta','ninguna'].includes(val)?val:'monto';
     else if(prop==='personas')g.personas=num(val)>=2?2:1;
     else if(prop==='puntajeParcial')g.puntajeParcial=Math.min(100,Math.max(0,num(val)))/100;
     else if(prop==='cobertura'||prop==='parcial')g[prop]=Math.max(0,num(val));
@@ -829,23 +836,12 @@ const APP={
 
   // Renglones del préstamo de la Institución según monto, plazo, tasa y periodicidad de la solicitud.
   prestamoFlujo(sol){
-    const d=sol.datos,pl=this.plan(d),per=d.periodicidad;
-    const mesesFlujo=this.aniosFlujo(sol)*12,plazo=num(d.plazo);
+    const d=sol.datos,mesesFlujo=this.aniosFlujo(sol)*12;
     const prestamoInst=new Array(96).fill(0),pagoInst=new Array(96).fill(0);
     prestamoInst[0]=num(d.monto);
-    if(per==='anual'){
-      pagoInst[Math.min(mesesFlujo-1,Math.max(0,num(sol.flujoMesPago)))]=Math.round(pl.cuotaIva);
-    }else if(per==='pago_unico'){
-      pagoInst[Math.min(mesesFlujo-1,Math.max(0,plazo-1))]=Math.round(pl.total);
-    }else if(per==='pago_unico_periodico'){
-      const intMensual=num(d.monto)*(num(d.tasaPct)/100/12);
-      const ivaInt=intMensual*this.state.params.u.ivaInteres;
-      for(let m=0;m<Math.min(mesesFlujo,plazo);m++)pagoInst[m]=Math.round(intMensual+ivaInt);
-      pagoInst[Math.min(mesesFlujo-1,Math.max(0,plazo-1))]=Math.round(num(d.monto)+intMensual+ivaInt);
-    }else{
-      // Pagos periódicos: la cuota mensual equivalente durante el plazo.
-      for(let m=0;m<Math.min(mesesFlujo,plazo);m++)pagoInst[m]=Math.round(pl.cuotaMensual);
-    }
+    // Cada pago de la tabla de amortización en el mes en que se cubre; la suma es capital, interés e IVA.
+    this.tablaPagos(d,Math.min(mesesFlujo-1,Math.max(0,num(sol.flujoMesPago)))).forEach(f=>{if(f.mes>=0&&f.mes<96)pagoInst[f.mes]+=f.pago});
+    for(let m=0;m<96;m++)pagoInst[m]=Math.round(pagoInst[m]);
     return {prestamoInst,pagoInst};
   },
 
@@ -907,7 +903,8 @@ const APP={
       const intTotal=monto*tasaAnual*(meses/12);
       const cuotaUnica=monto+intTotal;
       const cuotaMensual=cuotaUnica/Math.max(1,meses);
-      return {monto,meses,n:1,porAnio:0,cuota:cuotaUnica,cuotaIva:cuotaUnica+intTotal*P.u.ivaInteres,cuotaMensual:cuotaMensual+intTotal*P.u.ivaInteres/Math.max(1,meses),totalInt:intTotal,iva:intTotal*P.u.ivaInteres,total:cuotaUnica+intTotal*P.u.ivaInteres};
+      const cuotaIva=cuotaUnica+intTotal*P.u.ivaInteres;
+      return {monto,meses,n:1,porAnio:0,cuota:cuotaUnica,cuotaIva,ultimoPago:cuotaIva,cuotaMensual:cuotaMensual+intTotal*P.u.ivaInteres/Math.max(1,meses),totalInt:intTotal,iva:intTotal*P.u.ivaInteres,total:cuotaIva,mesesPlan:meses};
     }
     if(datos.periodicidad==='pago_unico_periodico'){
       const iPeriodo=tasaAnual/12;
@@ -915,23 +912,46 @@ const APP={
       const totalInt=intMensual*meses;
       const cuotaInt=intMensual;
       const cuotaMensual=intMensual+intMensual*P.u.ivaInteres+monto/Math.max(1,meses);
-      return {monto,meses,n:meses,porAnio:12,cuota:cuotaInt,cuotaIva:cuotaInt+cuotaInt*P.u.ivaInteres,cuotaMensual,totalInt,iva:totalInt*P.u.ivaInteres,total:monto+totalInt+totalInt*P.u.ivaInteres};
+      return {monto,meses,n:meses,porAnio:12,cuota:cuotaInt,cuotaIva:cuotaInt+cuotaInt*P.u.ivaInteres,ultimoPago:monto+cuotaInt+cuotaInt*P.u.ivaInteres,cuotaMensual,totalInt,iva:totalInt*P.u.ivaInteres,total:monto+totalInt+totalInt*P.u.ivaInteres,mesesPlan:meses};
     }
 
+    // Pagos periódicos: la tasa del periodo es la anual entre los pagos por año y el IVA se cobra sobre el interés de cada pago.
+    const IVA=num(P.u.ivaInteres);
     const n=Math.max(1,Math.round(meses/12*porAnio));
-    const i=tasaAnual/porAnio;
-    let cuota,totalInt;
+    const i=tasaAnual/porAnio,iIva=i*(1+IVA);
+    let primerPago,ultimoPago,totalInt;
     if(datos.plan==='insolutos'){
-      const cap=monto/n;const prim=cap+monto*i;
-      cuota=prim;totalInt=monto*i*(n+1)/2;
+      // Capital igual en cada pago e interés con IVA sobre el saldo: el primer pago es el más alto.
+      const cap=monto/n;
+      primerPago=cap+monto*iIva;ultimoPago=cap+cap*iIva;
+      totalInt=monto*i*(n+1)/2;
     }else{
-      cuota=i>0?monto*i/(1-Math.pow(1+i,-n)):monto/n;
-      totalInt=cuota*n-monto;
+      // Pago fijo con IVA incluido: cada pago cubre el interés y su IVA, y el resto abona a capital.
+      primerPago=ultimoPago=iIva>0?monto*iIva/(1-Math.pow(1+iIva,-n)):monto/n;
+      totalInt=(primerPago*n-monto)/(1+IVA);
     }
-    const intPeriodo=totalInt/n;
-    const cuotaIva=cuota+intPeriodo*P.u.ivaInteres;
-    const cuotaMensual=cuotaIva*porAnio/12;
-    return {monto,meses,n,porAnio,cuota,cuotaIva,cuotaMensual,totalInt,iva:totalInt*P.u.ivaInteres,total:cuotaIva*n};
+    const iva=totalInt*IVA;
+    return {monto,meses,n,porAnio,cuota:primerPago-monto*i*IVA,cuotaIva:primerPago,ultimoPago,cuotaMensual:primerPago*porAnio/12,totalInt,iva,total:monto+totalInt+iva,mesesPlan:n*12/porAnio};
+  },
+
+  // Tabla de amortización. «mes» es el mes del flujo (0 = primer mes) en que cae cada pago; con pagos
+  // anuales el primero cae en mesAnual (el mes del pago analizado) y los siguientes cada doce meses.
+  tablaPagos(datos,mesAnual){
+    const pl=this.plan(datos),IVA=num(this.state.params.u.ivaInteres),tasa=num(datos.tasaPct)/100;
+    const filas=[];let saldo=pl.monto;
+    const fila=(mes,capital,interes)=>{const iva=interes*IVA;filas.push({k:filas.length+1,mes,saldoIni:saldo,capital,interes,iva,pago:capital+interes+iva,saldoFin:saldo-capital});saldo-=capital};
+    if(datos.periodicidad==='pago_unico')fila(pl.meses-1,pl.monto,pl.totalInt);
+    else if(datos.periodicidad==='pago_unico_periodico'){const im=pl.monto*tasa/12;for(let m=0;m<pl.meses;m++)fila(m,m===pl.meses-1?pl.monto:0,im)}
+    else{
+      const i=tasa/pl.porAnio;
+      for(let k=1;k<=pl.n;k++){
+        const interes=saldo*i;
+        const capital=k===pl.n?saldo:datos.plan==='insolutos'?pl.monto/pl.n:pl.cuotaIva-interes*(1+IVA);
+        const mes=datos.periodicidad==='anual'&&mesAnual!=null?mesAnual%12+12*(k-1):Math.ceil(k*12/pl.porAnio)-1;
+        fila(mes,capital,interes);
+      }
+    }
+    return filas;
   },
 
   // Años del flujo: como mínimo los que abarca el plazo solicitado, hasta 8.
@@ -1077,11 +1097,26 @@ const APP={
 
     // COLATERAL
     const g=s.colateral;let colateral=0;let colTxt='';
-    const gar=garantiaDe(g.tipo,this.garantias());
+    const catGar=this.garantias(),gar=garantiaDe(g.tipo,catGar);
     const califica=x=>x>=num(gar.cobertura)?1:(num(gar.parcial)>0&&x>=num(gar.parcial)?Math.min(1,Math.max(0,num(gar.puntajeParcial))):0);
     const resultado=()=>colateral>=1?' — aceptable':colateral>0?' — cobertura parcial ('+pct(colateral)+')':' — insuficiente';
+    // Cobertura de una garantía con sus propios datos: con dos garantes cuenta el que cubre menos.
+    const coberturaDe=(gx,v)=>gx.medida==='cuota'
+      ?Math.min(...(num(gx.personas)>=2?[num(v.ingGarante1),num(v.ingGarante2)]:[num(v.ingAval)]).map(x=>pl.cuotaMensual>0?x/pl.cuotaMensual:0))
+      :pl.monto>0?num(v.avaluo)/pl.monto:0;
     if(!gar){
       colTxt='Garantía no configurada en el catálogo';
+    }else if(gar.medida==='mixta'){
+      const partes=(Array.isArray(g.mixta)?g.mixta:[]).map(v=>({v,gx:garantiaDe(v.tipo,catGar)})).filter(x=>x.gx&&(x.gx.medida==='cuota'||x.gx.medida==='monto'));
+      let suma=0;
+      const txt=partes.map(({v,gx})=>{
+        const cov=coberturaDe(gx,v),req=num(gx.cobertura);
+        const aporte=req>0?Math.min(1,cov/req):(cov>0?1:0);
+        suma+=aporte;
+        return gx.nombre+' '+cov.toFixed(2)+' de '+req.toFixed(2)+' ('+pct(aporte)+')';
+      });
+      colateral=califica(suma);
+      colTxt=partes.length?gar.nombre+': '+txt.join(' + ')+' = '+pct(suma)+' de la cobertura requerida; se requiere '+pct(num(gar.cobertura))+resultado():gar.nombre+': seleccione las garantías que la integran — insuficiente';
     }else if(gar.medida==='cuota'){
       const ingG=num(gar.personas)>=2?[num(g.ingGarante1),num(g.ingGarante2)]:[num(g.ingAval)];
       const cobs=ingG.map(x=>pl.cuotaMensual>0?x/pl.cuotaMensual:0);
@@ -1469,9 +1504,10 @@ const APP={
         <option value="fijo" ${d.plan==='fijo'?'selected':''}>Pagos fijos</option>
         <option value="insolutos" ${d.plan==='insolutos'?'selected':''}>Sobre saldos insolutos</option>
       </select>`)+
-      this.renderField('Número de pagos','',(d.periodicidad==='pago_unico'?'1':String(E.pl.n)))+
-      this.renderField('Pago por periodo con IVA','Capital, interés e IVA',`<strong>${mx(E.pl.cuotaIva)}</strong>`)+
-      this.renderField('Interés total del crédito','Más IVA de '+mx(E.pl.iva),`<strong>${mx(E.pl.totalInt)}</strong>`)
+      this.renderField('Número de pagos',Math.abs(E.pl.mesesPlan-E.pl.meses)>0.01?'<span style="color:var(--a2700)">Con pagos '+((PERIODICIDADES.find(p=>p[0]===d.periodicidad)||[])[1]||'').toLowerCase()+'s el plazo de '+E.pl.meses+' meses no da pagos completos: se calculan '+E.pl.n+' pagos ('+(+E.pl.mesesPlan.toFixed(1))+' meses).</span>':'',(d.periodicidad==='pago_unico'?'1':String(E.pl.n)))+
+      this.renderField(Math.abs(E.pl.ultimoPago-E.pl.cuotaIva)>0.005?'Primer pago con IVA':'Pago por periodo con IVA',Math.abs(E.pl.ultimoPago-E.pl.cuotaIva)>0.005?'Capital, interés e IVA · el último pago es de '+mx(E.pl.ultimoPago):'Capital, interés e IVA',`<strong>${mx(E.pl.cuotaIva)}</strong>`)+
+      this.renderField('Interés total del crédito','Más IVA de '+mx(E.pl.iva),`<strong>${mx(E.pl.totalInt)}</strong>`)+
+      this.renderField('Total a pagar','Monto más interés e IVA · el detalle está en Capacidad › Plan de pagos',`<strong>${mx(E.pl.total)}</strong>`)
     );
   },
 
@@ -1595,7 +1631,7 @@ const APP={
     )+
     this.renderSection('Indicadores de capacidad de pago',ver?pct(E.pesosC.capacidad)+' del score 5C · '+pct(E.capacidad):'',
       this.renderField('Disponible mensual','Ingresos menos egresos con margen',`<strong>${mx(E.disponible)}</strong>`)+
-      this.renderField('Cuota mensual equivalente','Del plan de pagos propuesto',`<strong>${mx(E.pl.cuotaMensual)}</strong>`)+
+      this.renderField('Cuota mensual equivalente',this.textoCuotaMensual(s.datos,E.pl),`<strong>${mx(E.pl.cuotaMensual)}</strong>`)+
       this.renderField('Cobertura de la cuota',ver?'Mínimo '+P.u.cobCuotaMin.toFixed(2):'Disponible mensual ÷ cuota mensual',`<strong>${E.cobCuota.toFixed(2)}</strong>`,E.sub.r1.toFixed(0))+
       this.renderField('Gastos sobre ingresos',ver?'Debajo de '+pct(P.u.gastosIngBueno)+' es óptimo':'Egresos con margen ÷ ingresos',`<strong>${pct(E.ratioGI)}</strong>`,E.sub.r2.toFixed(0))+
       this.renderField('Gastos más cuota sobre ingresos',ver?'Debajo de '+pct(P.u.gastosCuotaBueno)+' es óptimo':'(Egresos con margen + cuota) ÷ ingresos',`<strong>${pct(E.ratioGCI)}</strong>`,E.sub.r3.toFixed(0))+
@@ -1603,7 +1639,31 @@ const APP={
       this.renderField('Cuota solicitada sobre ingresos','La mensualidad no debe superar el 30% de los ingresos',`<strong>${pct(E.pctCuotaIng)}</strong> · ${dentro(E.pctCuotaIng)}`)+
       this.renderField('Nivel de compromisos financieros','Deudas actuales ('+mx(E.deudas)+') más la cuota solicitada ('+mx(E.pl.cuotaMensual)+'); máximo 30% de los ingresos',`<strong>${pct(E.ratioCompromisos)}</strong> · ${dentro(E.ratioCompromisos)}`)+
       this.renderField('Plazo ideal','Plazo mínimo en que la cuota cabe en el 30% de los ingresos, descontando las deudas actuales ('+mx(Math.max(0,E.capDisponible))+' disponibles)',`<strong>${plazoTxt}</strong>`)
-    );
+    )+this.renderPlanPagos(s,E);
+  },
+
+  textoCuotaMensual(d,pl){
+    const per=((PERIODICIDADES.find(p=>p[0]===d.periodicidad)||[])[1]||'').toLowerCase();
+    if(d.periodicidad==='pago_unico')return 'Total a pagar ('+mx(pl.total)+') entre los '+pl.meses+' meses del plazo';
+    if(d.periodicidad==='pago_unico_periodico')return 'Interés mensual con IVA ('+mx(pl.cuotaIva)+') más el capital entre los '+pl.meses+' meses ('+mx(pl.monto/pl.meses)+')';
+    if(pl.porAnio===12)return d.plan==='insolutos'?'Primer pago, el más alto del plan':'Pago mensual fijo con IVA';
+    return (d.plan==='insolutos'?'Primer pago '+per+', el más alto, ':'Pago '+per+' fijo ')+'de '+mx(pl.cuotaIva)+' × '+pl.porAnio+' pagos al año ÷ 12 meses';
+  },
+
+  renderPlanPagos(s,E){
+    const filas=this.tablaPagos(s.datos,Math.min(E.flujo.mesesFlujo-1,Math.max(0,num(s.flujoMesPago))));
+    const sum=k=>filas.reduce((a,f)=>a+f[k],0);
+    const td='padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap';
+    const mesTxt=m=>MESES[((m%12)+12)%12].slice(0,3)+' A'+(Math.floor(m/12)+1);
+    return this.renderSection('Plan de pagos',filas.length+' pago'+(filas.length>1?'s':'')+' · total '+mx(E.pl.total),
+      `<p style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin:8px 0 10px">${s.datos.plan==='insolutos'&&!/^pago_unico/.test(s.datos.periodicidad)?'Saldos insolutos: el capital se paga en partes iguales y el interés se calcula sobre el saldo, por eso los pagos bajan.':/^pago_unico/.test(s.datos.periodicidad)?'':'Pagos fijos: el pago incluye el IVA del interés; al bajar el saldo, una parte mayor abona a capital.'} Tasa del periodo: ${(num(s.datos.tasaPct)/(E.pl.porAnio||1)).toFixed(4)}%${E.pl.porAnio&&!/^pago_unico/.test(s.datos.periodicidad)?' ('+num(s.datos.tasaPct)+'% anual ÷ '+E.pl.porAnio+' pagos)':''} · IVA ${pct(num(this.state.params.u.ivaInteres))} sobre el interés. Estos pagos son los que «Autopoblar préstamo» coloca en el flujo de efectivo.</p>
+      <div style="overflow:auto;max-height:420px;border:1px solid var(--div)">
+      <table class="table" style="min-width:720px;margin:0">
+        <thead><tr><th style="text-align:right">Pago</th><th>Mes</th><th style="text-align:right">Saldo inicial</th><th style="text-align:right">Capital</th><th style="text-align:right">Interés</th><th style="text-align:right">IVA</th><th style="text-align:right">Pago total</th><th style="text-align:right">Saldo final</th></tr></thead>
+        <tbody>${filas.map(f=>`<tr><td style="${td}">${f.k}</td><td style="white-space:nowrap">${mesTxt(f.mes)}</td><td style="${td}">${mx(f.saldoIni)}</td><td style="${td}">${mx(f.capital)}</td><td style="${td}">${mx(f.interes)}</td><td style="${td}">${mx(f.iva)}</td><td style="${td};font-weight:600">${mx(f.pago)}</td><td style="${td}">${mx(Math.max(0,f.saldoFin))}</td></tr>`).join('')}
+          <tr style="background:var(--n200);font-weight:600"><td colspan="3">Totales</td><td style="${td}">${mx(sum('capital'))}</td><td style="${td}">${mx(sum('interes'))}</td><td style="${td}">${mx(sum('iva'))}</td><td style="${td}">${mx(sum('pago'))}</td><td></td></tr>
+        </tbody>
+      </table></div>`);
   },
 
   renderTabCapital(s,E){
@@ -1670,6 +1730,21 @@ const APP={
       campos+=this.renderField('Ingresos mensuales del aval, codeudor o garante','Debe cubrir al menos '+veces(gar.cobertura)+' veces la cuota mensual'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${g.ingAval}" data-action="updNum" data-path="colateral.ingAval" min="0">`);
     }else if(gar&&gar.medida==='monto'){
       campos+=this.renderField('Valor de la garantía','Avalúo, depósito o valor del colateral · cobertura exigida: '+veces(gar.cobertura)+' veces el monto del crédito'+parcialTxt,`<input class="input" type="text" inputmode="decimal" value="${g.avaluo}" data-action="updNum" data-path="colateral.avaluo" min="0">`);
+    }else if(gar&&gar.medida==='mixta'){
+      const mixta=Array.isArray(g.mixta)?g.mixta:[];
+      const elegibles=cat.filter(x=>(x.medida==='cuota'||x.medida==='monto')&&(x.activa!==false||mixta.some(v=>v.tipo===x.clave)));
+      const inp=(clave,prop,v)=>`<input class="input" type="text" inputmode="decimal" value="${num(v)}" data-action="updMixta" data-clave="${esc(clave)}" data-prop="${prop}" min="0">`;
+      campos+=this.renderField('Garantías que la integran','Marque las que presenta el solicitante. Cada una aporta la parte de su cobertura requerida que cubre, hasta 100%; la suma debe llegar a '+pct(num(gar.cobertura))+' de lo requerido'+(num(gar.parcial)>0?' · desde '+pct(num(gar.parcial))+' califica con '+pct(num(gar.puntajeParcial)):''),
+        `<div style="display:flex;flex-direction:column;gap:10px">${elegibles.map(x=>{
+          const v=mixta.find(m=>m.tipo===x.clave);
+          let det='';
+          if(v){
+            if(x.medida==='monto')det=`<div class="field"><label>Valor de la garantía · se requieren ${veces(x.cobertura)} veces el monto</label>${inp(x.clave,'avaluo',v.avaluo)}</div>`;
+            else if(num(x.personas)>=2)det=`<div style="display:flex;gap:10px"><div class="field" style="flex:1"><label>Ingresos del primer garante</label>${inp(x.clave,'ingGarante1',v.ingGarante1)}</div><div class="field" style="flex:1"><label>Ingresos del segundo garante</label>${inp(x.clave,'ingGarante2',v.ingGarante2)}</div></div><div style="font:400 12px/1.4 var(--font);color:var(--n700)">Cada garante debe cubrir ${veces(x.cobertura)} veces la cuota mensual</div>`;
+            else det=`<div class="field"><label>Ingresos mensuales · se requieren ${veces(x.cobertura)} veces la cuota mensual</label>${inp(x.clave,'ingAval',v.ingAval)}</div>`;
+          }
+          return `<div style="border:1px solid var(--div);padding:8px 10px;border-radius:3px"><label style="display:flex;gap:8px;align-items:center;font:400 13.5px/1.4 var(--font);cursor:pointer"><input type="checkbox" data-action="toggleMixta" data-clave="${esc(x.clave)}" ${v?'checked':''} style="accent-color:var(--accent)"><span>${esc(x.nombre)}${x.activa===false?' (inactiva)':''}</span></label>${det?'<div style="margin-top:8px">'+det+'</div>':''}</div>`;
+        }).join('')}</div>`);
     }
     campos+=this.renderField('Calificación de la garantía',E.colTxt,`<strong>${E.colateral>=0.7?'Aceptable':'No aceptable'}</strong>`,pct(E.colateral));
     return this.renderSection('Colateral',this.verScore()?pct(E.pesosC.colateral)+' del score 5C':'',campos);
@@ -2039,7 +2114,7 @@ const APP={
 
   renderConfigGarantias(){
     const st=this.state,cat=this.garantias();
-    const enUso=clave=>st.solicitudes.filter(s=>s.colateral&&s.colateral.tipo===clave).length;
+    const enUso=clave=>st.solicitudes.filter(s=>usaGarantia(s,clave)).length;
     const inp=(i,prop,v,w)=>`<input class="input" type="text" inputmode="decimal" value="${esc(String(v))}" data-action="updGarantia" data-idx="${i}" data-prop="${prop}" style="width:${w}px;text-align:right">`;
     const selMedida=(attrs,v,w)=>`<select class="input" ${attrs} style="width:${w||'100%'}">${MEDIDAS_GARANTIA.map(m=>`<option value="${m[0]}" ${v===m[0]?'selected':''}>${m[1]}</option>`).join('')}</select>`;
     const selPersonas=(attrs,v,w)=>`<select class="input" ${attrs} style="width:${w||'100%'}"><option value="1" ${num(v)<2?'selected':''}>1</option><option value="2" ${num(v)>=2?'selected':''}>2</option></select>`;
@@ -2051,6 +2126,7 @@ const APP={
       <ul style="font:400 13px/1.55 var(--font);color:var(--n700);margin:0 0 14px;padding-left:18px">
         <li><strong>Ingresos contra la cuota:</strong> los ingresos mensuales de cada garante, aval o codeudor se dividen entre la cuota mensual del crédito. Con dos garantes, ambos deben cumplir.</li>
         <li><strong>Valor contra el monto:</strong> el avalúo, depósito o valor del bien se divide entre el monto solicitado.</li>
+        <li><strong>Combinación de garantías (mixta):</strong> en la solicitud se marcan varias garantías del catálogo con sus datos. Cada una aporta la parte que cubre de su propia cobertura requerida, hasta 100%, y la suma se compara con la cobertura de la mixta: 1 = 100% de lo requerido (por ejemplo, una prenda que cubre la mitad de lo exigido más un aval que cubre la otra mitad).</li>
         <li>Con la <strong>cobertura requerida</strong> la garantía califica al 100%. Con la <strong>cobertura parcial</strong> (0 = no aplica) califica con el porcentaje indicado; debajo, con 0%.</li>
       </ul>
       <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Los cambios se aplican de inmediato al score de las solicitudes. Una garantía que ya usa alguna solicitud no se puede quitar: desactívela para que no se ofrezca en solicitudes nuevas.</p>
@@ -2406,6 +2482,7 @@ const APP={
       else if(a==='updCanvasNota')this.upd('canvas.'+el.dataset.key+'.nota',el.value);
       else if(a==='updActivoFijo'){const sol=this.actual();if(!sol)return;const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};if(el.dataset.prop==='monto')af[el.dataset.key].monto=num(el.value);else af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}
       else if(a==='updGarantia'){this.updGarantia(parseInt(el.dataset.idx),el.dataset.prop,el.value);return}
+      else if(a==='updMixta'){const sol=this.actual();if(!sol)return;const arr=JSON.parse(JSON.stringify(sol.colateral.mixta||[]));const it=arr.find(x=>x.tipo===el.dataset.clave);if(!it)return;it[el.dataset.prop]=num(el.value);this.upd('colateral.mixta',arr)}
       else if(a==='updReglaPct'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.reglas=Object.assign({},REGLAS_DEFAULT,cfg.reglas||{});cfg.reglas[el.dataset.regla]=Math.max(0,Math.min(100,num(el.value)))/100;this.state.config=cfg;this.persist();return}
       else if(a==='updMargenGiro'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.margenesGiro=Object.assign({},cfg.margenesGiro||{});cfg.margenesGiro[el.dataset.clave]=num(el.value)/100;this.state.config=cfg;this.persist();return}
       else if(a==='updNivelPlazo'){const cfg=JSON.parse(JSON.stringify(this.state.config));cfg.nivelesOperacion[parseInt(el.dataset.idx)].plazoMax=num(el.value);this.state.config=cfg;this.persist()}
@@ -2426,6 +2503,13 @@ const APP={
         if(el.dataset.action==='updReglaPct')this.log('Regla de análisis modificada','Gasto mínimo esperado: '+pct(this.reglas().gastoMinimoPct));
         else this.log('Margen promedio del giro modificado',el.dataset.clave+': '+pct(margenGiroRef(el.dataset.clave,this.state.config)));
         this.render();return;
+      }
+      if(el&&el.dataset.action==='toggleMixta'){
+        const sol=this.actual();if(!sol)return;
+        let arr=JSON.parse(JSON.stringify(sol.colateral.mixta||[]));
+        if(el.checked){if(!arr.some(x=>x.tipo===el.dataset.clave))arr.push({tipo:el.dataset.clave,avaluo:0,ingAval:0,ingGarante1:0,ingGarante2:0})}
+        else arr=arr.filter(x=>x.tipo!==el.dataset.clave);
+        this.upd('colateral.mixta',arr);this.render();return;
       }
       if(el&&el.dataset.action==='updGarantia'){
         let g=el.tagName==='SELECT'?this.updGarantia(parseInt(el.dataset.idx),el.dataset.prop,el.value):this.garantias()[parseInt(el.dataset.idx)];
@@ -2695,7 +2779,7 @@ const APP={
       case 'borrarGarantia':{
         const cat=JSON.parse(JSON.stringify(this.garantias()));
         const i=parseInt(el.dataset.idx),g=cat[i];if(!g)break;
-        const n=st.solicitudes.filter(s=>s.colateral&&s.colateral.tipo===g.clave).length;
+        const n=st.solicitudes.filter(s=>usaGarantia(s,g.clave)).length;
         if(n){this.set({avisoGarantias:'«'+g.nombre+'» se usa en '+n+' solicitud'+(n>1?'es':'')+'; desactívela en lugar de quitarla.'});break}
         if(cat.length<=1||(g.activa!==false&&cat.filter(x=>x.activa!==false).length<=1)){this.set({avisoGarantias:'Debe quedar al menos una garantía activa.'});break}
         cat.splice(i,1);
@@ -2722,7 +2806,7 @@ const APP={
       case 'resetGarantias':{
         // Se conservan las garantías propias que ya usan solicitudes, para no dejarlas sin catálogo.
         const ini=garantiasIniciales(st.params.u);
-        const propias=this.garantias().filter(x=>!ini.some(y=>y.clave===x.clave)&&st.solicitudes.some(s=>s.colateral&&s.colateral.tipo===x.clave));
+        const propias=this.garantias().filter(x=>!ini.some(y=>y.clave===x.clave)&&st.solicitudes.some(s=>usaGarantia(s,x.clave)));
         this.state.config=Object.assign({},st.config,{garantias:ini.concat(propias)});this.persist();
         this.log('Catálogo de garantías restaurado','');this.set({avisoGarantias:''});
         break;
