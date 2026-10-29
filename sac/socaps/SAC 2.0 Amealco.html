@@ -556,10 +556,12 @@ const APP={
     const id=this.state.idActual;
     this.state.solicitudes=this.state.solicitudes.map(s=>{
       if(s.id!==id)return s;
-      const c=JSON.parse(JSON.stringify(s));
+      let c=JSON.parse(JSON.stringify(s));
+      const cat=this.state.config.ocupaciones||OCUPACIONES_DEFAULT,eraNegocio=tipoActividad(c.datos,cat)==='negocio';
       let ref=c;const parts=path.split('.');
       for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];
       ref[parts[parts.length-1]]=value;
+      if(path==='datos.tipoActividad'&&value==='negocio'&&!eraNegocio)c=this.quitarIngresosCapacidad(c);
       return /^(capacidad\.|datos\.|flujoAnios$|flujoMesPago$)/.test(path)?this.sincronizarFlujo(c):c;
     });
     this.persist();
@@ -593,6 +595,20 @@ const APP={
       if(intacto&&(forzar||previo!==objetivo[r]||auto[r]===undefined)){
         flujo[r]=new Array(96).fill(objetivo[r]);nuevoAuto[r]=objetivo[r];cambio=true;
       }
+    });
+    return cambio?{...sol,flujo,flujoAuto:nuevoAuto}:sol;
+  },
+
+  // Al pasar a negocio, los ingresos que se habían cargado desde Capacidad (que con negocio ya no se ven)
+  // se quitan del flujo, salvo que el analista haya modificado el renglón a mano.
+  quitarIngresosCapacidad(sol){
+    const auto=sol.flujoAuto;if(!auto)return sol;
+    const flujo={...sol.flujo},nuevoAuto={...auto};let cambio=false;
+    ['sueldos','remesas'].forEach(r=>{
+      if(auto[r]===undefined||!num(auto[r]))return;
+      const arr=flujo[r]||[],previo=num(auto[r]);
+      for(let m=0;m<96;m++)if(num(arr[m])!==previo)return;
+      flujo[r]=new Array(96).fill(0);nuevoAuto[r]=0;cambio=true;
     });
     return cambio?{...sol,flujo,flujoAuto:nuevoAuto}:sol;
   },
