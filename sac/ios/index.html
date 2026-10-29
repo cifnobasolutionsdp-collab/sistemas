@@ -162,9 +162,11 @@ select.input{appearance:auto}
 <script>
 'use strict';
 const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+const VERSION='2.0.1';
 // Cada archivo guarda sus datos aparte según su nombre ("SAC 2.0 Amealco.html" y "SAC 2.0 Coroneo.html" no se mezclan).
 // index.html y la carpeta publicada conservan la clave original para no perder los datos ya capturados.
-const LS_KEY=(()=>{const base='sac_sistema_2_0';try{const n=decodeURIComponent((location.pathname||'').split('/').pop()||'').replace(/\.html?$/i,'').trim().toLowerCase();return (!n||n==='index')?base:base+'::'+n}catch(e){return base}})();
+// El número de versión del nombre no cuenta: «SAC 2.0.1 Amealco.html» abre los datos de «SAC 2.0 Amealco.html».
+const LS_KEY=(()=>{const base='sac_sistema_2_0';try{const n=decodeURIComponent((location.pathname||'').split('/').pop()||'').replace(/\.html?$/i,'').trim().toLowerCase().replace(/\b2\.0\.\d+\b/,'2.0');return (!n||n==='index')?base:base+'::'+n}catch(e){return base}})();
 // Institución con la que arranca este archivo antes de configurarlo.
 const INSTITUCION_INICIAL={nombre:'',logotipo:'',reglas:{}};
 const mx=n=>(n<0?'-$':'$')+Math.abs(Math.round(n||0)).toLocaleString('es-MX');
@@ -1128,7 +1130,7 @@ const APP={
           </div>
           ${cfg.logotipo?`<img src="${cfg.logotipo}" alt="${esc(cfg.nombreInstitucion)}" style="display:block;max-height:110px;max-width:280px;object-fit:contain;margin-top:28px">`:''}
           <h1 style="font:600 64px/0.95 var(--fonth);margin:30px 0 0;letter-spacing:-.02em">SAC</h1>
-          <div style="font:400 28px/1 var(--fonth);color:var(--a700);margin-top:6px">2.0</div>
+          <div style="font:400 28px/1 var(--fonth);color:var(--a700);margin-top:6px">${VERSION}</div>
           <p style="font:400 16px/1.55 var(--font);max-width:36ch;margin:30px 0 0;color:var(--n800)">Scoring crediticio por las cinco C del crédito, con análisis de flujo de efectivo y modelo CANVAS para micro y pequeños negocios rurales y urbanos.</p>
         </div>
         <div style="font:400 12.5px/1.6 var(--font);color:var(--n700)">
@@ -1172,7 +1174,7 @@ const APP={
     <div style="min-height:100vh;background:var(--bg)">
       <div class="no-print" style="display:flex;align-items:center;gap:15px;padding:12px 24px;border-bottom:1px solid var(--text);background:var(--bg);position:sticky;top:0;z-index:20">
         ${cfg.logotipo?`<img src="${cfg.logotipo}" alt="" style="max-height:28px;max-width:120px;object-fit:contain">`:''}
-        <span style="font:600 13px/1 var(--font);letter-spacing:.16em;text-transform:uppercase">SAC <span style="color:var(--a700)">2.0</span></span>
+        <span style="font:600 13px/1 var(--font);letter-spacing:.16em;text-transform:uppercase">SAC <span style="color:var(--a700)">${VERSION}</span></span>
         <span style="width:1px;height:20px;background:var(--div)"></span>
         <span style="font:400 13px/1 var(--font);color:var(--n700)">${esc(cfg.nombreInstitucion)}</span>
         <span style="width:1px;height:20px;background:var(--div)"></span>
@@ -1954,7 +1956,7 @@ const APP={
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6px;padding-top:4px;border-top:1px solid #999">
         <div style="font:400 8px/1.3 Arial,sans-serif;color:#666">Analista: ${esc(s.analista)}${sc('<br>Banda de riesgo 5C: '+E.banda)}</div>
-        <div style="font:400 8px/1.3 Arial,sans-serif;color:#666;text-align:right">SAC 2.0 · ${esc(cfg.nombreInstitucion)}<br>${new Date().toLocaleString('es-MX')}</div>
+        <div style="font:400 8px/1.3 Arial,sans-serif;color:#666;text-align:right">SAC ${VERSION} · ${esc(cfg.nombreInstitucion)}<br>${new Date().toLocaleString('es-MX')}</div>
       </div>
     </div>`;
   },
@@ -2002,7 +2004,7 @@ const APP={
         ${CANVAS_BLOQUES.map(b=>{const val=cv[b[0]]||{p:3,nota:''};return '<div style="border:1px solid #999;padding:4px 6px"><div style="font:700 8.5px/1.2 Arial,sans-serif;margin-bottom:2px">'+esc(b[1])+' — '+val.p+'/5</div><div style="font:400 8px/1.35 Arial,sans-serif;color:#333">'+esc(val.nota||'Sin observaciones')+'</div></div>'}).join('')}
       </div>
       ${this.verScore()?`<div style="font:700 10px/1.2 Arial,sans-serif;text-align:center;padding:4px;border:1px solid #000">Score CANVAS: ${pct(E.scoreCanvas)}</div>`:''}
-      <div style="margin-top:6px;font:400 8px/1.3 Arial,sans-serif;color:#666;text-align:center">SAC 2.0 · ${esc(cfg.nombreInstitucion)} · ${new Date().toLocaleString('es-MX')}</div>
+      <div style="margin-top:6px;font:400 8px/1.3 Arial,sans-serif;color:#666;text-align:center">SAC ${VERSION} · ${esc(cfg.nombreInstitucion)} · ${new Date().toLocaleString('es-MX')}</div>
     </div>`;
   },
 
@@ -2892,7 +2894,7 @@ const APP={
         break;
       }
       case 'exportar':{
-        const data={app:'SAC '+st.config.nombreInstitucion+' 2.0',exportado:new Date().toISOString(),users:st.users,sucursales:st.sucursales,params:st.params,config:st.config,solicitudes:st.solicitudes,auditoria:st.auditoria,folioSeq:st.folioSeq};
+        const data={app:'SAC '+st.config.nombreInstitucion+' '+VERSION,exportado:new Date().toISOString(),users:st.users,sucursales:st.sucursales,params:st.params,config:st.config,solicitudes:st.solicitudes,auditoria:st.auditoria,folioSeq:st.folioSeq};
         const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
         const a=document.createElement('a');a.href=URL.createObjectURL(blob);
         a.download='respaldo-sac-'+new Date().toISOString().slice(0,10)+'.json';
