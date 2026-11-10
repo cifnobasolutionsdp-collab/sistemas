@@ -338,7 +338,22 @@ const pct=n=>(isFinite(n)?(n*100).toFixed(1):'0.0')+'%';
 const num=v=>{const n=parseFloat(typeof v==='string'?v.replace(/[$,\s]/g,''):v);return isFinite(n)?n:0};
 const clamp10=n=>Math.max(0,Math.min(10,n));
 // Valor de un campo numérico con separador de miles («30,000»); num() quita las comas al leerlo.
+// Huella corta de un objeto para saber si dos equipos o dos momentos evaluaron lo mismo.
+function huella(o){const t=JSON.stringify(o);let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)}
+const huellaDatos=s=>huella([s.datos,s.caracter,s.capacidad,s.capital,s.condiciones,s.colateral,s.flujo,s.flujoAnios,s.flujoMesPago,s.canvas]);
 const fnum=v=>v===''||v==null?'':num(v).toLocaleString('es-MX',{maximumFractionDigits:4});
+// Pone las comas de miles mientras se teclea, sin mover el cursor ni quitar el punto decimal que se está escribiendo.
+const CAMPOS_CON_MILES=['updNum','updFlujo','updMixta','updActivoFijo'];
+function conMiles(el){
+  const t=el.value,pos=el.selectionStart==null?t.length:el.selectionStart;
+  const neg=/^\s*-/.test(t),x=t.replace(/[^\d.]/g,''),pd=x.indexOf('.');
+  const ent=(pd<0?x:x.slice(0,pd)).replace(/^0+(?=\d)/,''),dec=pd<0?null:x.slice(pd+1).replace(/\./g,'');
+  const nuevo=(neg?'-':'')+ent.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(dec!=null?'.'+dec:'');
+  if(nuevo===t)return;
+  const signif=t.slice(0,pos).replace(/[^\d.\-]/g,'').length;
+  let c=0,i=0;while(i<nuevo.length&&c<signif){if(/[\d.\-]/.test(nuevo[i]))c++;i++}
+  el.value=nuevo;try{el.setSelectionRange(i,i)}catch(e){}
+}
 const hoyISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 // Fechas de pago a partir de la fecha de disposición: meses de calendario, o 15 y 7 días en quincenal y semanal.
 function fechaPago(iso,periodicidad,k){
@@ -468,6 +483,8 @@ const OCUPACIONES_VER=2;
 // Reglas que cada institución activa en Configuración › Reglas de análisis; INSTITUCION_INICIAL.reglas las precarga.
 const REGLAS_DEFAULT={ocultarScore:false,tipoIngreso:false,margenUtilidad:false,gastoMinimoPct:0};
 function migrarConfig(c,u){
+  // Dos productos con el mismo nombre se confundían (uno con IVA y otro sin IVA): el segundo se renombra.
+  if(Array.isArray(c.productos)){const vistos={};c.productos.forEach(pr=>{const base=String(pr.nombre||'').trim()||'Producto';let n=base,k=2;while(vistos[n.toLowerCase()])n=base+' ('+(k++)+')';vistos[n.toLowerCase()]=1;pr.nombre=n})}
   if(!Array.isArray(c.garantias)||!c.garantias.length)c.garantias=garantiasIniciales(u);
   else if(c.garantiasVer!==GARANTIAS_VER&&!c.garantias.some(g=>g.medida==='mixta'))c.garantias=c.garantias.concat([JSON.parse(JSON.stringify(GARANTIAS_DEFAULT.find(g=>g.clave==='mixta')))]);
   c.garantiasVer=GARANTIAS_VER;
@@ -648,6 +665,15 @@ const FILAS_ING=[['agricolas','Agrícolas'],['ganaderos','Ganaderos'],['ventas',
 const FILAS_EGR=[['egresosFam','Egresos familiares'],['gastosNegocio','Gastos del negocio'],['pagoIntereses','Pago de intereses'],['pagoInst','Pago a la Institución'],['pagoOtras','Pago a otras Entidades Financieras'],['ahorroFlujo','Compromiso de ahorro'],['otrosGastos','Otros gastos'],['reservaGastos','Reserva destinada para compromisos o gastos (en negativo)']];
 const ROL_NOMBRE={superadmin:'Superadministrador',gerente:'Gerente de sucursal',analista:'Analista de crédito'};
 
+// Parámetros guardados: completa los que falten y actualiza los valores de fábrica que cambiaron.
+const PARAMS_VER=2;
+function migrarParams(d){
+  const P=Object.assign(defaultParams(),d||{});
+  P.u=Object.assign(defaultParams().u,(d||{}).u||{});
+  if((P.paramsVer||0)<2&&num(P.u.gastoBasicoPersona)===2000)P.u.gastoBasicoPersona=1000;
+  P.paramsVer=PARAMS_VER;
+  return P;
+}
 function defaultParams(){
   return {
     mezcla:{cincoC:0.60,flujo:0.30,canvas:0.10},
@@ -672,10 +698,10 @@ function defaultParams(){
       cobCuotaBuena:1.2,cobCuotaMin:1.0,
       gastosIngBueno:0.7,gastosIngMedio:0.8,
       gastosCuotaBueno:0.8,gastosCuotaMedio:0.9,
-      margenGastos:0.10,gastoBasicoPersona:2000,
+      margenGastos:0.10,gastoBasicoPersona:1000,
       flujoGastosMax:0.90,flujoCoberturaMin:1.0,
       covPrenda:2,covHipoteca:2,covAhorro:1,
-      ivaInteres:0.16,baseDias:360
+      ivaInteres:0.16,baseDias:360,pagoFijoIvaIncluido:0
     },
     dictamen:{aprobado:80,condicionado:60},
     bandas:[[0.9,'IRRELEVANTE'],[0.8,'TOLERABLE'],[0.7,'MODERADO'],[0.6,'RELEVANTE'],[0.5,'INTOLERABLE']]
@@ -770,6 +796,21 @@ const APP={
   },
 
   // Con «Ocultar score» activo, analistas y gerentes no ven el score, sus puntajes ni las causales de rechazo.
+  huellaConfig(){const c=this.state.config;return huella([this.state.params,c.productos,c.garantias,c.reglas,c.ocupaciones,c.margenesGiro])},
+  // Compara el score con que se envió la solicitud con el que se calcula ahora en este equipo y explica la diferencia.
+  renderComparaEnvio(s,E){
+    const v=s.envio;if(!v||v.score==null||!this.verScore())return '';
+    const igual=Math.abs(num(v.score)-E.global)<0.05;
+    const causas=[];
+    if(v.huellaDatos&&v.huellaDatos!==huellaDatos(s))causas.push('La solicitud se modificó después de enviarse.');
+    if(v.version&&v.version!==VERSION)causas.push('Se envió con la versión '+v.version+' y este archivo es la versión '+VERSION+'.');
+    if(v.huellaConfig&&v.huellaConfig!==this.huellaConfig())causas.push('Los parámetros del modelo, productos, garantías o reglas de este equipo no son iguales a los del equipo donde se envió. Use el mismo archivo y la misma configuración en ambos equipos (Exportar en uno e Importar en el otro).');
+    if(!v.version&&!igual)causas.push('Se envió con una versión anterior del sistema.');
+    return `<div style="border:1px solid ${igual?'var(--div)':'var(--accent2)'};background:${igual?'var(--n200)':'var(--a2100)'};padding:12px 16px;margin-bottom:24px;font:400 13.5px/1.5 var(--font)">
+      <div><strong>Score al enviar:</strong> ${num(v.score).toFixed(1)} (${esc(v.por)}, ${new Date(v.ts).toLocaleString('es-MX')}) · <strong>Score con los datos y la configuración de este equipo:</strong> ${E.global.toFixed(1)}</div>
+      <div style="margin-top:4px;color:${igual?'var(--n700)':'var(--a2800)'}">${igual?'Coinciden.':esc(causas.join(' ')||'La diferencia viene de un cambio en los datos o en la configuración.')}</div>
+    </div>`;
+  },
   verScore(){const u=this.state.sesion;return !(this.state.config.reglas||{}).ocultarScore||!!(u&&u.rol==='superadmin')},
   reglas(){return Object.assign({},REGLAS_DEFAULT,this.state.config.reglas||{})},
 
@@ -780,7 +821,7 @@ const APP={
         const d=JSON.parse(raw);
         Object.assign(this.state,{
           users:d.users||USUARIOS_INICIALES,sucursales:d.sucursales||SUCURSALES_INICIALES,
-          params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{}),(d.params||{}).u),
+          params:migrarParams(d.params),config:migrarConfig(Object.assign(defaultConfig(),d.config||{}),(d.params||{}).u),
           solicitudes:d.solicitudes||[],auditoria:d.auditoria||[],folioSeq:d.folioSeq||1001
         });
       }
@@ -1008,10 +1049,19 @@ const APP={
       const cap=monto/n;
       primerPago=cap+monto*iIva;ultimoPago=cap+cap*iIva;
       totalInt=monto*i*(n+1)/2;
-    }else{
+    }else if(num(P.u.pagoFijoIvaIncluido)){
       // Pago fijo con IVA incluido: cada pago cubre el interés y su IVA, y el resto abona a capital.
       primerPago=ultimoPago=iIva>0?monto*iIva/(1-Math.pow(1+iIva,-n)):monto/n;
       totalInt=(primerPago*n-monto)/(1+IVA);
+    }else{
+      // Capital e interés fijos (amortización francesa con la tasa del periodo); el IVA del interés de cada
+      // pago se suma aparte, así que el pago con IVA baja un poco conforme baja el saldo.
+      const fijo=i>0?monto*i/(1-Math.pow(1+i,-n)):monto/n;
+      primerPago=fijo+monto*i*IVA;
+      ultimoPago=fijo+(fijo-fijo/(1+i))*IVA;
+      totalInt=fijo*n-monto;
+      const iva=totalInt*IVA;
+      return {monto,meses,n,porAnio,cuota:fijo,pagoFijo:fijo,cuotaIva:primerPago,ultimoPago,pagoMaximo:primerPago,cuotaMensual:primerPago*porAnio/12,totalInt,iva,total:monto+totalInt+iva,mesesPlan:n*12/porAnio,ivaPct:IVA};
     }
     const iva=totalInt*IVA;
     return {monto,meses,n,porAnio,cuota:primerPago-monto*i*IVA,cuotaIva:primerPago,ultimoPago,pagoMaximo:primerPago,cuotaMensual:primerPago*porAnio/12,totalInt,iva,total:monto+totalInt+iva,mesesPlan:n*12/porAnio,ivaPct:IVA};
@@ -1032,7 +1082,7 @@ const APP={
         const f=conFecha?fechaPago(datos.fechaDisposicion,datos.periodicidad,k):null;
         const dias=f?Math.round((f-fechaPago(datos.fechaDisposicion,datos.periodicidad,k-1))/864e5):null;
         const interes=pl.porDias?saldo*tasa/base*dias:saldo*i;
-        const capital=k===pl.n?saldo:datos.plan==='insolutos'?pl.monto/pl.n:pl.cuotaIva-interes*(1+IVA);
+        const capital=k===pl.n?saldo:datos.plan==='insolutos'?pl.monto/pl.n:pl.pagoFijo!=null?pl.pagoFijo-interes:pl.cuotaIva-interes*(1+IVA);
         const mes=datos.periodicidad==='anual'&&mesAnual!=null?mesAnual%12+12*(k-1):Math.ceil(k*12/pl.porAnio)-1;
         fila(mes,capital,interes,f,dias);
       }
@@ -1609,7 +1659,8 @@ const APP={
       </select>`)+
       this.renderField('Número de pagos',Math.abs(E.pl.mesesPlan-E.pl.meses)>0.01?'<span style="color:var(--a2700)">Con pagos '+((PERIODICIDADES.find(p=>p[0]===d.periodicidad)||[])[1]||'').toLowerCase()+'s el plazo de '+E.pl.meses+' meses no da pagos completos: se calculan '+E.pl.n+' pagos ('+(+E.pl.mesesPlan.toFixed(1))+' meses).</span>':'',(d.periodicidad==='pago_unico'?'1':String(E.pl.n)))+
       this.renderField(Math.abs(E.pl.ultimoPago-E.pl.cuotaIva)>0.005?'Primer pago con IVA':'Pago por periodo con IVA',Math.abs(E.pl.ultimoPago-E.pl.cuotaIva)>0.005?'Capital, interés e IVA · el último pago es de '+mx(E.pl.ultimoPago):'Capital, interés e IVA',`<strong>${mx(E.pl.cuotaIva)}</strong>`)+
-      this.renderField('IVA sobre intereses',E.pl.ivaPct>0?'Tasa con IVA: '+(num(d.tasaPct)*(1+E.pl.ivaPct)).toFixed(2)+'% anual':'El producto está configurado sin IVA',`<strong>${E.pl.ivaPct>0?pct(E.pl.ivaPct):'Sin IVA'}</strong>`)+
+      (E.pl.pagoFijo!=null&&!/^pago_unico/.test(d.periodicidad)?this.renderField('Pago fijo de capital e interés','Igual en todos los pagos; el IVA del interés se suma aparte',`<strong>${mx(E.pl.pagoFijo)}</strong>`):'')+
+      this.renderField('IVA sobre intereses',E.pl.ivaPct>0?'Tasa con IVA: '+(num(d.tasaPct)*(1+E.pl.ivaPct)).toFixed(2)+'% anual'+(prodSel?' · el producto está configurado con IVA':''):'El producto «'+esc(d.producto)+'» está configurado sin IVA',`<strong>${E.pl.ivaPct>0?pct(E.pl.ivaPct):'Sin IVA'}</strong>`)+
       this.renderField('Interés total del crédito',E.pl.ivaPct>0?'Más IVA de '+mx(E.pl.iva):'Sin IVA',`<strong>${mx(E.pl.totalInt)}</strong>`)+
       this.renderField('Total a pagar','Monto más interés e IVA · el detalle está en el plan de pagos',`<strong>${mx(E.pl.total)}</strong>`)
     )+this.renderPlanPagos(s,E);
@@ -1726,7 +1777,7 @@ const APP={
       this.renderField('Vestido y calzado','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gVestido)}" data-action="updNum" data-path="capacidad.gVestido" min="0">`)+
       this.renderField('Salud','Médicos, medicamentos, seguros',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gSalud)}" data-action="updNum" data-path="capacidad.gSalud" min="0">`)+
       this.renderField('Transferencias y otros gastos','',`<input class="input" type="text" inputmode="decimal" value="${fnum(k.gOtrosGastos)}" data-action="updNum" data-path="capacidad.gOtrosGastos" min="0">`)+
-      this.renderField('Alerta de subdeclaración','Regla de gastos básicos mínimos por persona',`<strong>${E.alertaGastos?'Revisar: declara menos que el valor de referencia':'Sin observación'}</strong>`)+
+      this.renderField('Alerta de subdeclaración','Gastos menores a '+mx(this.state.params.u.gastoBasicoPersona)+' por dependiente (se cambia en Parámetros del modelo)',`<strong>${E.alertaGastos?'Revisar: declara menos que el valor de referencia':'Sin observación'}</strong>`)+
       (E.gastoMinPct>0?this.renderField('Alerta de gasto mínimo','Gastos familiares declarados ÷ ingresos; se espera al menos '+pct(E.gastoMinPct)+' · solo informativa, no afecta el score',
         E.ingresos>0?`<strong>${pct(E.ratioGastoFam)}</strong> · ${E.alertaGastoMin?'<strong style="color:var(--a2700)">Revisar: posible subdeclaración de gastos</strong>':'Sin observación'}`:'<strong>Capture los ingresos para calcularla</strong>'):'')
     )+
@@ -1753,7 +1804,7 @@ const APP={
     const per=((PERIODICIDADES.find(p=>p[0]===d.periodicidad)||[])[1]||'').toLowerCase();
     if(d.periodicidad==='pago_unico')return 'Total a pagar ('+mx(pl.total)+') entre los '+pl.meses+' meses del plazo';
     if(d.periodicidad==='pago_unico_periodico')return 'Interés mensual con IVA ('+mx(pl.cuotaIva)+') más el capital entre los '+pl.meses+' meses ('+mx(pl.monto/pl.meses)+')';
-    if(pl.porAnio===12)return d.plan==='insolutos'?'Pago más alto del plan':'Pago mensual fijo';
+    if(pl.porAnio===12)return d.plan==='insolutos'||pl.pagoFijo!=null?'Pago más alto del plan (el primero, con su IVA)':'Pago mensual fijo';
     return (d.plan==='insolutos'?'Pago '+per+' más alto ':'Pago '+per+' fijo ')+'('+mx(pl.pagoMaximo)+') × '+pl.porAnio+' pagos al año ÷ 12 meses';
   },
 
@@ -1764,7 +1815,7 @@ const APP={
     const mesTxt=m=>MESES[((m%12)+12)%12].slice(0,3)+' A'+(Math.floor(m/12)+1);
     const conFecha=filas.some(f=>f.fecha),conDias=!!E.pl.porDias;
     return this.renderSection('Plan de pagos',filas.length+' pago'+(filas.length>1?'s':'')+' · total '+mx(E.pl.total),
-      `<p style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin:8px 0 10px">${conDias?'Saldos insolutos: el capital se paga en partes iguales y el interés de cada pago es saldo × '+num(s.datos.tasaPct)+'% ÷ '+(num(this.state.params.u.baseDias)||360)+' × días transcurridos desde el pago anterior.':s.datos.plan==='insolutos'&&!/^pago_unico/.test(s.datos.periodicidad)?'Saldos insolutos: el capital se paga en partes iguales y el interés se calcula sobre el saldo, por eso los pagos bajan. Capture la fecha de disposición para calcularlo por días transcurridos.':/^pago_unico/.test(s.datos.periodicidad)?'':'Pagos fijos: el pago incluye el IVA del interés; al bajar el saldo, una parte mayor abona a capital.'} ${conDias?'':'Tasa del periodo: '+(num(s.datos.tasaPct)/(E.pl.porAnio||1)).toFixed(4)+'%'+(E.pl.porAnio&&!/^pago_unico/.test(s.datos.periodicidad)?' ('+num(s.datos.tasaPct)+'% anual ÷ '+E.pl.porAnio+' pagos)':'')+' · '}${E.pl.ivaPct>0?'IVA '+pct(E.pl.ivaPct)+' sobre el interés.':'Producto sin IVA.'} Estos pagos son los que «Autopoblar préstamo» coloca en el flujo de efectivo.</p>
+      `<p style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin:8px 0 10px">${conDias?'Saldos insolutos: el capital se paga en partes iguales y el interés de cada pago es saldo × '+num(s.datos.tasaPct)+'% ÷ '+(num(this.state.params.u.baseDias)||360)+' × días transcurridos desde el pago anterior.':s.datos.plan==='insolutos'&&!/^pago_unico/.test(s.datos.periodicidad)?'Saldos insolutos: el capital se paga en partes iguales y el interés se calcula sobre el saldo, por eso los pagos bajan. Capture la fecha de disposición para calcularlo por días transcurridos.':/^pago_unico/.test(s.datos.periodicidad)?'':(E.pl.pagoFijo!=null?'Pagos fijos: capital e interés suman '+mx(E.pl.pagoFijo)+' en cada pago y el IVA del interés se suma aparte, por eso el pago total baja un poco; al bajar el saldo, una parte mayor abona a capital.':'Pagos fijos: el pago incluye el IVA del interés; al bajar el saldo, una parte mayor abona a capital.')} ${conDias?'':'Tasa del periodo: '+(num(s.datos.tasaPct)/(E.pl.porAnio||1)).toFixed(4)+'%'+(E.pl.porAnio&&!/^pago_unico/.test(s.datos.periodicidad)?' ('+num(s.datos.tasaPct)+'% anual ÷ '+E.pl.porAnio+' pagos)':'')+' · '}${E.pl.ivaPct>0?'IVA '+pct(E.pl.ivaPct)+' sobre el interés.':'Producto sin IVA.'} Estos pagos son los que «Autopoblar préstamo» coloca en el flujo de efectivo.</p>
       <div style="overflow:auto;max-height:420px;border:1px solid var(--div)">
       <table class="table" style="min-width:720px;margin:0">
         <thead><tr><th style="text-align:right">Pago</th>${conFecha?'<th>Fecha</th>':''}${conDias?'<th style="text-align:right">Días</th>':''}<th>Mes del flujo</th><th style="text-align:right">Saldo inicial</th><th style="text-align:right">Capital</th><th style="text-align:right">Interés</th><th style="text-align:right">IVA</th><th style="text-align:right">Pago total</th><th style="text-align:right">Saldo final</th></tr></thead>
@@ -1877,7 +1928,7 @@ const APP={
 
     return `
     <div style="background:var(--a2100);border:1px solid var(--accent2);padding:10px 14px;margin-bottom:12px;border-radius:3px;font:400 13px/1.5 var(--font);color:var(--a2800)"><strong>Flujo de efectivo requerido:</strong> ${E.tieneNegocio?'el solicitante tiene un negocio o empresa':'el solicitante tiene ingresos variables o un gasto importante programado en el año'}. Complete el flujo mensual para una evaluación precisa.</div>
-    <div style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin-bottom:14px">${E.tieneNegocio?'Capture aquí los ingresos del negocio. De Capacidad se cargan solos':'Los datos de Capacidad se cargan solos: ingresos por trabajo en <strong>Sueldos</strong>, rentas, intereses y transferencias en <strong>Otros ingresos</strong>,'} gastos familiares en <strong>Egresos familiares</strong> y deudas en <strong>Pago a otras Entidades Financieras</strong>. Si modifica un mes de esos renglones, el renglón deja de actualizarse.</div>
+    <div style="font:400 12.5px/1.5 var(--font);color:var(--n700);margin-bottom:14px">${E.tieneNegocio?'Capture aquí los ingresos del negocio. De Capacidad se cargan solos':'Los datos de Capacidad se cargan solos: ingresos por trabajo en <strong>Sueldos</strong>, rentas, intereses y transferencias en <strong>Otros ingresos</strong>,'} gastos familiares en <strong>Egresos familiares</strong> y deudas en <strong>Pago a otras Entidades Financieras</strong>. Al capturar un mes, los meses siguientes que tenían el mismo valor se llenan solos hacia la derecha hasta el primer mes distinto. Si modifica un mes de esos renglones, el renglón deja de actualizarse.</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
       <button class="btn btn-s" data-action="recargarFlujo">Recargar desde Capacidad</button>
       <button class="btn btn-p" data-action="autoPopularFlujo">Autopoblar préstamo de la Institución</button>
@@ -2063,6 +2114,7 @@ const APP={
         </div>`:''}
 
         <div class="no-print">
+          ${this.renderComparaEnvio(s,E)}
           <h2 style="font:600 19px/1.2 var(--fonth);margin:0 0 10px;border-bottom:2px solid var(--text);padding-bottom:6px">Resolución</h2>
           <label style="display:block;font:400 13px/1.4 var(--font);margin-bottom:5px">Dictamen del analista</label>
           <textarea class="input" rows="4" id="comentarioDictamen" placeholder="Con base en el análisis e investigación de crédito, se recomienda (otorgar o rechazar) la solicitud por el monto, plazo, tasa y garantías...">${esc(st.comentario)}</textarea>
@@ -2291,7 +2343,8 @@ const APP={
     ${st.configTab==='productos'?`
     <div class="config-card">
       <h3>Catálogo de productos de crédito</h3>
-      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Defina los productos disponibles con sus tasas, plazos y montos mínimos y máximos. «Con IVA» suma el IVA de los intereses a cada pago (la tasa efectiva queda con IVA); «Sin IVA» calcula los pagos solo con la tasa de interés. Haga clic en la columna para cambiarlo.</p>
+      <p style="font:400 13px/1.5 var(--font);color:var(--n700);margin:0 0 12px">Defina los productos disponibles con sus tasas, plazos y montos mínimos y máximos. «Con IVA» suma el IVA de los intereses a cada pago; «Sin IVA» calcula los pagos solo con la tasa de interés. Cámbielo en la columna «IVA sobre intereses». Cada producto debe tener un nombre distinto.</p>
+      ${st.avisoProductos?`<div style="font:400 13px/1.4 var(--font);color:var(--a2700);margin-bottom:12px">${esc(st.avisoProductos)}</div>`:''}
       <div style="overflow-x:auto">
       <table class="table" style="margin-bottom:20px;min-width:700px">
         <thead><tr><th>Producto</th><th style="text-align:right">Plazo máx. (meses)</th><th style="text-align:right">Tasa anual (%)</th><th style="text-align:right">Monto mínimo</th><th style="text-align:right">Monto máximo</th><th>IVA sobre intereses</th><th></th></tr></thead>
@@ -2302,7 +2355,7 @@ const APP={
             <td style="text-align:right">${p.tasaAnual}%</td>
             <td style="text-align:right">${mx(p.montoMin||0)}</td>
             <td style="text-align:right">${mx(p.montoMax||0)}</td>
-            <td><button class="btn btn-g" data-action="toggleIvaProducto" data-idx="${i}" style="padding:4px 9px;font-size:12px">${p.sinIva?'Sin IVA':'Con IVA'}</button></td>
+            <td><select class="input" data-action="updIvaProducto" data-idx="${i}" style="min-width:120px"><option value="con" ${p.sinIva?'':'selected'}>Con IVA</option><option value="sin" ${p.sinIva?'selected':''}>Sin IVA</option></select></td>
             <td style="text-align:right"><button class="btn btn-g" data-action="borrarProducto" data-idx="${i}" style="padding:4px 9px;font-size:12px">Quitar</button></td>
           </tr>`).join('')}
         </tbody>
@@ -2477,6 +2530,14 @@ const APP={
         ${mkRow('Endeudamiento máximo con el crédito','',''+P.u.endProyVeto,'u.endProyVeto')}
         ${mkRow('Créditos con atraso tolerados','',''+P.u.atrasosVeto,'u.atrasosVeto')}
         ${mkRow('IVA sobre intereses','Se aplica a los productos marcados con IVA',''+P.u.ivaInteres,'u.ivaInteres')}
+        ${mkRow('Gasto básico por persona','Referencia mínima de gastos familiares por dependiente para la alerta de subdeclaración',''+P.u.gastoBasicoPersona,'u.gastoBasicoPersona')}
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--div)">
+          <div><div style="font:400 14px/1.35 var(--font)">Pagos fijos</div><div style="font:400 12px/1.4 var(--font);color:var(--n600)">Cómo se suma el IVA de los intereses al pago fijo</div></div>
+          <select class="input" data-action="updParamSel" data-path="u.pagoFijoIvaIncluido" ${dis}>
+            <option value="0" ${num(P.u.pagoFijoIvaIncluido)?'':'selected'}>Capital e interés fijos; IVA aparte</option>
+            <option value="1" ${num(P.u.pagoFijoIvaIncluido)?'selected':''}>Pago fijo con el IVA incluido</option>
+          </select>
+        </div>
         ${mkRow('Base de días del año','Saldos insolutos: interés = saldo × tasa anual ÷ base × días transcurridos',''+(num(P.u.baseDias)||360),'u.baseDias')}
       </section>
     </div>
@@ -2573,6 +2634,7 @@ const APP={
       const el=e.target.closest('[data-action]');
       if(!el)return;
       const a=el.dataset.action;
+      if(el.tagName==='INPUT'&&el.getAttribute('inputmode')==='decimal'&&CAMPOS_CON_MILES.includes(a))conMiles(el);
       if(a==='updText')this.upd(el.dataset.path,el.value);
       else if(a==='updNum'){
         let v=num(el.value);
@@ -2589,7 +2651,14 @@ const APP={
         }
         this.upd(el.dataset.path,v);
       }
-      else if(a==='updFlujo'){const s=this.actual();if(!s)return;const arr=(s.flujo[el.dataset.key]||[]).slice();arr[parseInt(el.dataset.mes)]=num(el.value);this.upd('flujo.'+el.dataset.key,arr)}
+      else if(a==='updFlujo'){
+        const s=this.actual();if(!s)return;const arr=(s.flujo[el.dataset.key]||[]).slice(),m=parseInt(el.dataset.mes),ant=num(arr[m]),v=num(el.value);
+        arr[m]=v;
+        // Relleno hacia la derecha: los meses siguientes que tenían el mismo valor que este mes toman el nuevo;
+        // se detiene en el primer mes con otro valor, así que un mes capturado aparte no se pisa.
+        for(let k=m+1;k<96&&num(arr[k])===ant;k++)arr[k]=v;
+        this.upd('flujo.'+el.dataset.key,arr);
+      }
       else if(a==='updCanvasNota')this.upd('canvas.'+el.dataset.key+'.nota',el.value);
       else if(a==='updActivoFijo'){const sol=this.actual();if(!sol)return;const af=JSON.parse(JSON.stringify(sol.capital.activosFijos||{}));if(!af[el.dataset.key])af[el.dataset.key]={monto:0,comprobante:'ninguno'};if(el.dataset.prop==='monto')af[el.dataset.key].monto=num(el.value);else af[el.dataset.key].comprobante=el.value;this.upd('capital.activosFijos',af)}
       else if(a==='updGarantia'){this.updGarantia(parseInt(el.dataset.idx),el.dataset.prop,el.value);return}
@@ -2655,6 +2724,8 @@ const APP={
         }
       }
       else if(a==='updFlujoProp')this.upd(el.dataset.prop,num(el.value));
+      else if(a==='updIvaProducto'){const cfg=JSON.parse(JSON.stringify(this.state.config));const pr=cfg.productos[parseInt(el.dataset.idx)];if(!pr)return;if(el.value==='sin')pr.sinIva=true;else delete pr.sinIva;this.state.config=cfg;this.persist();this.log('Producto '+(pr.sinIva?'sin':'con')+' IVA sobre intereses',pr.nombre)}
+      else if(a==='updParamSel'){const pr=JSON.parse(JSON.stringify(this.state.params));const parts=el.dataset.path.split('.');let ref=pr;for(let i=0;i<parts.length-1;i++)ref=ref[parts[i]];ref[parts[parts.length-1]]=num(el.value);this.state.params=pr;this.persist();this.log('Parámetros modificados','Pagos fijos: '+(num(el.value)?'IVA incluido':'IVA aparte'))}
       else if(a==='updRegla'){
         const cfg=JSON.parse(JSON.stringify(this.state.config));
         cfg.reglas=Object.assign({},REGLAS_DEFAULT,cfg.reglas||{});cfg.reglas[el.dataset.regla]=el.value==='true';
@@ -2752,7 +2823,8 @@ const APP={
           if(x.id!==s.id)return x;
           const c=JSON.parse(JSON.stringify(x));
           c.estado=estado;
-          c.resolucion={estado,por:u.nombre,rol:ROL_NOMBRE[u.rol],comentario,firma,ts:Date.now(),score:E.global,banda:E.banda};
+          c.resolucion={estado,por:u.nombre,rol:ROL_NOMBRE[u.rol],comentario,firma,ts:Date.now(),score:E.global,banda:E.banda,version:VERSION,huellaConfig:this.huellaConfig(),huellaDatos:huellaDatos(x)};
+          if(estado==='ENVIADA'||estado==='ESCALADA')c.envio={...c.resolucion,dictamen:E.dictamen};
           c.bitacora=(c.bitacora||[]).concat([{ts:Date.now(),accion:etiqueta+' — score '+E.global.toFixed(1),quien:u.nombre}]);
           return c;
         });
@@ -2812,11 +2884,12 @@ const APP={
         const montoMin=num(document.getElementById('nuevoProductoMontoMin')?.value);
         const montoMax=num(document.getElementById('nuevoProductoMontoMax')?.value);
         if(!nombre)return;
+        if(st.config.productos.some(p=>String(p.nombre).trim().toLowerCase()===nombre.toLowerCase())){this.set({avisoProductos:'Ya existe un producto llamado «'+nombre+'». Use otro nombre o cambie el IVA del existente.'});return}
         const cfg=JSON.parse(JSON.stringify(st.config));
         const sinIva=document.getElementById('nuevoProductoIva')?.value==='sin';
         cfg.productos.push(Object.assign({nombre,plazoMax:plazo,tasaAnual:tasa,montoMin,montoMax},sinIva?{sinIva:true}:{}));
         this.state.config=cfg;this.persist();this.log('Producto agregado',nombre);
-        this.set({nuevoProducto:{nombre:'',plazoMax:24,tasaAnual:18,montoMin:0,montoMax:0}});
+        this.set({nuevoProducto:{nombre:'',plazoMax:24,tasaAnual:18,montoMin:0,montoMax:0},avisoProductos:''});
         break;
       }
       case 'toggleIvaProducto':{
@@ -3110,7 +3183,7 @@ const APP={
               const merged=(d.solicitudes||[]).concat(st.solicitudes.filter(x=>!(d.solicitudes||[]).some(y=>y.id===x.id)));
               Object.assign(this.state,{
                 users:d.users||st.users,sucursales:d.sucursales||st.sucursales,
-                params:Object.assign(defaultParams(),d.params||{}),config:migrarConfig(Object.assign(defaultConfig(),d.config||{}),(d.params||{}).u),
+                params:migrarParams(d.params),config:migrarConfig(Object.assign(defaultConfig(),d.config||{}),(d.params||{}).u),
                 solicitudes:merged,auditoria:(d.auditoria||[]).concat(st.auditoria).slice(0,400),
                 folioSeq:Math.max(d.folioSeq||1001,st.folioSeq)
               });
