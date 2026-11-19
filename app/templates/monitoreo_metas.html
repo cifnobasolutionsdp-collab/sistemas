@@ -4,7 +4,7 @@
 <h2 class="titulo">Metas de indicadores</h2>
 <p class="descripcion">Metas por omisión basadas en las metas de excelencia del archivo de referencia y en buenas prácticas IFRS 9.
   Capture un valor personalizado para sobrescribirlas (en %, o en veces para los indicadores de apalancamiento). Deje en blanco para usar la meta por omisión.
-  Las metas que dependen de otros indicadores o de la inflación/tasas (R1–R8, R13, S) se evalúan automáticamente.</p>
+  Las metas que dependen de otros indicadores o de la inflación/tasas (I1–I8, I13, Z) se evalúan automáticamente.</p>
 <form class="filtros" method="get">
   <div><label>Tipo de entidad</label><select name="tipo" onchange="this.form.submit()">
     {% for k, v in tipos.items() %}<option value="{{ k }}" {% if k == tipo %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>

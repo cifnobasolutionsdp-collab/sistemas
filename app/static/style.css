@@ -158,3 +158,21 @@ input.chico { width: 90px; }
 table.datos th.num { text-align: right; }
 td.num { white-space: nowrap; }
 td.rojo { color: var(--rojo); font-weight: 600; }
+/* Índice SOLIDEZ */
+.indice { display: grid; grid-template-columns: 210px 1fr; gap: 16px; margin: 16px 0; }
+@media (max-width: 900px) { .indice { grid-template-columns: 1fr; } }
+.indice-global { border-radius: 10px; padding: 18px; color: #fff; background: var(--azul); display: flex; flex-direction: column; justify-content: center; }
+.indice-global.cumple { background: var(--acento); }
+.indice-global.alerta { background: #b07a1f; }
+.indice-global.deficiente { background: var(--rojo); }
+.indice-global .etiqueta { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; opacity: .85; }
+.indice-global .cifra { font-size: 46px; font-weight: 700; line-height: 1.1; }
+.indice-global .cifra span { font-size: 16px; font-weight: 400; opacity: .8; }
+.indice-global .calif { font-size: 17px; font-weight: 600; }
+.indice-dimensiones { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.dim { display: flex; gap: 10px; background: #fff; border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; align-items: center; }
+.dim-letra { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; color: #fff; background: #9aa7b6; flex-shrink: 0; }
+.dim-letra.cumple { background: var(--acento); } .dim-letra.alerta { background: #e0a526; } .dim-letra.deficiente { background: var(--rojo); }
+.dim-cuerpo { flex: 1; min-width: 0; }
+.dim-nombre { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.dim .barra-fondo { height: 8px; }

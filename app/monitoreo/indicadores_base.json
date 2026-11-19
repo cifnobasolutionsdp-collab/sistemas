@@ -1,63 +1,63 @@
 {
  "fuente": "Archivo de referencia proporcionado por el usuario",
  "estrategias": {
-  "P1": [
-   "(a) Disminuir la morosidad (A1) de la cartera mediante un adecuado análisis crediticio (RATIOS); (b) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
-   "Efectuar depuraciones (P3) de cartera morosa con mas de 12 meses, en forma mensual o trimestral.",
-   "Ajustes mensuales de la estimación de préstamos irrecuperables (R10), para mantener un saldo equivalente del 35% (P2) de la morosidad entre 1-12 meses (P1) y 100% de préstamos morosos mayor de 12 meses.",
-   "Utilizar plan empresarial, (planeación financiera y operativa) para determinar tasa empresarial (R1) y así poder ofrecer tasas activas que tengan incluidas el costo de provisionamiento",
-   "Que los fondos provenientes de recuperaciones de cartera depurada (P5) se destinen a restituir y fortalecer la Estimación de Préstamos.",
+  "S1": [
+   "(a) Disminuir la morosidad (E1) de la cartera mediante un adecuado análisis crediticio (RATIOS); (b) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
+   "Efectuar depuraciones (S3) de cartera morosa con mas de 12 meses, en forma mensual o trimestral.",
+   "Ajustes mensuales de la estimación de préstamos irrecuperables (I10), para mantener un saldo equivalente del 35% (S2) de la morosidad entre 1-12 meses (S1) y 100% de préstamos morosos mayor de 12 meses.",
+   "Utilizar plan empresarial, (planeación financiera y operativa) para determinar tasa empresarial (I1) y así poder ofrecer tasas activas que tengan incluidas el costo de provisionamiento",
+   "Que los fondos provenientes de recuperaciones de cartera depurada (S5) se destinen a restituir y fortalecer la Estimación de Préstamos.",
    "Incrementar el margen bruto mediante ajustes a las tasas pasivas y activas de interés, Optimizar gasto a efecto de mejorar sus niveles de rentabilidad, Ejercer el presupuesto en razón de los resultados obtenidos no antes, incrementar la colocación para obtener ingresos por encima de los gastos y poder así destinar al provisionamiento sin afectar al resultado."
   ],
-  "P2": [
-   "(a) Disminuir la morosidad (A1) de la cartera mediante un adecuado análisis crediticio (RATIOS); (b) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
-   "Efectuar depuraciones (P3) de cartera morosa con mas de 12 meses, en forma mensual o trimestral.",
-   "Ajustes mensuales de la estimación de préstamos irrecuperables (R10), para mantener un saldo equivalente del 35% (P2) de la morosidad entre 1-12 meses (P1) y 100% de préstamos morosos mayor de 12 meses.",
-   "Utilizar plan empresarial, (planeación financiera y operativa) para determinar tasa empresarial (R1) y así poder ofrecer tasas activas que tengan incluidas el costo de provisionamiento",
-   "Que los fondos provenientes de recuperaciones de cartera depurada (P5) se destinen a restituir y fortalecer la Estimación de Préstamos.",
+  "S2": [
+   "(a) Disminuir la morosidad (E1) de la cartera mediante un adecuado análisis crediticio (RATIOS); (b) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
+   "Efectuar depuraciones (S3) de cartera morosa con mas de 12 meses, en forma mensual o trimestral.",
+   "Ajustes mensuales de la estimación de préstamos irrecuperables (I10), para mantener un saldo equivalente del 35% (S2) de la morosidad entre 1-12 meses (S1) y 100% de préstamos morosos mayor de 12 meses.",
+   "Utilizar plan empresarial, (planeación financiera y operativa) para determinar tasa empresarial (I1) y así poder ofrecer tasas activas que tengan incluidas el costo de provisionamiento",
+   "Que los fondos provenientes de recuperaciones de cartera depurada (S5) se destinen a restituir y fortalecer la Estimación de Préstamos.",
    "Incrementar el margen bruto mediante ajustes a las tasas pasivas y activas de interés, Optimizar gasto a efecto de mejorar sus niveles de rentabilidad, Ejercer el presupuesto en razón de los resultados obtenidos no antes, incrementar la colocación para obtener ingresos por encima de los gastos y poder así destinar al provisionamiento sin afectar al resultado."
   ],
-  "P3": [
+  "S3": [
    "Aplicar el sistema de cobranza de cobranza preventiva y recuperación (PAC)",
    "Efectuar las depuraciones mensuales, tomando en cuenta los préstamos morosos de más de 12 meses",
    "determinar las políticas de creación de provisiones para préstamos en forma mensual, a fin de facilitar el proceso de depuración"
   ],
-  "P4": [
+  "S4": [
    "Aplicar el sistema de cobranza de cobranza preventiva y recuperación (PAC)",
    "Efectuar las depuraciones mensuales, tomando en cuenta los préstamos morosos de más de 12 meses",
    "determinar las políticas de creación de provisiones para préstamos en forma mensual, a fin de facilitar el proceso de depuración"
   ],
-  "P5": [
+  "S5": [
    "Formalizar una unidad de cobranza especializada con los mecanismos que garanticen la recuperación.",
-   "Definir política de aplicación de fondos provenientes de la recuperación de cartera depurada (P3 y P4) se detiene a fortalecer a la cooperativa en el siguiente orden: (1) Estimación de Préstamos Corrientes (2) Capital Institucional y (3) Ingresos."
+   "Definir política de aplicación de fondos provenientes de la recuperación de cartera depurada (S3 y S4) se detiene a fortalecer a la cooperativa en el siguiente orden: (1) Estimación de Préstamos Corrientes (2) Capital Institucional y (3) Ingresos."
   ],
-  "P6": [
-   "Disminuir la morosidad (A1) de la cartera mediante un adecuado análisis crediticio (RATIOS) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
-   "Ajustes mensuales de la estimación de préstamos irrecuperables (R10), para mantener un saldo equivalente del 35% (P2) de la morosidad entre 1-12 meses (P1) y 100% de préstamos morosos mayor de 12 meses.",
+  "S6": [
+   "Disminuir la morosidad (E1) de la cartera mediante un adecuado análisis crediticio (RATIOS) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
+   "Ajustes mensuales de la estimación de préstamos irrecuperables (I10), para mantener un saldo equivalente del 35% (S2) de la morosidad entre 1-12 meses (S1) y 100% de préstamos morosos mayor de 12 meses.",
    "Contar con un programa de realización y depuración de los activos problemáticos,"
   ],
-  "E1": [
-   "Establecer el sistema de tesorería para determinar los recursos a colocar, en función a los excesos de liquidez (L1), rendimiento de la cartera (R1) y otras alternativas de inversión (R3, 4)",
+  "O1": [
+   "Establecer el sistema de tesorería para determinar los recursos a colocar, en función a los excesos de liquidez (L1), rendimiento de la cartera (I1) y otras alternativas de inversión (I3, 4)",
    "Readecuar las políticas y normas crediticias y apoyarse en un sistema de Credit Scoring (RATIOS); Tasas activas competitivas y rentables; Montos a otorgar; Plazos y Destinos; Nuevos Proyectos de Inversión (apertura de nuevas sucursales); Garantías; Nivel de información que permita determinar el carácter del socio",
-   "Minimizar los activos improductivos (A2), implementando mecanismos de análisis de la mora a partir de un día, aplicando una gestión de cobranza mas agresivas y analizando el impacto financiero de activos fijos y problemáticos",
+   "Minimizar los activos improductivos (E2), implementando mecanismos de análisis de la mora a partir de un día, aplicando una gestión de cobranza mas agresivas y analizando el impacto financiero de activos fijos y problemáticos",
    "Minimizar la liquidez ociosa (L3) implementando controles de efectivo de acuerdo a las necesidades de operación por sucursal."
   ],
-  "E2": [
-   "Establecer el sistema de tesorería para determinar los recursos a colocar, en función a los excesos de liquidez (L1), rendimiento de la cartera (R1) y otras alternativas de inversión (R3, 4)",
-   "Minimizar los activos improductivos (A2), implementando mecanismos de análisis de la mora a partir de un día, aplicando una gestión de cobranza mas agresivas y analizando el impacto financiero de activos fijos y problemáticos",
+  "O2": [
+   "Establecer el sistema de tesorería para determinar los recursos a colocar, en función a los excesos de liquidez (L1), rendimiento de la cartera (I1) y otras alternativas de inversión (I3, 4)",
+   "Minimizar los activos improductivos (E2), implementando mecanismos de análisis de la mora a partir de un día, aplicando una gestión de cobranza mas agresivas y analizando el impacto financiero de activos fijos y problemáticos",
    "Minimizar la liquidez ociosa (L3) implementando controles de efectivos de acuerdo alas necesidades de operación y mantener el flujo de efectivo suficiente para la operación en sucursales, evitar la inversión en cuentas bancarias improductivas, efectuar conciliaciones bancarias al cierre de cada mes,"
   ],
-  "E3": [
-   "Fijar el nivel óptimo de este indicador, en función a la estructura de las inversiones (E2) y (E4) así como los rendimientos generados (R2) y (R4).",
-   "Minimizar los activos improductivos (A2), implementando mecanismos de análisis de la mora a partir de un día, aplicando una gestión de cobranza mas agresivas y analizando el impacto financiero de activos fijos y problemáticos",
+  "O3": [
+   "Fijar el nivel óptimo de este indicador, en función a la estructura de las inversiones (O2) y (O4) así como los rendimientos generados (I2) y (I4).",
+   "Minimizar los activos improductivos (E2), implementando mecanismos de análisis de la mora a partir de un día, aplicando una gestión de cobranza mas agresivas y analizando el impacto financiero de activos fijos y problemáticos",
    "Minimizar la liquidez ociosa (L3) implementando controles de efectivos de acuerdo alas necesidades de operación y mantener el flujo de efectivo suficiente para la operación en sucursales, evitar la inversión en cuentas bancarias improductivas, efectuar conciliaciones bancarias al cierre de cada mes,"
   ],
-  "E4": [
+  "O4": [
    "Tratar de minimizar este indicador ya que depende de la existencia de inversiones que desvirtúan el objeto principal de la cooperativa.",
    "Mantener los excesos de liquidez colocados en cartera o inversiones financieras productivas",
    "Evitar la adquisición de activos fijos que no ayuden a cumplir con el objeto de la cooperativa"
   ],
-  "E5": [
+  "O5": [
    "Desarrollar productos de captación atractivos que mantengan la movilización de ahorros",
    "Fijar las tasas pasivas dentro del promedio de mercado logrando mantener por encima de la inflación",
    "Implementar servicios colaterales relacionados al ahorro, tales como: Transferencias de fondos; Acceso a otros servicios; Remesas; Retiros de ahorro y operaciones inter sistema",
@@ -67,81 +67,81 @@
    "Mejorar la imagen institucional para generar confianza",
    "Lograr una mayor penetración, mediante alianza estratégicas con grupos empresariales de la zona de influencia o cobertura de la cooperativa por medio de productos específicos como es la administración de nomina, módulos en sitio, etc."
   ],
-  "E6": [
+  "O6": [
    "Endeudarse únicamente por los siguientes conceptos: (a) Aprovechamiento de líneas de crédito externas para financiar proyectos de largo plazo; (b) Créditos especiales cuyas condiciones sean más favorables que la captación de ahorros.",
-   "Usar cualquier exceso de disponibilidades (E2) que rinde (R2) menos que la tasa pasiva sobre los prestamos, para cancelar anticipadamente dichos préstamos."
+   "Usar cualquier exceso de disponibilidades (O2) que rinde (I2) menos que la tasa pasiva sobre los prestamos, para cancelar anticipadamente dichos préstamos."
   ],
-  "E7": [
+  "O7": [
    "No incrementar la parte social",
    "Implementar mecanismos de depuración de partes sociales",
    "Eliminar/Readecuar la política de apalancamiento sobre aportaciones. El estimulo de invertir en aportaciones debe sugerir de una tasa de interés o dividendo atractivo."
   ],
-  "E8": [
-   "No permitir que el porcentaje de crecimiento de capital institucional (S8) sea menor que el porcentaje de crecimiento del activo total (S11).",
-   "Lograr una estructura financiera eficiente (E1-E5) con rendimientos optimizados (R1-R9), minimizando los activos improductivos (A2) y liquidez ociosa (L3).",
-   "Controlar y minimizar los gastos administrativos (R10.",
-   "Disminuir la morosidad (A1) y como resultado de ella, disminuir la necesidad de crear provisiones (R10).",
+  "O8": [
+   "No permitir que el porcentaje de crecimiento de capital institucional (Z8) sea menor que el porcentaje de crecimiento del activo total (Z11).",
+   "Lograr una estructura financiera eficiente (O1-O5) con rendimientos optimizados (I1-I9), minimizando los activos improductivos (E2) y liquidez ociosa (L3).",
+   "Controlar y minimizar los gastos administrativos (I10.",
+   "Disminuir la morosidad (E1) y como resultado de ella, disminuir la necesidad de crear provisiones (I10).",
    "Capitalizar a la reserva irrepartible, todos los excedentes netos que la cooperativa genera.",
    "Aplicar el criterio de destinar los excedentes primero a estimación, luego a capitalización y por ultimo a la Reserva Irrepartible.",
    "Trasladar los excedentes generados por operaciones con terceros a la",
    "Reserva Irrepartible.",
    "Trasladar el saldo de otras reservas a la Reserva Irrepartible previo al cierre anual."
   ],
-  "E9": [
-   "No permitir que el porcentaje de crecimiento de capital institucional (S8) sea menor que el porcentaje de crecimiento del activo total (S11).",
-   "Lograr una estructura financiera eficiente (E1-E5) con rendimientos optimizados (R1-R9), minimizando los activos improductivos (A2) y liquidez ociosa (L3).",
-   "Controlar y minimizar los gastos administrativos (R10.",
-   "Disminuir la morosidad (A1) y como resultado de ella, disminuir la necesidad de crear provisiones (R10).",
+  "O9": [
+   "No permitir que el porcentaje de crecimiento de capital institucional (Z8) sea menor que el porcentaje de crecimiento del activo total (Z11).",
+   "Lograr una estructura financiera eficiente (O1-O5) con rendimientos optimizados (I1-I9), minimizando los activos improductivos (E2) y liquidez ociosa (L3).",
+   "Controlar y minimizar los gastos administrativos (I10.",
+   "Disminuir la morosidad (E1) y como resultado de ella, disminuir la necesidad de crear provisiones (I10).",
    "Capitalizar a la reserva irrepartible, todos los excedentes netos que la cooperativa genera.",
    "Aplicar el criterio de destinar los excedentes primero a estimación, luego a capitalización y por ultimo al ingreso. a la Reserva Irrepartible.",
    "Trasladar los excedentes generados por operaciones con terceros a la Reserva Irrepartible.",
    "Trasladar el saldo de otras reservas a la Reserva Irrepartible previo al cierre anual."
   ],
-  "R1": [
+  "I1": [
    "Fijar diferentes tasas de interés sobre los préstamos, según los siguientes criterios: a. Riesgo",
    "Diseñar y aplicar políticas de fijación de tasas diferenciadas para castigar los préstamos morosos con recargos por mora.",
    "Eliminar subsidios a proyectos y programas especiales de préstamos y cobrar tasas reales del mercado que cubran el costo real de dichos programas.",
    "Establecer un programa agresivo de cobranza para bajar la morosidad."
   ],
-  "R2": [
+  "I2": [
    "Monitorear mensualmente las tasas de interés que los bancos o alternativas de inversión que están pagando sobre depósitos.",
-   "Revisar las inversiones en disponibilidades que la cooperativa tiene y hacer ajustes mensuales en la colocación de estas disponibilidades (E2) para optimizar los rendimientos sobre esas disponibilidades, sin sacrificar la seguridad.",
+   "Revisar las inversiones en disponibilidades que la cooperativa tiene y hacer ajustes mensuales en la colocación de estas disponibilidades (O2) para optimizar los rendimientos sobre esas disponibilidades, sin sacrificar la seguridad.",
    "Minimizar la liquidez ociosa (L3).",
    "Lograr economías de escala, mediante la inversión a través de una entidad de segundo piso."
   ],
-  "R3": [
-   "Monitorear mensualmente las tasas de interés que los bancos están pagando sobre los depósitos. Revisar las inversiones financieras que la cooperativa tiene y hacer ajustes mensuales en la colocación de estas inversiones (E3) para optimizar los rendimientos sobre esas inversiones, sin sacrificar la seguridad.",
+  "I3": [
+   "Monitorear mensualmente las tasas de interés que los bancos están pagando sobre los depósitos. Revisar las inversiones financieras que la cooperativa tiene y hacer ajustes mensuales en la colocación de estas inversiones (O3) para optimizar los rendimientos sobre esas inversiones, sin sacrificar la seguridad.",
    "Minimizar la liquidez ociosa (L3).",
-   "Realizar los activos improductivos (A2) y aquellos que se puedan convertirlos en activos productivos."
+   "Realizar los activos improductivos (E2) y aquellos que se puedan convertirlos en activos productivos."
   ],
-  "R4": [
+  "I4": [
    "Revisar cuidadosamente los rendimientos sobre las inversiones no financieras, porque la cooperativa se especialice en operaciones financieras. Si los rendimientos son inferiores a los rendimientos sobre inversiones financieras se deberá tomar medidas para desinvertir los fondos y salir de esos negocios colaterales menos rentables.",
    "Si los rendimientos son superiores, se deberá analizar quienes son los usuarios y beneficiarios de dichas inversiones. Si la mayoría son personas no asociadas, se deberá crear una sociedad anónima donde la cooperativa es la principal accionista. Bajo esta modalidad, el concepto de cooperativismo no se desvirtúa por hacer negocios con terceros. Si los usuarios son asociados, entonces podría valer la pena continuar con el negocio o servicio."
   ],
-  "R5": [
+  "I5": [
    "Evaluar y modificar la estructura de los rangos de depósitos de acuerdo a necesidades (planeación empresarial) y hacer cambios que no eleven los costos financieros",
    "Realizar sondeos mensualmente, a los bancos y a los otros competidores, para asegurar que las tasas pasivas de la cooperativa son competitivas en el mercado financiero y basarse en el plan empresarial.",
-   "Optimizar la estructura financiera (E1-E8) y los rendimientos (R1-R8) en función del plan empresarial",
-   "Realizar los activos improductivos (A2) y aquellos que se puedan convertirlos en activos productivos.",
+   "Optimizar la estructura financiera (O1-O8) y los rendimientos (I1-I8) en función del plan empresarial",
+   "Realizar los activos improductivos (E2) y aquellos que se puedan convertirlos en activos productivos.",
    "Establecer incentivos adicionales diferenciados para la permanencia de los recursos en la cooperativa, reduciendo el costo de captación y mayor estabilidad de los recursos."
   ],
-  "R6": [
+  "I6": [
    "Reducir o eliminar a lo mas mínimo la dependencia al crédito externo",
-   "Optimizar la estructura financiera (E1 - E3) (E5, E7, E8) y los rendimientos (R1 - R8)."
+   "Optimizar la estructura financiera (O1 - O3) (O5, O7, O8) y los rendimientos (I1 - I8)."
   ],
-  "R7": [
+  "I7": [
    "Buscar un equilibrio entre la necesidad de crear capital institucional y pagar un rendimiento justo sobre la aportación, tomando en cuenta que la aportación es una inversión a largo plazo, y por lo tanto, debería devengar un interés",
-   "Incrementar el rendimiento sobre aportaciones a través de las siguientes mejoras en la eficiencia de la cooperativa: (a) Optimizar la estructura financiera (E1-E8), bajando por lo menos el porcentaje de aportaciones al 20% Minimizar los activos improductivos (A2) y aquellos que se puedan convertirlos en activos productivos.",
-   "Incrementar las tasas de interés sobre los préstamos (R1), al mismo tiempo que se libera o elimina el apalancamiento (prestamos: aportaciones) para mantener el mismo nivel de rentabilidad (R12)."
+   "Incrementar el rendimiento sobre aportaciones a través de las siguientes mejoras en la eficiencia de la cooperativa: (a) Optimizar la estructura financiera (O1-O8), bajando por lo menos el porcentaje de aportaciones al 20% Minimizar los activos improductivos (E2) y aquellos que se puedan convertirlos en activos productivos.",
+   "Incrementar las tasas de interés sobre los préstamos (I1), al mismo tiempo que se libera o elimina el apalancamiento (prestamos: aportaciones) para mantener el mismo nivel de rentabilidad (I12)."
   ],
-  "R8": [
-   "Optimizar la estructura financiera (E1-E8).",
-   "Optimizar los rendimientos sobre esa estructura (R1-R7).",
-   "Minimizar los activos improductivos (A2) y aquellos que se puedan convertirlos en activos productivos.",
-   "Disminuir la morosidad (A1) de la cartera mediante un adecuado análisis crediticio (RATIOS) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
+  "I8": [
+   "Optimizar la estructura financiera (O1-O8).",
+   "Optimizar los rendimientos sobre esa estructura (I1-I7).",
+   "Minimizar los activos improductivos (E2) y aquellos que se puedan convertirlos en activos productivos.",
+   "Disminuir la morosidad (E1) de la cartera mediante un adecuado análisis crediticio (RATIOS) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
    "Minimizar la liquidez ociosa (L3) implementando controles de efectivo de acuerdo a las necesidades de operación por sucursal."
   ],
-  "R9": [
+  "I9": [
    "Elaborar el presupuesto en forma conservadora y ejercerlo en función del cumplimento de los objetivos trazados mismo, en función del crecimiento de activos observado en el trimestre anterior Esto evitara gastarnos el dinero antes de generarlo.",
    "Tratar de convertir los incrementos en gastos de personal, directivos y otros relacionados con recursos humanos, en variables contra el cumplimiento de metas, partiendo del presupuesto base.",
    "Revisar la estructura administrativa para determinar la necesidad de cada puesto y readecuar salarios.",
@@ -150,17 +150,17 @@
    "Utilizar el presupuesto como herramienta para la autorización de gastos, velando que hayan recursos para hacerlo. El hecho que exista asignación presupuestaria no implica que haya recursos para gastarlos.",
    "Los gastos de avalúo y cobranza deben cobrarse al asociado."
   ],
-  "R10": [
-   "Disminuir la morosidad (A1) de la cartera mediante un adecuado análisis crediticio (RATIOS) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
-   "Ajustes mensuales de la estimación de préstamos irrecuperables (R10), para mantener un saldo equivalente del 35% (P2)de la morosidad entre 1-12 meses (P1) y 100% de préstamos morosos mayor de 12 meses.",
+  "I10": [
+   "Disminuir la morosidad (E1) de la cartera mediante un adecuado análisis crediticio (RATIOS) análisis de la mora a partir de un día, aplicar el programa de cobranza agresiva (PAC),",
+   "Ajustes mensuales de la estimación de préstamos irrecuperables (I10), para mantener un saldo equivalente del 35% (S2)de la morosidad entre 1-12 meses (S1) y 100% de préstamos morosos mayor de 12 meses.",
    "Analizar mensualmente el margen bruto para asegurar que hay ingresos financieros suficientes para crear las provisiones utilizando el plan empresarial"
   ],
-  "R12": [
-   "Incrementar el excedente neto a través de las siguientes mejoras en la eficiencia operativa de la cooperativa: (a) Optimizar la estructura financiera (E1-E8); (b) Optimizar los rendimientos (R1-R7) sobre la estructura idónea en E1 - E8; (c) Controlar y reducir gastos administrativos (R9) innecesarios. (d) Minimizar los activos improductivos (A2) y aquellos que se puedan convertirlos en activos productivos; (e) Controlar la morosidad (A1) y reducir las provisiones para préstamos incobrables; (f) No presentar excedentes antes de haber cubierto las estimaciones requeridas y el ajuste al capital",
+  "I12": [
+   "Incrementar el excedente neto a través de las siguientes mejoras en la eficiencia operativa de la cooperativa: (a) Optimizar la estructura financiera (O1-O8); (b) Optimizar los rendimientos (I1-I7) sobre la estructura idónea en O1 - O8; (c) Controlar y reducir gastos administrativos (I9) innecesarios. (d) Minimizar los activos improductivos (E2) y aquellos que se puedan convertirlos en activos productivos; (e) Controlar la morosidad (E1) y reducir las provisiones para préstamos incobrables; (f) No presentar excedentes antes de haber cubierto las estimaciones requeridas y el ajuste al capital",
    "Si hay excedentes suficientes, analizar la posibilidad de pagar una bonificación por resultados a los empleados que lograron la obtención de los resultados"
   ],
   "L1": [
-   "Controlar los niveles de préstamo contra activo (E1) y liquidez (L1) obteniendo parámetros aceptables",
+   "Controlar los niveles de préstamo contra activo (O1) y liquidez (L1) obteniendo parámetros aceptables",
    "Mantener coordinación y comunicación entre la instancia de crédito, sucursales y la tesorería para controlar los niveles de liquidez",
    "Incrementar la captación si es que los niveles de liquidez se encuentran bajos",
    "Mantener las inversiones en instrumentos de alta seguridad, rentabilidad y disponibilidad",
@@ -175,7 +175,7 @@
    "Ajustar a diario los niveles de liquidez que la cooperativa tiene.",
    "Llevar un control diario de los ingresos y los retiros de depósitos (por numero y tamaño) para conocer las tendencias estacionales de la comunidad. La información obtenida ayudará a afinar la cantidad de liquidez ociosa necesaria."
   ],
-  "A1": [
+  "E1": [
    "Mejoramiento continuo de las políticas de crédito.",
    "Asignar la responsabilidad de la cobranza en una persona o área.",
    "Iniciar el cobro administrativo a partir de la primera cuota vencida.",
@@ -186,7 +186,7 @@
    "No utilizar los instrumentos de administración crediticia (Renovaciones y Prórrogas).",
    "Establecer los mecanismos de control para monitorear los avances de recuperación de la cobranza judicial y extrajudicial."
   ],
-  "A2": [
+  "E2": [
    "Evaluar las alternativas de arrendamiento versus compra o construcción de activos fijos.",
    "Establecer políticas de depreciaciones y amortizaciones basadas en la vida útil real de los bienes y en base a la legislación aplicable.",
    "Hacer una realización rápida de los activos extraordinarios.",
@@ -194,33 +194,33 @@
    "Hacer una campaña agresiva de cobro de cuentas deudoras improductivas, incluyendo un análisis de antigüedad y montos, estableciendo una política de depuración.",
    "Definir una política de contabilización de activos fijos y depurar."
   ],
-  "A3": [
-   "Seguir las estrategias mencionadas en E8, Capital Institucional, para incrementar este rubro.",
-   "Seguir las estrategias mencionadas en A2, Activo Improductivo, para disminuir este rubro."
+  "E3": [
+   "Seguir las estrategias mencionadas en O8, Capital Institucional, para incrementar este rubro.",
+   "Seguir las estrategias mencionadas en E2, Activo Improductivo, para disminuir este rubro."
   ],
-  "S11": [
+  "Z11": [
    "Utilizar el depósito de ahorro como la fuente principal de crecimiento, y elaborar un buen programa de mercadeo para captar más ahorros.",
-   "Optimizar la estructura financiera (E1-E8) de la cooperativa.",
+   "Optimizar la estructura financiera (O1-O8) de la cooperativa.",
    "Pagar tasas empresariales sobre los activos, pasivos, y capital.",
    "Poner énfasis al crecimiento del activo total, siempre y cuando contribuya al margen bruto.",
-   "Reducir los activos improductivos (A2)."
+   "Reducir los activos improductivos (E2)."
   ],
-  "S1": [
-   "Seguir las estrategias mencionadas en E1, Préstamos, para lograr un crecimiento aceptable."
+  "Z1": [
+   "Seguir las estrategias mencionadas en O1, Préstamos, para lograr un crecimiento aceptable."
   ],
-  "S5": [
-   "Seguir las estrategias mencionadas en E5, Depósitos, para lograr un crecimiento aceptable."
+  "Z5": [
+   "Seguir las estrategias mencionadas en O5, Depósitos, para lograr un crecimiento aceptable."
   ],
-  "S6": [
-   "Seguir las estrategias mencionadas en E6, Crédito Externo, para lograr una disminución gradual pero definitiva."
+  "Z6": [
+   "Seguir las estrategias mencionadas en O6, Crédito Externo, para lograr una disminución gradual pero definitiva."
   ],
-  "S7": [
-   "Seguir las estrategias mencionadas en E7, Aportaciones, para lograr un crecimiento aceptable."
+  "Z7": [
+   "Seguir las estrategias mencionadas en O7, Aportaciones, para lograr un crecimiento aceptable."
   ],
-  "S8": [
-   "Seguir las estrategias mencionadas en E8, Capital Institucional, para lograr un crecimiento aceptable."
+  "Z8": [
+   "Seguir las estrategias mencionadas en O8, Capital Institucional, para lograr un crecimiento aceptable."
   ],
-  "S10": [
+  "Z10": [
    "Agilizar los requisitos de ingreso de nuevos asociados.",
    "Utilizar los estudios de mercado, principalmente la segmentación demográfica de su mercado, para orientar los esfuerzos de captación.",
    "Flexibilizar y readecuar el concepto de asociados, para convertir a los usuarios ahorrantes\"en \"asociados reales\".",
@@ -233,549 +233,549 @@
   ]
  },
  "interrelacion": {
-  "P1": {
+  "S1": {
    "afecta": [
-    "E1",
-    "R12"
+    "O1",
+    "I12"
    ],
    "afectado_por": [
-    "P3",
-    "P4",
-    "P5",
-    "R10",
-    "A1"
+    "S3",
+    "S4",
+    "S5",
+    "I10",
+    "E1"
    ],
    "afecta_indirecta": [
-    "E8",
-    "S11",
-    "S1"
+    "O8",
+    "Z11",
+    "Z1"
    ],
    "afectado_por_indirecta": [
-    "R8"
+    "I8"
    ]
   },
-  "P2": {
+  "S2": {
    "afecta": [
-    "E1",
-    "R12"
+    "O1",
+    "I12"
    ],
    "afectado_por": [
-    "P3",
-    "P4",
-    "P5",
-    "R10",
-    "A1"
+    "S3",
+    "S4",
+    "S5",
+    "I10",
+    "E1"
    ],
    "afecta_indirecta": [
-    "E8",
-    "S11",
-    "S1"
+    "O8",
+    "Z11",
+    "Z1"
    ],
    "afectado_por_indirecta": [
-    "R8"
+    "I8"
    ]
   },
-  "P3": {
+  "S3": {
    "afecta": [
-    "P1",
-    "P2",
-    "P5",
-    "E1",
-    "E7",
-    "A1",
-    "S11",
     "S1",
-    "S10"
+    "S2",
+    "S5",
+    "O1",
+    "O7",
+    "E1",
+    "Z11",
+    "Z1",
+    "Z10"
    ],
    "afectado_por": [
-    "R10"
+    "I10"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": []
   },
-  "P4": {
+  "S4": {
    "afecta": [
-    "P1",
-    "P2",
-    "P5",
-    "E1",
-    "E7",
-    "A1",
-    "S11",
     "S1",
-    "S10"
+    "S2",
+    "S5",
+    "O1",
+    "O7",
+    "E1",
+    "Z11",
+    "Z1",
+    "Z10"
    ],
    "afectado_por": [
-    "R10"
+    "I10"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": []
   },
-  "P5": {
+  "S5": {
    "afecta": [
-    "P1",
-    "P2",
-    "E8",
-    "R10",
-    "R12",
-    "S8"
+    "S1",
+    "S2",
+    "O8",
+    "I10",
+    "I12",
+    "Z8"
    ],
    "afectado_por": [
-    "P3",
-    "P4"
-   ],
-   "afecta_indirecta": [
-    "A3",
-    "S11"
-   ],
-   "afectado_por_indirecta": []
-  },
-  "E1": {
-   "afecta": [
-    "E2",
-    "R8",
-    "R12"
-   ],
-   "afectado_por": [
-    "P1",
-    "P4",
-    "R1",
-    "L1",
-    "A1",
-    "S11",
-    "S1"
+    "S3",
+    "S4"
    ],
    "afecta_indirecta": [
     "E3",
-    "E4",
-    "E8",
-    "S8"
+    "Z11"
+   ],
+   "afectado_por_indirecta": []
+  },
+  "O1": {
+   "afecta": [
+    "O2",
+    "I8",
+    "I12"
+   ],
+   "afectado_por": [
+    "S1",
+    "S4",
+    "I1",
+    "L1",
+    "E1",
+    "Z11",
+    "Z1"
+   ],
+   "afecta_indirecta": [
+    "O3",
+    "O4",
+    "O8",
+    "Z8"
    ],
    "afectado_por_indirecta": [
-    "R2",
-    "R4",
-    "R10",
-    "A2",
-    "S10"
+    "I2",
+    "I4",
+    "I10",
+    "E2",
+    "Z10"
    ]
   },
-  "E2": {
+  "O2": {
    "afecta": [
-    "R8",
-    "R12",
+    "I8",
+    "I12",
     "L1",
     "L4",
-    "A2"
+    "E2"
    ],
    "afectado_por": [
-    "E1",
-    "E3",
-    "E5",
-    "E7",
-    "R2",
+    "O1",
+    "O3",
+    "O5",
+    "O7",
+    "I2",
     "L2",
-    "S11",
-    "S1"
+    "Z11",
+    "Z1"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": [
-    "R1",
-    "R3",
-    "R4"
+    "I1",
+    "I3",
+    "I4"
    ]
   },
-  "E3": {
+  "O3": {
    "afecta": [
-    "E2",
-    "R8",
-    "R12"
+    "O2",
+    "I8",
+    "I12"
    ],
    "afectado_por": [
-    "E5",
-    "E7",
-    "R3",
+    "O5",
+    "O7",
+    "I3",
     "L4",
-    "S11"
+    "Z11"
    ],
    "afecta_indirecta": [
-    "E8",
+    "O8",
     "L1",
     "L3",
-    "S8"
+    "Z8"
    ],
    "afectado_por_indirecta": [
-    "E1",
-    "E4",
-    "R1",
-    "R2",
-    "R4",
-    "A2"
+    "O1",
+    "O4",
+    "I1",
+    "I2",
+    "I4",
+    "E2"
    ]
   },
-  "E4": {
+  "O4": {
    "afecta": [
-    "E2",
-    "R8",
-    "R12"
+    "O2",
+    "I8",
+    "I12"
    ],
    "afectado_por": [
-    "E5",
-    "E7",
-    "R4",
-    "S11"
+    "O5",
+    "O7",
+    "I4",
+    "Z11"
    ],
    "afecta_indirecta": [
-    "E8",
+    "O8",
     "L1",
     "L4",
-    "S8"
+    "Z8"
    ],
    "afectado_por_indirecta": [
-    "E1",
-    "E3",
-    "R1",
-    "R3",
-    "A2"
+    "O1",
+    "O3",
+    "I1",
+    "I3",
+    "E2"
    ]
   },
-  "E5": {
+  "O5": {
    "afecta": [
-    "E1",
-    "E4",
-    "R8",
-    "R12",
+    "O1",
+    "O4",
+    "I8",
+    "I12",
     "L1",
     "L2",
     "L4",
-    "S11",
-    "S1"
+    "Z11",
+    "Z1"
    ],
    "afectado_por": [
-    "E6",
-    "R5",
-    "S5"
+    "O6",
+    "I5",
+    "Z5"
    ],
    "afecta_indirecta": [
-    "E7",
-    "E8",
+    "O7",
+    "O8",
     "L3",
-    "S8"
+    "Z8"
    ],
    "afectado_por_indirecta": [
-    "R6",
-    "R7",
-    "S10"
+    "I6",
+    "I7",
+    "Z10"
    ]
   },
-  "E6": {
+  "O6": {
    "afecta": [
-    "E1",
-    "E5",
-    "R1",
-    "R8",
-    "R12",
-    "S11"
+    "O1",
+    "O5",
+    "I1",
+    "I8",
+    "I12",
+    "Z11"
    ],
    "afectado_por": [
-    "R6",
-    "S6"
+    "I6",
+    "Z6"
    ],
    "afecta_indirecta": [
-    "E7",
-    "E8",
-    "S1",
-    "S8"
+    "O7",
+    "O8",
+    "Z1",
+    "Z8"
    ],
    "afectado_por_indirecta": []
   },
-  "E7": {
+  "O7": {
    "afecta": [
-    "E1",
-    "E2",
-    "E3",
-    "E4",
-    "R8",
-    "R12",
-    "S11"
+    "O1",
+    "O2",
+    "O3",
+    "O4",
+    "I8",
+    "I12",
+    "Z11"
    ],
    "afectado_por": [
-    "P3",
-    "P4",
-    "R7",
-    "S7",
-    "S10"
+    "S3",
+    "S4",
+    "I7",
+    "Z7",
+    "Z10"
    ],
    "afecta_indirecta": [
-    "E8",
-    "S8"
+    "O8",
+    "Z8"
    ],
    "afectado_por_indirecta": [
-    "E5",
-    "E6"
+    "O5",
+    "O6"
    ]
   },
-  "E8": {
+  "O8": {
    "afecta": [
-    "A3"
+    "E3"
    ],
    "afectado_por": [
-    "P5",
-    "R1",
-    "R12",
+    "S5",
+    "I1",
+    "I12",
     "L3",
-    "A1",
-    "A2",
-    "S8"
+    "E1",
+    "E2",
+    "Z8"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": [
-    "P1",
-    "P2",
-    "E1",
-    "E7",
-    "S11",
-    "S5"
+    "S1",
+    "S2",
+    "O1",
+    "O7",
+    "Z11",
+    "Z5"
    ]
   },
-  "R1": {
+  "I1": {
    "afecta": [
-    "E1",
-    "E8",
-    "R8",
-    "R12",
-    "S11",
-    "S1",
-    "S6",
-    "S8",
-    "S10"
+    "O1",
+    "O8",
+    "I8",
+    "I12",
+    "Z11",
+    "Z1",
+    "Z6",
+    "Z8",
+    "Z10"
    ],
    "afectado_por": [
-    "E6",
-    "R5",
-    "R7",
-    "A1"
+    "O6",
+    "I5",
+    "I7",
+    "E1"
    ],
    "afecta_indirecta": [
-    "E2",
-    "E4",
+    "O2",
+    "O4",
     "L3"
    ],
    "afectado_por_indirecta": [
-    "R2",
-    "R3"
+    "I2",
+    "I3"
    ]
   },
-  "R2": {
+  "I2": {
    "afecta": [
-    "E2",
-    "E8",
-    "R8",
-    "R12",
+    "O2",
+    "O8",
+    "I8",
+    "I12",
     "L1",
-    "S8"
+    "Z8"
    ],
    "afectado_por": [
     "L2",
     "L4"
    ],
    "afecta_indirecta": [
-    "E1",
-    "E3",
-    "E4",
-    "R1",
-    "S11"
+    "O1",
+    "O3",
+    "O4",
+    "I1",
+    "Z11"
    ],
    "afectado_por_indirecta": [
-    "A2"
+    "E2"
    ]
   },
-  "R3": {
+  "I3": {
    "afecta": [
-    "E3",
-    "E8",
-    "R8",
-    "R12",
-    "S8"
+    "O3",
+    "O8",
+    "I8",
+    "I12",
+    "Z8"
    ],
    "afectado_por": [
     "L4"
    ],
    "afecta_indirecta": [
-    "E1",
-    "E2",
-    "E4",
-    "R1",
+    "O1",
+    "O2",
+    "O4",
+    "I1",
     "L3",
-    "S11"
+    "Z11"
    ],
    "afectado_por_indirecta": [
-    "A2"
+    "E2"
    ]
   },
-  "R4": {
+  "I4": {
    "afecta": [
-    "E4",
-    "E8",
-    "R8",
-    "R12",
-    "S8"
+    "O4",
+    "O8",
+    "I8",
+    "I12",
+    "Z8"
    ],
    "afectado_por": [
-    "A2"
+    "E2"
    ],
    "afecta_indirecta": [
-    "E1",
-    "E3",
-    "S11"
+    "O1",
+    "O3",
+    "Z11"
    ],
    "afectado_por_indirecta": []
   },
-  "R5": {
+  "I5": {
    "afecta": [
-    "E5",
-    "E8",
-    "R1",
-    "R6",
-    "R8",
-    "R12",
-    "S11",
-    "S5",
-    "S8",
-    "S10"
+    "O5",
+    "O8",
+    "I1",
+    "I6",
+    "I8",
+    "I12",
+    "Z11",
+    "Z5",
+    "Z8",
+    "Z10"
    ],
    "afectado_por": [],
    "afecta_indirecta": [
-    "R2",
-    "R4"
+    "I2",
+    "I4"
    ],
    "afectado_por_indirecta": [
-    "A2"
+    "E2"
    ]
   },
-  "R6": {
+  "I6": {
    "afecta": [
-    "E6",
-    "E8",
-    "R1",
-    "R8",
-    "R12",
-    "S11",
-    "S6",
-    "S8"
+    "O6",
+    "O8",
+    "I1",
+    "I8",
+    "I12",
+    "Z11",
+    "Z6",
+    "Z8"
    ],
    "afectado_por": [
-    "R5",
-    "R7"
+    "I5",
+    "I7"
    ],
    "afecta_indirecta": [
-    "E5"
+    "O5"
    ],
    "afectado_por_indirecta": []
   },
-  "R7": {
+  "I7": {
    "afecta": [
-    "E7",
-    "E8",
-    "R1",
-    "R6",
-    "R8",
-    "R12",
-    "S7",
-    "S10"
+    "O7",
+    "O8",
+    "I1",
+    "I6",
+    "I8",
+    "I12",
+    "Z7",
+    "Z10"
    ],
    "afectado_por": [
-    "R5"
+    "I5"
    ],
    "afecta_indirecta": [
-    "E5",
-    "R2",
-    "R4"
+    "O5",
+    "I2",
+    "I4"
    ],
    "afectado_por_indirecta": [
-    "A2"
+    "E2"
    ]
   },
-  "R8": {
+  "I8": {
    "afecta": [
-    "E8",
-    "R10",
-    "R12",
-    "S11",
-    "S8"
+    "O8",
+    "I10",
+    "I12",
+    "Z11",
+    "Z8"
+   ],
+   "afectado_por": [
+    "O1",
+    "O7",
+    "I1",
+    "I2",
+    "I3",
+    "I4",
+    "I5",
+    "I6",
+    "I7",
+    "L3",
+    "E1",
+    "E2"
+   ],
+   "afecta_indirecta": [
+    "S1",
+    "S2"
+   ],
+   "afectado_por_indirecta": []
+  },
+  "I9": {
+   "afecta": [
+    "O8",
+    "I1",
+    "I12",
+    "Z8"
    ],
    "afectado_por": [
     "E1",
-    "E7",
-    "R1",
-    "R2",
-    "R3",
-    "R4",
-    "R5",
-    "R6",
-    "R7",
-    "L3",
-    "A1",
-    "A2"
-   ],
-   "afecta_indirecta": [
-    "P1",
-    "P2"
-   ],
-   "afectado_por_indirecta": []
-  },
-  "R9": {
-   "afecta": [
-    "E8",
-    "R1",
-    "R12",
-    "S8"
-   ],
-   "afectado_por": [
-    "A1",
-    "S11"
+    "Z11"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": []
   },
-  "R10": {
+  "I10": {
    "afecta": [
-    "P1",
-    "P5",
-    "E8",
-    "R12",
-    "S11",
     "S1",
-    "S8"
+    "S5",
+    "O8",
+    "I12",
+    "Z11",
+    "Z1",
+    "Z8"
    ],
    "afectado_por": [
-    "R8",
-    "A1"
+    "I8",
+    "E1"
    ],
    "afecta_indirecta": [
-    "E1",
-    "R2",
-    "R7"
+    "O1",
+    "I2",
+    "I7"
    ],
    "afectado_por_indirecta": []
   },
-  "R12": {
+  "I12": {
    "afecta": [
-    "E8",
-    "A3",
-    "S11",
-    "S8"
+    "O8",
+    "E3",
+    "Z11",
+    "Z8"
    ],
    "afectado_por": [
-    "P1",
-    "P2",
-    "P5",
-    "E1",
-    "E7",
-    "R1",
-    "R11",
+    "S1",
+    "S2",
+    "S5",
+    "O1",
+    "O7",
+    "I1",
+    "I11",
     "L3",
-    "A1",
-    "A2"
+    "E1",
+    "E2"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": [
@@ -784,254 +784,254 @@
   },
   "L1": {
    "afecta": [
-    "E1",
+    "O1",
     "L4"
    ],
    "afectado_por": [
-    "E2",
-    "E5",
-    "R2",
+    "O2",
+    "O5",
+    "I2",
     "L2"
    ],
    "afecta_indirecta": [
-    "R12",
-    "S10"
+    "I12",
+    "Z10"
    ],
    "afectado_por_indirecta": [
-    "E3",
-    "E4"
+    "O3",
+    "O4"
    ]
   },
   "L2": {
    "afecta": [
-    "E2",
-    "R2",
+    "O2",
+    "I2",
     "L1",
     "L3"
    ],
    "afectado_por": [
-    "E5"
+    "O5"
    ],
    "afecta_indirecta": [
-    "S10"
+    "Z10"
    ],
    "afectado_por_indirecta": [
-    "E3",
-    "E4"
+    "O3",
+    "O4"
    ]
   },
   "L3": {
    "afecta": [
-    "E8",
-    "R2",
-    "R8",
-    "R12",
-    "A2",
-    "A3",
-    "S8"
+    "O8",
+    "I2",
+    "I8",
+    "I12",
+    "E2",
+    "E3",
+    "Z8"
    ],
    "afectado_por": [],
    "afecta_indirecta": [],
    "afectado_por_indirecta": [
-    "E3",
-    "E5",
-    "R1",
-    "R3"
+    "O3",
+    "O5",
+    "I1",
+    "I3"
    ]
   },
-  "A1": {
+  "E1": {
    "afecta": [
-    "P1",
-    "P2",
-    "E1",
-    "E8",
-    "R1",
-    "R8",
-    "R9",
-    "R10",
-    "R11",
-    "R12",
-    "S11",
-    "S8"
+    "S1",
+    "S2",
+    "O1",
+    "O8",
+    "I1",
+    "I8",
+    "I9",
+    "I10",
+    "I11",
+    "I12",
+    "Z11",
+    "Z8"
    ],
    "afectado_por": [
-    "P3",
-    "P4",
-    "S1"
+    "S3",
+    "S4",
+    "Z1"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": []
   },
-  "A2": {
+  "E2": {
    "afecta": [
-    "E8",
-    "R4",
-    "R8",
-    "R12",
-    "A3",
-    "S11",
-    "S8"
+    "O8",
+    "I4",
+    "I8",
+    "I12",
+    "E3",
+    "Z11",
+    "Z8"
    ],
    "afectado_por": [
-    "E2",
+    "O2",
     "L3"
    ],
    "afecta_indirecta": [
-    "E1",
-    "E3",
-    "E4",
-    "R2",
-    "R3",
-    "R5",
-    "S5"
+    "O1",
+    "O3",
+    "O4",
+    "I2",
+    "I3",
+    "I5",
+    "Z5"
    ],
    "afectado_por_indirecta": []
   },
-  "A3": {
+  "E3": {
    "afecta": [],
    "afectado_por": [
-    "E8",
-    "R12",
+    "O8",
+    "I12",
     "L3",
-    "A2",
-    "S8"
+    "E2",
+    "Z8"
    ],
    "afecta_indirecta": [],
    "afectado_por_indirecta": [
-    "P5"
+    "S5"
    ]
   },
-  "S11": {
+  "Z11": {
    "afecta": [
-    "E1",
-    "E4",
-    "R9"
+    "O1",
+    "O4",
+    "I9"
    ],
    "afectado_por": [
-    "P3",
-    "P5",
-    "E5",
-    "E7",
-    "R1",
-    "R10",
-    "R12",
-    "A1",
-    "A2",
-    "S1",
-    "S10"
-   ],
-   "afecta_indirecta": [
-    "E8"
-   ],
-   "afectado_por_indirecta": [
-    "P1",
-    "P2",
-    "R2",
-    "R7"
-   ]
-  },
-  "S1": {
-   "afecta": [
+    "S3",
+    "S5",
+    "O5",
+    "O7",
+    "I1",
+    "I10",
+    "I12",
     "E1",
     "E2",
-    "E5",
-    "A1",
-    "S11"
-   ],
-   "afectado_por": [
-    "P3",
-    "P4",
-    "R1",
-    "R10",
-    "S5",
-    "S10"
-   ],
-   "afecta_indirecta": [],
-   "afectado_por_indirecta": [
-    "P1",
-    "P2",
-    "E6"
-   ]
-  },
-  "S5": {
-   "afecta": [
-    "E5",
-    "S11",
-    "S1"
-   ],
-   "afectado_por": [
-    "R5",
-    "S10"
+    "Z1",
+    "Z10"
    ],
    "afecta_indirecta": [
-    "E8"
+    "O8"
    ],
    "afectado_por_indirecta": [
-    "A2"
-   ]
-  },
-  "S6": {
-   "afecta": [
-    "E6",
-    "S11"
-   ],
-   "afectado_por": [
-    "R1",
-    "R6"
-   ],
-   "afecta_indirecta": [],
-   "afectado_por_indirecta": []
-  },
-  "S7": {
-   "afecta": [
-    "E7",
-    "S11"
-   ],
-   "afectado_por": [
-    "R7",
-    "S10"
-   ],
-   "afecta_indirecta": [],
-   "afectado_por_indirecta": []
-  },
-  "S8": {
-   "afecta": [
-    "E8",
-    "A3",
-    "S11"
-   ],
-   "afectado_por": [
-    "P5",
-    "R1",
-    "R12",
-    "L3",
-    "A1",
-    "A2"
-   ],
-   "afecta_indirecta": [],
-   "afectado_por_indirecta": [
-    "E1",
-    "E7"
-   ]
-  },
-  "S10": {
-   "afecta": [
-    "E7",
-    "S11",
     "S1",
-    "S5",
-    "S7"
+    "S2",
+    "I2",
+    "I7"
+   ]
+  },
+  "Z1": {
+   "afecta": [
+    "O1",
+    "O2",
+    "O5",
+    "E1",
+    "Z11"
    ],
    "afectado_por": [
-    "P3",
-    "P4",
-    "R1",
-    "R5",
-    "R7"
+    "S3",
+    "S4",
+    "I1",
+    "I10",
+    "Z5",
+    "Z10"
+   ],
+   "afecta_indirecta": [],
+   "afectado_por_indirecta": [
+    "S1",
+    "S2",
+    "O6"
+   ]
+  },
+  "Z5": {
+   "afecta": [
+    "O5",
+    "Z11",
+    "Z1"
+   ],
+   "afectado_por": [
+    "I5",
+    "Z10"
    ],
    "afecta_indirecta": [
+    "O8"
+   ],
+   "afectado_por_indirecta": [
+    "E2"
+   ]
+  },
+  "Z6": {
+   "afecta": [
+    "O6",
+    "Z11"
+   ],
+   "afectado_por": [
+    "I1",
+    "I6"
+   ],
+   "afecta_indirecta": [],
+   "afectado_por_indirecta": []
+  },
+  "Z7": {
+   "afecta": [
+    "O7",
+    "Z11"
+   ],
+   "afectado_por": [
+    "I7",
+    "Z10"
+   ],
+   "afecta_indirecta": [],
+   "afectado_por_indirecta": []
+  },
+  "Z8": {
+   "afecta": [
+    "O8",
+    "E3",
+    "Z11"
+   ],
+   "afectado_por": [
+    "S5",
+    "I1",
+    "I12",
+    "L3",
     "E1",
-    "E5"
+    "E2"
+   ],
+   "afecta_indirecta": [],
+   "afectado_por_indirecta": [
+    "O1",
+    "O7"
+   ]
+  },
+  "Z10": {
+   "afecta": [
+    "O7",
+    "Z11",
+    "Z1",
+    "Z5",
+    "Z7"
+   ],
+   "afectado_por": [
+    "S3",
+    "S4",
+    "I1",
+    "I5",
+    "I7"
+   ],
+   "afecta_indirecta": [
+    "O1",
+    "O5"
    ],
    "afectado_por_indirecta": [
     "L1",

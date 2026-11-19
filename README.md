@@ -60,10 +60,13 @@ Todas incluyen **Saldo Vigente y Saldo Vencido**:
 Las SOCAPS y SOFOMES importan su **balanza de comprobación** o sus **estados
 financieros** (Excel o CSV) y el sistema genera:
 
-- Semáforo de **indicadores financieros** de protección, estructura,
-  rendimientos, liquidez, activos improductivos y crecimiento (metas de
-  excelencia parametrizables) con histórico por corte, porcentaje de
-  indicadores deficientes y ajuste requerido en pesos para alcanzar cada meta.
+- **Modelo S-O-L-I-D-E-Z** de 58 indicadores en siete dimensiones:
+  Salvaguarda de cartera, Orden del balance, Liquidez, Ingresos y
+  rentabilidad, Deterioro y pérdida esperada (IFRS 9), Eficiencia de activos y
+  Zona de crecimiento. Semáforo con histórico por corte, metas
+  parametrizables y ajuste requerido en pesos para alcanzar cada meta.
+- **Índice SOLIDEZ** (0-100) por dimensión y global, con calificación
+  Sólida / Estable / En vigilancia / Crítica.
 - **IFRS 9**: cartera por etapas, pérdida crediticia esperada (PD × LGD × EAD
   con escenarios prospectivos), suficiencia de reservas, cobertura de etapa
   3, costo de riesgo, migración entre etapas y capital ajustado.

@@ -42,16 +42,37 @@
   {% endif %}
 </div>
 
+{% set ix = res.indice %}
+<div class="indice">
+  <div class="indice-global {{ ix.clase }}">
+    <div class="etiqueta">Índice SOLIDEZ</div>
+    <div class="cifra">{{ '%.0f' % ix.puntaje if ix.puntaje is not none else '—' }}<span>/100</span></div>
+    <div class="calif">{{ ix.calificacion }}</div>
+  </div>
+  <div class="indice-dimensiones">
+    {% for d in ix.dimensiones %}
+    <div class="dim">
+      <div class="dim-letra {{ d.clase }}">{{ d.grupo }}</div>
+      <div class="dim-cuerpo">
+        <div class="dim-nombre">{{ d.nombre }} <span class="nota">· peso {{ d.peso }}%</span></div>
+        <div class="barra-fondo"><div class="barra {{ 'verde' if d.clase == 'cumple' else ('vencido' if d.clase == 'deficiente' else '') }}" style="width: {{ d.puntaje or 0 }}%"></div></div>
+        <div class="nota">{% if d.puntaje is not none %}{{ '%.0f' % d.puntaje }} · {{ d.calificacion }} · {{ d.cumple }} cumplen · {{ d.alerta }} alerta · {{ d.deficiente }} deficientes{% else %}Sin indicadores evaluables{% endif %}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
 <div class="tarjetas">
   <div class="tarjeta"><div class="etiqueta">Activo total</div><div class="valor">{{ ag.activo_total | moneda }}</div>
     <div class="detalle">Cartera bruta {{ ag.cartera_bruta | moneda }}</div></div>
-  <div class="tarjeta"><div class="etiqueta">Morosidad (A1)</div><div class="valor {{ 'rojo' if pc.A1.estatus == 'deficiente' else 'verde' }}">{{ pc.A1 | vind }}</div>
-    <div class="detalle">Meta {{ pc.A1.ind.meta }}</div></div>
-  <div class="tarjeta"><div class="etiqueta">Capital institucional (E8)</div><div class="valor {{ 'rojo' if pc.E8.estatus == 'deficiente' else 'verde' }}">{{ pc.E8 | vind }}</div>
-    <div class="detalle">Meta {{ pc.E8.ind.meta }}</div></div>
-  <div class="tarjeta"><div class="etiqueta">Suficiencia PCE IFRS 9 (I7)</div><div class="valor {{ 'rojo' if pc.I7.estatus == 'deficiente' else 'verde' }}">{{ pc.I7 | vind }}</div>
+  <div class="tarjeta"><div class="etiqueta">Morosidad (E1)</div><div class="valor {{ 'rojo' if pc.E1.estatus == 'deficiente' else 'verde' }}">{{ pc.E1 | vind }}</div>
+    <div class="detalle">Meta {{ pc.E1.ind.meta }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Capital institucional (O8)</div><div class="valor {{ 'rojo' if pc.O8.estatus == 'deficiente' else 'verde' }}">{{ pc.O8 | vind }}</div>
+    <div class="detalle">Meta {{ pc.O8.ind.meta }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Suficiencia PCE IFRS 9 (D7)</div><div class="valor {{ 'rojo' if pc.D7.estatus == 'deficiente' else 'verde' }}">{{ pc.D7 | vind }}</div>
     <div class="detalle">{% if res.pce.deficit %}Déficit {{ res.pce.deficit | moneda }}{% else %}Excedente {{ res.pce.excedente | moneda }}{% endif %}</div></div>
-  <div class="tarjeta"><div class="etiqueta">ROA (R12)</div><div class="valor {{ 'rojo' if pc.R12.estatus == 'deficiente' else 'verde' }}">{{ pc.R12 | vind }}</div>
+  <div class="tarjeta"><div class="etiqueta">ROA (I12)</div><div class="valor {{ 'rojo' if pc.I12.estatus == 'deficiente' else 'verde' }}">{{ pc.I12 | vind }}</div>
     <div class="detalle">Excedente {{ ag.excedente_neto | moneda }}</div></div>
 </div>
 
@@ -64,7 +85,7 @@
     <div><label>Tasa empresarial (%)</label><input class="chico" name="tasa_empresarial" value="{{ '%.2f' % (estado.tasa_empresarial * 100) if estado.tasa_empresarial is not none else '' }}"></div>
     <button class="boton" type="submit">Guardar</button>
   </form>
-  <p class="nota">Se usan para evaluar R1, R2, R3, R5, R13 y las señales expansivas (S). Sin ellos esos indicadores quedan como informativos.</p>
+  <p class="nota">Se usan para evaluar I1, I2, I3, I5, I13 y la zona de crecimiento (Z). Sin ellos esos indicadores quedan como informativos.</p>
 </details>
 
 <h3>Indicadores</h3>

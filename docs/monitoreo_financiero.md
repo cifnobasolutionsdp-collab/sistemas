@@ -97,28 +97,45 @@ Datos complementarios: `mora_1_12`, `mora_mas_12`, `castigos_ejercicio`,
 `pe_etapa1..3` (PCE propia), `activos_problematicos`, `cxp_30_dias`,
 `reserva_liquidez`, `asociados`.
 
-## Indicadores
+## Modelo S-O-L-I-D-E-Z
 
-Valores en porcentaje salvo indicación. *R*: flujos anualizados (12 ÷ meses
+El sistema evalúa siete dimensiones de la solidez financiera. Cada indicador
+tiene un código con la letra de su dimensión.
+
+| Dimensión | Peso en el índice | Indicadores |
+|---|---|---|
+| **S** — Salvaguarda de cartera | 20 % | S1 Cobertura de mora > 12 meses (100 %), S2 Cobertura de mora de 1 a 12 meses (≥ 35 %), S3 Saneamiento total de cartera > 12 meses (Sí), S4 Intensidad de castigos, S5 Efectividad en la recuperación de castigos (> 75 %), S6 Respaldo patrimonial al ahorrador (≥ 111 %, SOCAP) |
+| **O** — Orden del balance | 15 % | O1 Colocación productiva del activo (70-80 %), O2 Peso de la liquidez (≤ 16 %), O3 Inversiones financieras (≤ 2 %), O4 Inmovilización en inversiones no financieras (0 %), O5 Fondeo con ahorro de socios (70-80 %), O6 Dependencia de fondeo externo (0-5 %), O7 Peso de las aportaciones (10-20 %), O8 Fortaleza patrimonial (≥ 10 %), O9 Fortaleza patrimonial neta de riesgos (≥ 10 %), O10 Apalancamiento (≤ 5 veces, SOFOM) |
+| **L** — Liquidez | 15 % | L1 Liquidez disponible para ahorradores (≥ 15 %), L2 Reserva de liquidez (≥ 10 %), L3 Efectivo ocioso (< 1 %) |
+| **I** — Ingresos, costos y rentabilidad | 15 % | I1–I4 rendimiento de cartera, liquidez e inversiones vs. tasa empresarial / de mercado, I5–I7 costo del ahorro, del fondeo externo y de las aportaciones, I8 Margen financiero (≥ I9 + I10), I9 Carga operativa (3-10 %), I10 Carga de estimaciones (suficiente para la PCE), I11 Resultados no recurrentes, I12 ROA, I13 ROC (> inflación), I14 Eficiencia operativa (≤ 75 %) |
+| **D** — Deterioro y pérdida esperada (IFRS 9) | 20 % | D1 Cartera sana (≥ 90 %), D2 Cartera en vigilancia (≤ 5 %), D3 Cartera deteriorada (≤ 5 %), D4–D6 suficiencia de reservas por etapa, D7 Suficiencia total vs. PCE (≥ 100 %), D8 Cobertura de cartera deteriorada, D9 Costo de riesgo (≤ 3 %), D10 Migración neta a etapas 2 y 3, D11 Capital ajustado por pérdida esperada (≥ 10 %) |
+| **E** — Eficiencia de activos | 10 % | E1 Índice de morosidad (≤ 5 %), E2 Activos que no generan ingresos (≤ 5 %), E3 Financiamiento sin costo del activo improductivo (≥ 200 %) |
+| **Z** — Zona de crecimiento | 5 % | Z1–Z11 crecimiento de cartera neta, liquidez, inversiones, ahorro, fondeo externo, aportaciones, capital institucional (≥ Z11), capital neto, socios y activo total |
+
+Valores en porcentaje salvo indicación. *I*: flujos anualizados (12 ÷ meses
 transcurridos) entre el **saldo promedio** de los cortes del ejercicio
-(incluido el cierre anterior). *S*: crecimiento anualizado contra el cierre del
+(incluido el cierre anterior). *Z*: crecimiento anualizado contra el cierre del
 ejercicio anterior (o el corte previo disponible). Estatus *Alerta*: fuera de
 meta por menos de 10 % de la meta.
 
-| Grupo | Indicadores |
+### Índice SOLIDEZ
+
+Puntaje de 0 a 100 por dimensión: cada indicador evaluado vale 100 si cumple,
+50 si está en alerta y 0 si es deficiente (los informativos y los que no
+aplican no cuentan). El índice global es el promedio ponderado de las
+dimensiones con los pesos de la tabla (si una dimensión no tiene indicadores
+evaluables, su peso se redistribuye).
+
+| Puntaje | Calificación |
 |---|---|
-| **P** Protección | P1 Estimaciones/mora > 12 m (100 %), P2 Estimaciones netas/mora 1-12 m (≥ 35 %), P3 Depuración completa (Sí), P4 Castigos/cartera promedio, P5 Recuperaciones/castigos acumulados (> 75 %), P6 Solvencia (≥ 111 %, SOCAP) |
-| **E** Estructura | E1 Préstamos netos/activo (70-80 %), E2 Inversiones líquidas (≤ 16 %), E3 Inv. financieras (≤ 2 %), E4 Inv. no financieras (0 %), E5 Depósitos (70-80 %), E6 Crédito externo (0-5 %), E7 Aportaciones (10-20 %), E8 Capital institucional (≥ 10 %), E9 Capital institucional neto (≥ 10 %) |
-| **R** Rendimientos y costos | R1–R4 rendimientos vs. tasa empresarial / de mercado, R5–R7 costos financieros, R8 Margen bruto (≥ R9 + R10), R9 Gastos operativos (3-10 %), R10 Provisiones (suficientes para la PCE), R11 Otros, R12 ROA, R13 ROC (> inflación) |
-| **L** Liquidez | L1 (Inv. líquidas − CxP ≤ 30 d)/depósitos (≥ 15 %), L2 Reserva de liquidez (≥ 10 %), L3 Liquidez ociosa (< 1 %) |
-| **A** Activos improductivos | A1 Morosidad (≤ 5 %), A2 Activo improductivo (≤ 5 %), A3 Fondos sin costo/activo improductivo (≥ 200 %) |
-| **S** Señales expansivas | S1–S11 crecimiento de cartera, inversiones, depósitos, crédito externo, aportaciones, capital institucional (≥ S11), capital neto, asociados y activo total |
-| **I** IFRS 9 | I1–I3 cartera por etapa, I4–I6 suficiencia de reservas por etapa, I7 suficiencia total (EPRC ÷ PCE), I8 cobertura de etapa 3, I9 costo de riesgo, I10 deterioro neto (migración a etapas 2 y 3), I11 capital ajustado por déficit IFRS 9 |
-| **K** Solvencia / eficiencia | K1 Apalancamiento (pasivo/capital ≤ 5 veces, SOFOM), K2 Gastos de administración/margen bruto (≤ 75 %) |
+| ≥ 85 | Sólida |
+| 70 – 84 | Estable |
+| 50 – 69 | En vigilancia |
+| < 50 | Crítica |
 
 Para **SOFOMES** no aplican los indicadores ligados a captación y
-aportaciones (P6, E5, E7, R5, R7, L1, L2, S5, S7); E8 se calcula con el
-capital contable y E6 es informativo. Las metas por omisión son las metas de
+aportaciones (S6, O5, O7, I5, I7, L1, L2, Z5, Z7); O8 se calcula con el
+capital contable y O6 es informativo. Las metas por omisión son las metas de
 excelencia del archivo de referencia y pueden personalizarse por tipo de
 entidad en *Metas de indicadores*.
 
@@ -145,11 +162,9 @@ calibrarse con su experiencia de pérdida y la metodología vigente de la CNBV
 
 Las estrategias y la matriz de interrelación de los indicadores provienen del
 archivo de referencia proporcionado (`app/monitoreo/indicadores_base.json`).
-En ese archivo las señales expansivas usan la numeración de la hoja
-*Explicación* (S1 Activo total … S7 Asociados); se convirtieron a la
-numeración S1–S11 de la hoja de indicadores. Las estrategias e
-interrelaciones de los indicadores IFRS 9 (I) y de solvencia/eficiencia (K)
-se agregaron en `app/monitoreo/estrategias.py`.
+Los códigos se convirtieron a la nomenclatura S-O-L-I-D-E-Z. Las
+estrategias e interrelaciones de la dimensión D (IFRS 9), de O10 y de I14 se
+agregaron en `app/monitoreo/estrategias.py`.
 
 ## Datos de demostración
 

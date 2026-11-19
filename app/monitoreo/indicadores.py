@@ -1,11 +1,14 @@
-"""Cálculo y evaluación de los indicadores del Sistema de Evaluación y Monitoreo
-Financiero (protección, estructura, rendimientos, liquidez, activos
-improductivos, señales expansivas) e IFRS 9.
+"""Modelo S-O-L-I-D-E-Z del Sistema de Evaluación y Monitoreo Financiero.
+
+Siete dimensiones: **S**alvaguarda de cartera, **O**rden del balance,
+**L**iquidez, **I**ngresos-costos-rentabilidad, **D**eterioro y pérdida
+esperada (IFRS 9), **E**ficiencia de activos y **Z**ona de crecimiento.
+Además calcula el **Índice SOLIDEZ** (0-100) por dimensión y global.
 
 Los valores se expresan como fracción decimal (0.10 = 10 %), salvo los
-indicadores en "veces". Los indicadores de rendimientos y costos (R) se
+indicadores en "veces". Los indicadores de ingresos y costos (I) se
 anualizan con base en los meses transcurridos del ejercicio y se dividen
-entre el saldo promedio; las señales expansivas (S) son crecimientos
+entre el saldo promedio; los de la zona de crecimiento (Z) son crecimientos
 anualizados contra el cierre del ejercicio anterior (o el periodo previo
 disponible).
 """
@@ -21,16 +24,49 @@ from .ifrs9 import calcular_pce
 from .modelos import Entidad, EstadoFinanciero, MetaIndicador
 from .rubros import agregados
 
+# Modelo S-O-L-I-D-E-Z: siete dimensiones de la solidez financiera.
 GRUPOS = {
-    "P": "Protección",
-    "E": "Estructura financiera",
-    "R": "Rendimientos y costos (anualizados)",
+    "S": "Salvaguarda de cartera",
+    "O": "Orden del balance",
     "L": "Liquidez",
-    "A": "Activos improductivos",
-    "S": "Señales expansivas (crecimiento anualizado)",
-    "I": "IFRS 9 — Pérdida crediticia esperada",
-    "K": "Solvencia y eficiencia",
+    "I": "Ingresos, costos y rentabilidad",
+    "D": "Deterioro y pérdida esperada (IFRS 9)",
+    "E": "Eficiencia de activos",
+    "Z": "Zona de crecimiento",
 }
+ORDEN_GRUPOS = "SOLIDEZ"
+
+# Ponderación de cada dimensión en el Índice SOLIDEZ (suma 100).
+PESOS_DIMENSION = {"S": 20, "O": 15, "L": 15, "I": 15, "D": 20, "E": 10, "Z": 5}
+CALIFICACIONES = [(85, "Sólida", "cumple"), (70, "Estable", "cumple"), (50, "En vigilancia", "alerta"), (0, "Crítica", "deficiente")]
+
+
+def calificacion(puntaje: float | None) -> tuple[str, str]:
+    if puntaje is None:
+        return ("Sin evaluar", "na")
+    for minimo, nombre, clase in CALIFICACIONES:
+        if puntaje >= minimo:
+            return (nombre, clase)
+    return ("Crítica", "deficiente")
+
+
+def indice_solidez(filas: list[dict]) -> dict:
+    """Puntaje 0-100: cumple = 1, alerta = 0.5, deficiente = 0, por dimensión y ponderado."""
+    dimensiones = []
+    suma, pesos = 0.0, 0.0
+    for g in ORDEN_GRUPOS:
+        ev = [f for f in filas if f["ind"].grupo == g and f["estatus"] in ("cumple", "alerta", "deficiente")]
+        cuenta = {e: sum(1 for f in ev if f["estatus"] == e) for e in ("cumple", "alerta", "deficiente")}
+        puntaje = 100 * (cuenta["cumple"] + 0.5 * cuenta["alerta"]) / len(ev) if ev else None
+        if puntaje is not None:
+            suma += puntaje * PESOS_DIMENSION[g]
+            pesos += PESOS_DIMENSION[g]
+        nombre, clase = calificacion(puntaje)
+        dimensiones.append({"grupo": g, "nombre": GRUPOS[g], "peso": PESOS_DIMENSION[g], "puntaje": puntaje,
+                            "evaluados": len(ev), **cuenta, "calificacion": nombre, "clase": clase})
+    global_ = suma / pesos if pesos else None
+    nombre, clase = calificacion(global_)
+    return {"puntaje": global_, "calificacion": nombre, "clase": clase, "dimensiones": dimensiones}
 
 TOLERANCIA = 0.10  # margen relativo para el estatus "Alerta"
 
@@ -100,7 +136,7 @@ def _requiere(ctx: Contexto, *claves: str):
     return f"Requiere dato complementario: {', '.join(faltan)}" if faltan else None
 
 
-def _p1(ctx):
+def _s1(ctx):
     if m := _requiere(ctx, "mora_mas_12"):
         return (None, m)
     m12 = ctx.g("mora_mas_12")
@@ -109,7 +145,7 @@ def _p1(ctx):
     return (min(ctx.g("estimaciones"), m12) / m12, min(ctx.g("estimaciones"), m12), m12)
 
 
-def _p2(ctx):
+def _s2(ctx):
     if m := _requiere(ctx, "mora_1_12", "mora_mas_12"):
         return (None, m)
     m112 = ctx.g("mora_1_12")
@@ -117,13 +153,13 @@ def _p2(ctx):
     return _div(netas, m112) if m112 > 0 else (None, "Sin morosidad de 1 a 12 meses")
 
 
-def _p3(ctx):
+def _s3(ctx):
     if m := _requiere(ctx, "mora_mas_12"):
         return (None, m)
     return (1.0 if ctx.g("mora_mas_12") <= 0 else 0.0, None, None)
 
 
-def _p6(ctx):
+def _s6(ctx):
     a = ctx.a
     num = (
         a["activo_total"] + ctx.g("estimaciones") - ctx.g("mora_mas_12") - 0.35 * ctx.g("mora_1_12")
@@ -144,16 +180,16 @@ def _flujo(ctx, clave: str, saldo: str):
     return _div(ctx.g(clave) * ctx.factor, ctx.prom(saldo))
 
 
-def _r12_custom(ctx, valor):
+def _i12_custom(ctx, valor):
     if valor <= 0:
         return "deficiente"
-    e8, s8, s11 = ctx.valores.get("E8"), ctx.valores.get("S8"), ctx.valores.get("S11")
+    e8, s8, s11 = ctx.valores.get("O8"), ctx.valores.get("Z8"), ctx.valores.get("Z11")
     if e8 is not None and e8 < 0.10 and s8 is not None and s11 is not None and s8 < s11:
         return "alerta"
     return "cumple"
 
 
-def _r10_custom(ctx, valor):
+def _i10_custom(ctx, valor):
     suf = ctx.pce.get("suficiencia")
     if suf is None:
         return "informativo"
@@ -172,7 +208,7 @@ def _suf(ctx, i):
     return (e["suficiencia"], e["reserva"], e["pce"])
 
 
-def _i10(ctx):
+def _d10(ctx):
     if not ctx.anterior:
         return (None, "Requiere un periodo anterior cargado")
     def pct(x):
@@ -184,91 +220,90 @@ def _i10(ctx):
     return (act - ant, None, None)
 
 
-def _i11(ctx):
+def _d11(ctx):
     return _div(_capital_e8(ctx) - ctx.pce["deficit"], ctx.a["activo_total"])
 
 
 SOCAP = ("SOCAP",)
 
 INDICADORES: list[Indicador] = [
-    # ------------------------------------------------------------------ P
-    Indicador("P1", "Estimaciones / Morosidad > 12 meses", "min(EPRC, mora>12) ÷ mora>12", "100 %", _p1, "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
-    Indicador("P2", "Estimaciones netas / Morosidad 1-12 meses", "(EPRC − cobertura de mora>12) ÷ mora 1-12", "≥ 35 %", _p2, "min", {"SOCAP": (0.35, None), "SOFOM": (0.35, None)}),
-    Indicador("P3", "Depuración completa de morosidad > 12 meses", "¿Cartera morosa > 12 meses = 0?", "Sí", _p3, "sino", formato="sino"),
-    Indicador("P4", "Depuraciones anuales / Cartera promedio", "Castigos del ejercicio anualizados ÷ cartera bruta promedio", "Lo mínimo",
+    # ------------------------------------------------------------------ S · Salvaguarda de cartera
+    Indicador("S1", "Cobertura de mora mayor a 12 meses", "min(EPRC, mora>12) ÷ mora>12", "100 %", _s1, "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
+    Indicador("S2", "Cobertura de mora de 1 a 12 meses", "(EPRC − cobertura de mora>12) ÷ mora 1-12", "≥ 35 %", _s2, "min", {"SOCAP": (0.35, None), "SOFOM": (0.35, None)}),
+    Indicador("S3", "Saneamiento total de cartera mayor a 12 meses", "¿Cartera morosa > 12 meses = 0?", "Sí", _s3, "sino", formato="sino"),
+    Indicador("S4", "Intensidad de castigos", "Castigos del ejercicio anualizados ÷ cartera bruta promedio", "Lo mínimo",
               lambda c: _div(c.g("castigos_ejercicio") * c.factor, c.prom("cartera_bruta")) if c.tiene("castigos_ejercicio") else (None, "Requiere dato complementario: castigos_ejercicio"), "info"),
-    Indicador("P5", "Recuperación cartera depurada / Depuraciones acumuladas", "Recuperaciones acumuladas ÷ castigos acumulados", "> 75 %",
+    Indicador("S5", "Efectividad en la recuperación de castigos", "Recuperaciones acumuladas ÷ castigos acumulados", "> 75 %",
               lambda c: _div(c.g("recuperaciones_acumuladas"), c.g("castigos_acumulados")) if c.g("castigos_acumulados") else (None, "Sin castigos acumulados"), "min", {"SOCAP": (0.75, None), "SOFOM": (0.75, None)}),
-    Indicador("P6", "Solvencia", "(Activo + EPRC − mora>12 − 35 % mora 1-12 − pasivo − activos problemáticos + depósitos) ÷ (depósitos + aportaciones)", "≥ 111 %", _p6, "min", {"SOCAP": (1.11, None)}, aplica=SOCAP),
-    # ------------------------------------------------------------------ E
-    Indicador("E1", "Préstamos netos / Activo total", "Cartera neta ÷ activo total", "70 % – 80 %", lambda c: _div(c.a["cartera_neta"], c.a["activo_total"]), "rango", {"SOCAP": (0.70, 0.80), "SOFOM": (0.70, 0.95)}),
-    Indicador("E2", "Inversiones líquidas / Activo total", "(Disponibilidades + inversiones CP) ÷ activo total", "≤ 16 %", lambda c: _div(c.a["inversiones_liquidas"], c.a["activo_total"]), "max", {"SOCAP": (None, 0.16), "SOFOM": (None, 0.16)}),
-    Indicador("E3", "Inversiones financieras / Activo total", "Inversiones LP ÷ activo total", "≤ 2 %", lambda c: _div(c.g("inversiones_lp"), c.a["activo_total"]), "max", {"SOCAP": (None, 0.02), "SOFOM": (None, 0.02)}),
-    Indicador("E4", "Inversiones no financieras / Activo total", "Inversiones permanentes ÷ activo total", "0 %", lambda c: _div(c.g("inversiones_permanentes"), c.a["activo_total"]), "max", {"SOCAP": (None, 0.0), "SOFOM": (None, 0.0)}),
-    Indicador("E5", "Depósitos de ahorro / Activo total", "Depósitos ÷ activo total", "70 % – 80 %", lambda c: _div(c.a["depositos"], c.a["activo_total"]), "rango", {"SOCAP": (0.70, 0.80)}, aplica=SOCAP),
-    Indicador("E6", "Crédito externo / Activo total", "Préstamos bancarios ÷ activo total", "0 % – 5 %", lambda c: _div(c.g("prestamos_bancarios"), c.a["activo_total"]), "rango", {"SOCAP": (0.0, 0.05), "SOFOM": (None, None)}),
-    Indicador("E7", "Aportaciones / Activo total", "Capital social ÷ activo total", "10 % – 20 %", lambda c: _div(c.g("capital_social"), c.a["activo_total"]), "rango", {"SOCAP": (0.10, 0.20)}, aplica=SOCAP),
-    Indicador("E8", "Capital institucional / Activo total", "Reservas + resultados ÷ activo total (SOFOM: capital contable)", "≥ 10 %", lambda c: _div(_capital_e8(c), c.a["activo_total"]), "min", {"SOCAP": (0.10, None), "SOFOM": (0.10, None)}),
-    Indicador("E9", "Capital institucional neto / Activo total", "(Capital institucional + EPRC − mora>12 − 35 % mora 1-12 − activos problemáticos) ÷ activo", "≥ 10 %", lambda c: _div(_capital_neto(c), c.a["activo_total"]), "min", {"SOCAP": (0.10, None), "SOFOM": (0.10, None)}),
-    # ------------------------------------------------------------------ R
-    Indicador("R1", "Ingresos por préstamos / Promedio préstamos netos", "Intereses de cartera anualizados ÷ cartera neta promedio", "≥ Tasa empresarial", lambda c: _flujo(c, "ing_intereses_cartera", "cartera_neta"), "min",
+    Indicador("S6", "Respaldo patrimonial al ahorrador (solvencia)", "(Activo + EPRC − mora>12 − 35 % mora 1-12 − pasivo − activos problemáticos + depósitos) ÷ (depósitos + aportaciones)", "≥ 111 %", _s6, "min", {"SOCAP": (1.11, None)}, aplica=SOCAP),
+    # ------------------------------------------------------------------ O · Orden del balance
+    Indicador("O1", "Colocación productiva del activo", "Cartera neta ÷ activo total", "70 % – 80 %", lambda c: _div(c.a["cartera_neta"], c.a["activo_total"]), "rango", {"SOCAP": (0.70, 0.80), "SOFOM": (0.70, 0.95)}),
+    Indicador("O2", "Peso de la liquidez en el activo", "(Disponibilidades + inversiones CP) ÷ activo total", "≤ 16 %", lambda c: _div(c.a["inversiones_liquidas"], c.a["activo_total"]), "max", {"SOCAP": (None, 0.16), "SOFOM": (None, 0.16)}),
+    Indicador("O3", "Peso de las inversiones financieras", "Inversiones LP ÷ activo total", "≤ 2 %", lambda c: _div(c.g("inversiones_lp"), c.a["activo_total"]), "max", {"SOCAP": (None, 0.02), "SOFOM": (None, 0.02)}),
+    Indicador("O4", "Inmovilización en inversiones no financieras", "Inversiones permanentes ÷ activo total", "0 %", lambda c: _div(c.g("inversiones_permanentes"), c.a["activo_total"]), "max", {"SOCAP": (None, 0.0), "SOFOM": (None, 0.0)}),
+    Indicador("O5", "Fondeo con ahorro de socios", "Depósitos ÷ activo total", "70 % – 80 %", lambda c: _div(c.a["depositos"], c.a["activo_total"]), "rango", {"SOCAP": (0.70, 0.80)}, aplica=SOCAP),
+    Indicador("O6", "Dependencia de fondeo externo", "Préstamos bancarios ÷ activo total", "0 % – 5 %", lambda c: _div(c.g("prestamos_bancarios"), c.a["activo_total"]), "rango", {"SOCAP": (0.0, 0.05), "SOFOM": (None, None)}),
+    Indicador("O7", "Peso de las aportaciones de socios", "Capital social ÷ activo total", "10 % – 20 %", lambda c: _div(c.g("capital_social"), c.a["activo_total"]), "rango", {"SOCAP": (0.10, 0.20)}, aplica=SOCAP),
+    Indicador("O8", "Fortaleza patrimonial", "Reservas + resultados ÷ activo total (SOFOM: capital contable)", "≥ 10 %", lambda c: _div(_capital_e8(c), c.a["activo_total"]), "min", {"SOCAP": (0.10, None), "SOFOM": (0.10, None)}),
+    Indicador("O9", "Fortaleza patrimonial neta de riesgos", "(Capital institucional + EPRC − mora>12 − 35 % mora 1-12 − activos problemáticos) ÷ activo", "≥ 10 %", lambda c: _div(_capital_neto(c), c.a["activo_total"]), "min", {"SOCAP": (0.10, None), "SOFOM": (0.10, None)}),
+    Indicador("O10", "Apalancamiento (pasivo / capital contable)", "Pasivo total ÷ capital contable", "≤ 5 veces (SOFOM)", lambda c: _div(c.a["pasivo_total"], c.a["capital_contable"]), "max", {"SOFOM": (None, 5.0)}, formato="veces", aplica=("SOFOM",)),
+    # ------------------------------------------------------------------ L · Liquidez
+    Indicador("L1", "Liquidez disponible para ahorradores", "(Inversiones líquidas − CxP ≤ 30 días) ÷ depósitos", "≥ 15 %", lambda c: _div(c.a["inversiones_liquidas"] - c.g("cxp_30_dias"), c.a["depositos"]), "min", {"SOCAP": (0.15, None)}, aplica=SOCAP),
+    Indicador("L2", "Reserva de liquidez", "Reserva de liquidez ÷ depósitos", "≥ 10 %", lambda c: _div(c.g("reserva_liquidez"), c.a["depositos"]) if c.tiene("reserva_liquidez") else (None, "Requiere dato complementario: reserva_liquidez"), "min", {"SOCAP": (0.10, None)}, aplica=SOCAP),
+    Indicador("L3", "Efectivo ocioso", "Caja sin rendimiento ÷ activo total", "< 1 %", lambda c: _div(c.g("caja"), c.a["activo_total"]), "max", {"SOCAP": (None, 0.01), "SOFOM": (None, 0.01)}),
+    # ------------------------------------------------------------------ I · Ingresos, costos y rentabilidad
+    Indicador("I1", "Rendimiento de la cartera de crédito", "Intereses de cartera anualizados ÷ cartera neta promedio", "≥ Tasa empresarial", lambda c: _flujo(c, "ing_intereses_cartera", "cartera_neta"), "min",
               limites_dinamicos=lambda c: (c.estado.tasa_empresarial, None)),
-    Indicador("R2", "Ingresos por inv. líquidas / Promedio inv. líquidas", "Ingresos de disponibilidades anualizados ÷ inversiones líquidas promedio", "≥ Tasa de mercado", lambda c: _flujo(c, "ing_disponibilidades", "inversiones_liquidas"), "min",
+    Indicador("I2", "Rendimiento de la liquidez", "Ingresos de disponibilidades anualizados ÷ inversiones líquidas promedio", "≥ Tasa de mercado", lambda c: _flujo(c, "ing_disponibilidades", "inversiones_liquidas"), "min",
               limites_dinamicos=lambda c: (c.estado.tasa_mercado, None)),
-    Indicador("R3", "Ingresos por inv. financieras / Promedio inv. financieras", "Ingresos de inversiones LP anualizados ÷ inversiones LP promedio", "≥ Tasa de mercado", lambda c: _flujo(c, "ing_inversiones_lp", "inversiones_lp"), "min",
+    Indicador("I3", "Rendimiento de inversiones financieras", "Ingresos de inversiones LP anualizados ÷ inversiones LP promedio", "≥ Tasa de mercado", lambda c: _flujo(c, "ing_inversiones_lp", "inversiones_lp"), "min",
               limites_dinamicos=lambda c: (c.estado.tasa_mercado, None)),
-    Indicador("R4", "Ingresos por inv. no financieras / Promedio inv. no financieras", "Ingresos de inv. permanentes anualizados ÷ promedio", "≥ R1", lambda c: _flujo(c, "ing_inversiones_permanentes", "inversiones_permanentes"), "min",
-              limites_dinamicos=lambda c: (c.valores.get("R1"), None)),
-    Indicador("R5", "Costo financiero: depósitos / Promedio depósitos", "Intereses de depósitos anualizados ÷ depósitos promedio", "≥ Inflación (tasa real positiva)", lambda c: _flujo(c, "int_depositos", "depositos"), "min",
+    Indicador("I4", "Rendimiento de inversiones no financieras", "Ingresos de inv. permanentes anualizados ÷ promedio", "≥ I1", lambda c: _flujo(c, "ing_inversiones_permanentes", "inversiones_permanentes"), "min",
+              limites_dinamicos=lambda c: (c.valores.get("I1"), None)),
+    Indicador("I5", "Costo del ahorro", "Intereses de depósitos anualizados ÷ depósitos promedio", "≥ Inflación (tasa real positiva)", lambda c: _flujo(c, "int_depositos", "depositos"), "min",
               limites_dinamicos=lambda c: (c.inflacion, None), aplica=SOCAP),
-    Indicador("R6", "Costo financiero: crédito externo / Promedio crédito externo", "Intereses de préstamos bancarios anualizados ÷ promedio", "≥ R5 (SOFOM: ≤ R1)", lambda c: _flujo(c, "int_prestamos_bancarios", "prestamos_bancarios"), "rango",
-              limites_dinamicos=lambda c: (None, c.valores.get("R1")) if c.entidad.tipo == "SOFOM" else (c.valores.get("R5"), None)),
-    Indicador("R7", "Costo financiero: aportaciones / Promedio aportaciones", "Rendimientos de aportaciones anualizados ÷ capital social promedio", "≤ R5", lambda c: _flujo(c, "int_aportaciones", "capital_social"), "max",
-              limites_dinamicos=lambda c: (None, c.valores.get("R5")), aplica=SOCAP),
-    Indicador("R8", "Margen bruto / Promedio activos", "Margen financiero anualizado ÷ activo promedio", "≥ R9 + R10", lambda c: _flujo(c, "margen_bruto", "activo_total"), "min",
-              limites_dinamicos=lambda c: ((c.valores.get("R9") or 0) + (c.valores.get("R10") or 0), None)),
-    Indicador("R9", "Gastos operativos / Promedio activos", "Gastos de administración anualizados ÷ activo promedio", "3 % – 10 %", lambda c: _flujo(c, "gastos_administracion", "activo_total"), "rango", {"SOCAP": (0.03, 0.10), "SOFOM": (0.03, 0.10)}),
-    Indicador("R10", "Provisiones activos de riesgo / Promedio activos", "Estimaciones del ejercicio anualizadas ÷ activo promedio", "Suficiente para cubrir la PCE (IFRS 9)", lambda c: _flujo(c, "provisiones", "activo_total"), "custom", custom=_r10_custom),
-    Indicador("R11", "Otros ingresos o gastos / Promedio activos", "(Otros ingresos − otros gastos) anualizados ÷ activo promedio", "Lo mínimo", lambda c: _flujo(c, "otros_neto", "activo_total"), "info"),
-    Indicador("R12", "Excedente neto / Promedio activos (ROA)", "Resultado neto anualizado ÷ activo promedio", "> 0 y suficiente para alcanzar E8", lambda c: _flujo(c, "excedente_neto", "activo_total"), "custom", custom=_r12_custom),
-    Indicador("R13", "Excedente neto / Promedio capital institucional (ROC)", "Resultado neto anualizado ÷ capital institucional promedio", "> Inflación", lambda c: _flujo(c, "excedente_neto", "capital_institucional"), "min",
+    Indicador("I6", "Costo del fondeo externo", "Intereses de préstamos bancarios anualizados ÷ promedio", "≥ I5 (SOFOM: ≤ I1)", lambda c: _flujo(c, "int_prestamos_bancarios", "prestamos_bancarios"), "rango",
+              limites_dinamicos=lambda c: (None, c.valores.get("I1")) if c.entidad.tipo == "SOFOM" else (c.valores.get("I5"), None)),
+    Indicador("I7", "Costo de las aportaciones", "Rendimientos de aportaciones anualizados ÷ capital social promedio", "≤ I5", lambda c: _flujo(c, "int_aportaciones", "capital_social"), "max",
+              limites_dinamicos=lambda c: (None, c.valores.get("I5")), aplica=SOCAP),
+    Indicador("I8", "Margen financiero sobre activos", "Margen financiero anualizado ÷ activo promedio", "≥ I9 + I10", lambda c: _flujo(c, "margen_bruto", "activo_total"), "min",
+              limites_dinamicos=lambda c: ((c.valores.get("I9") or 0) + (c.valores.get("I10") or 0), None)),
+    Indicador("I9", "Carga operativa sobre activos", "Gastos de administración anualizados ÷ activo promedio", "3 % – 10 %", lambda c: _flujo(c, "gastos_administracion", "activo_total"), "rango", {"SOCAP": (0.03, 0.10), "SOFOM": (0.03, 0.10)}),
+    Indicador("I10", "Carga de estimaciones sobre activos", "Estimaciones del ejercicio anualizadas ÷ activo promedio", "Suficiente para cubrir la PCE (IFRS 9)", lambda c: _flujo(c, "provisiones", "activo_total"), "custom", custom=_i10_custom),
+    Indicador("I11", "Resultados no recurrentes sobre activos", "(Otros ingresos − otros gastos) anualizados ÷ activo promedio", "Lo mínimo", lambda c: _flujo(c, "otros_neto", "activo_total"), "info"),
+    Indicador("I12", "Rentabilidad sobre activos (ROA)", "Resultado neto anualizado ÷ activo promedio", "> 0 y suficiente para alcanzar O8", lambda c: _flujo(c, "excedente_neto", "activo_total"), "custom", custom=_i12_custom),
+    Indicador("I13", "Rentabilidad sobre capital institucional (ROC)", "Resultado neto anualizado ÷ capital institucional promedio", "> Inflación", lambda c: _flujo(c, "excedente_neto", "capital_institucional"), "min",
               limites_dinamicos=lambda c: (c.inflacion, None)),
-    # ------------------------------------------------------------------ L
-    Indicador("L1", "(Inv. líquidas − CxP ≤ 30 días) / Depósitos de ahorro", "(Inversiones líquidas − CxP ≤ 30 días) ÷ depósitos", "≥ 15 %", lambda c: _div(c.a["inversiones_liquidas"] - c.g("cxp_30_dias"), c.a["depositos"]), "min", {"SOCAP": (0.15, None)}, aplica=SOCAP),
-    Indicador("L2", "Reservas de liquidez / Depósitos", "Reserva de liquidez ÷ depósitos", "≥ 10 %", lambda c: _div(c.g("reserva_liquidez"), c.a["depositos"]) if c.tiene("reserva_liquidez") else (None, "Requiere dato complementario: reserva_liquidez"), "min", {"SOCAP": (0.10, None)}, aplica=SOCAP),
-    Indicador("L3", "Liquidez ociosa / Activo total", "Caja sin rendimiento ÷ activo total", "< 1 %", lambda c: _div(c.g("caja"), c.a["activo_total"]), "max", {"SOCAP": (None, 0.01), "SOFOM": (None, 0.01)}),
-    # ------------------------------------------------------------------ A
-    Indicador("A1", "Morosidad total / Cartera bruta", "Cartera morosa (o etapa 3) ÷ cartera bruta", "≤ 5 %", lambda c: _div(c.a["morosidad_total"], c.a["cartera_bruta"]), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
-    Indicador("A2", "Activo improductivo / Activo total", "(Caja + CxC + adjudicados + activo fijo + otros) ÷ activo total", "≤ 5 %", lambda c: _div(c.a["activo_improductivo"], c.a["activo_total"]), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
-    Indicador("A3", "Fondos sin costo neto / Activo improductivo", "(Capital institucional + pasivos sin costo) ÷ activo improductivo", "≥ 200 %", lambda c: _div(c.a["capital_institucional"] + c.a["pasivo_sin_costo"], c.a["activo_improductivo"]), "min", {"SOCAP": (2.0, None), "SOFOM": (2.0, None)}),
-    # ------------------------------------------------------------------ S
-    Indicador("S1", "Crecimiento cartera neta de préstamos", "Crecimiento anualizado", "≥ Inflación (para alcanzar E1)", lambda c: _crec(c, "cartera_neta"), "min", limites_dinamicos=lambda c: (c.inflacion, None)),
-    Indicador("S2", "Crecimiento inversiones líquidas", "Crecimiento anualizado", "Congruente con E2", lambda c: _crec(c, "inversiones_liquidas"), "info"),
-    Indicador("S3", "Crecimiento inversiones financieras", "Crecimiento anualizado", "Congruente con E3", lambda c: _crec(c, "inversiones_lp"), "info"),
-    Indicador("S4", "Crecimiento inversiones no financieras", "Crecimiento anualizado", "Congruente con E4", lambda c: _crec(c, "inversiones_permanentes"), "info"),
-    Indicador("S5", "Crecimiento depósitos de ahorro", "Crecimiento anualizado", "≥ Inflación (para alcanzar E5)", lambda c: _crec(c, "depositos"), "min", limites_dinamicos=lambda c: (c.inflacion, None), aplica=SOCAP),
-    Indicador("S6", "Crecimiento crédito externo", "Crecimiento anualizado", "Congruente con E6", lambda c: _crec(c, "prestamos_bancarios"), "info"),
-    Indicador("S7", "Crecimiento aportaciones", "Crecimiento anualizado", "≥ Inflación (para alcanzar E7)", lambda c: _crec(c, "capital_social"), "min", limites_dinamicos=lambda c: (c.inflacion, None), aplica=SOCAP),
-    Indicador("S8", "Crecimiento capital institucional", "Crecimiento anualizado", "≥ crecimiento del activo (S11)", lambda c: _crec(c, "capital_institucional"), "min", limites_dinamicos=lambda c: (c.valores.get("S11"), None)),
-    Indicador("S9", "Crecimiento capital institucional neto", "Crecimiento anualizado", "Congruente con E9", lambda c: _crec(c, "capital_neto"), "info"),
-    Indicador("S10", "Crecimiento de asociados", "Crecimiento anualizado", "≥ Inflación", lambda c: _crec(c, "asociados"), "min", limites_dinamicos=lambda c: (c.inflacion, None)),
-    Indicador("S11", "Crecimiento activo total", "Crecimiento anualizado", "≥ Inflación", lambda c: _crec(c, "activo_total"), "min", limites_dinamicos=lambda c: (c.inflacion, None)),
-    # ------------------------------------------------------------------ I (IFRS 9)
-    Indicador("I1", "Cartera etapa 1 / Cartera bruta", "Cartera etapa 1 ÷ cartera total", "≥ 90 %", lambda c: _etapa(c, 0), "min", {"SOCAP": (0.90, None), "SOFOM": (0.90, None)}),
-    Indicador("I2", "Cartera etapa 2 / Cartera bruta", "Cartera etapa 2 ÷ cartera total", "≤ 5 %", lambda c: _etapa(c, 1), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
-    Indicador("I3", "Cartera etapa 3 / Cartera bruta", "Cartera etapa 3 ÷ cartera total", "≤ 5 %", lambda c: _etapa(c, 2), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
-    Indicador("I4", "Suficiencia de reservas etapa 1 (PCE 12 meses)", "Reserva etapa 1 ÷ PCE etapa 1", "≥ 100 %", lambda c: _suf(c, 0), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
-    Indicador("I5", "Suficiencia de reservas etapa 2 (PCE vida del crédito)", "Reserva etapa 2 ÷ PCE etapa 2", "≥ 100 %", lambda c: _suf(c, 1), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
-    Indicador("I6", "Suficiencia de reservas etapa 3 (deteriorada)", "Reserva etapa 3 ÷ PCE etapa 3", "≥ 100 %", lambda c: _suf(c, 2), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
-    Indicador("I7", "Suficiencia total de reservas (EPRC / PCE)", "EPRC total ÷ PCE total", "≥ 100 %",
+    Indicador("I14", "Eficiencia operativa (gastos / margen financiero)", "Gastos de administración ÷ margen financiero", "≤ 75 %", lambda c: _div(c.g("gastos_administracion"), c.a["margen_bruto"]), "max", {"SOCAP": (None, 0.75), "SOFOM": (None, 0.75)}),
+    # ------------------------------------------------------------------ D · Deterioro y pérdida esperada (IFRS 9)
+    Indicador("D1", "Cartera sana (etapa 1)", "Cartera etapa 1 ÷ cartera total", "≥ 90 %", lambda c: _etapa(c, 0), "min", {"SOCAP": (0.90, None), "SOFOM": (0.90, None)}),
+    Indicador("D2", "Cartera en vigilancia (etapa 2)", "Cartera etapa 2 ÷ cartera total", "≤ 5 %", lambda c: _etapa(c, 1), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
+    Indicador("D3", "Cartera deteriorada (etapa 3)", "Cartera etapa 3 ÷ cartera total", "≤ 5 %", lambda c: _etapa(c, 2), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
+    Indicador("D4", "Suficiencia de reservas — etapa 1 (PCE 12 meses)", "Reserva etapa 1 ÷ PCE etapa 1", "≥ 100 %", lambda c: _suf(c, 0), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
+    Indicador("D5", "Suficiencia de reservas — etapa 2 (PCE vida del crédito)", "Reserva etapa 2 ÷ PCE etapa 2", "≥ 100 %", lambda c: _suf(c, 1), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
+    Indicador("D6", "Suficiencia de reservas — etapa 3", "Reserva etapa 3 ÷ PCE etapa 3", "≥ 100 %", lambda c: _suf(c, 2), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
+    Indicador("D7", "Suficiencia total de reservas vs. pérdida esperada", "EPRC total ÷ PCE total", "≥ 100 %",
               lambda c: (c.pce["suficiencia"], c.pce["reserva_total"], c.pce["pce_total"]) if c.pce["pce_total"] else (None, "Sin pérdida esperada"), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
-    Indicador("I8", "Cobertura de cartera etapa 3", "EPRC total ÷ cartera etapa 3", "≥ 100 %", lambda c: _div(c.g("estimaciones"), c.g("cartera_etapa3")), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
-    Indicador("I9", "Costo de riesgo", "Estimaciones del ejercicio anualizadas ÷ cartera bruta promedio", "≤ 3 %", lambda c: _flujo(c, "provisiones", "cartera_bruta"), "max", {"SOCAP": (None, 0.03), "SOFOM": (None, 0.03)}),
-    Indicador("I10", "Deterioro neto (migración a etapas 2 y 3)", "Δ participación de etapas 2 + 3 vs. periodo anterior", "≤ 0 pp", _i10, "max", {"SOCAP": (None, 0.0), "SOFOM": (None, 0.0)}),
-    Indicador("I11", "Capital ajustado por déficit IFRS 9 / Activo total", "(Capital institucional − déficit de reservas vs. PCE) ÷ activo total", "≥ 10 %", _i11, "min", {"SOCAP": (0.10, None), "SOFOM": (0.10, None)}),
-    # ------------------------------------------------------------------ K
-    Indicador("K1", "Apalancamiento (Pasivo total / Capital contable)", "Pasivo total ÷ capital contable", "≤ 5 veces (SOFOM)", lambda c: _div(c.a["pasivo_total"], c.a["capital_contable"]), "max", {"SOFOM": (None, 5.0)}, formato="veces", aplica=("SOFOM",)),
-    Indicador("K2", "Eficiencia operativa (Gastos de administración / Margen bruto)", "Gastos de administración ÷ margen financiero", "≤ 75 %", lambda c: _div(c.g("gastos_administracion"), c.a["margen_bruto"]), "max", {"SOCAP": (None, 0.75), "SOFOM": (None, 0.75)}),
+    Indicador("D8", "Cobertura de cartera deteriorada", "EPRC total ÷ cartera etapa 3", "≥ 100 %", lambda c: _div(c.g("estimaciones"), c.g("cartera_etapa3")), "min", {"SOCAP": (1.0, None), "SOFOM": (1.0, None)}),
+    Indicador("D9", "Costo de riesgo", "Estimaciones del ejercicio anualizadas ÷ cartera bruta promedio", "≤ 3 %", lambda c: _flujo(c, "provisiones", "cartera_bruta"), "max", {"SOCAP": (None, 0.03), "SOFOM": (None, 0.03)}),
+    Indicador("D10", "Migración neta a etapas 2 y 3", "Δ participación de etapas 2 + 3 vs. periodo anterior", "≤ 0 pp", _d10, "max", {"SOCAP": (None, 0.0), "SOFOM": (None, 0.0)}),
+    Indicador("D11", "Capital ajustado por pérdida esperada", "(Capital institucional − déficit de reservas vs. PCE) ÷ activo total", "≥ 10 %", _d11, "min", {"SOCAP": (0.10, None), "SOFOM": (0.10, None)}),
+    # ------------------------------------------------------------------ E · Eficiencia de activos
+    Indicador("E1", "Índice de morosidad", "Cartera morosa (o etapa 3) ÷ cartera bruta", "≤ 5 %", lambda c: _div(c.a["morosidad_total"], c.a["cartera_bruta"]), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
+    Indicador("E2", "Activos que no generan ingresos", "(Caja + CxC + adjudicados + activo fijo + otros) ÷ activo total", "≤ 5 %", lambda c: _div(c.a["activo_improductivo"], c.a["activo_total"]), "max", {"SOCAP": (None, 0.05), "SOFOM": (None, 0.05)}),
+    Indicador("E3", "Financiamiento sin costo del activo improductivo", "(Capital institucional + pasivos sin costo) ÷ activo improductivo", "≥ 200 %", lambda c: _div(c.a["capital_institucional"] + c.a["pasivo_sin_costo"], c.a["activo_improductivo"]), "min", {"SOCAP": (2.0, None), "SOFOM": (2.0, None)}),
+    # ------------------------------------------------------------------ Z · Zona de crecimiento
+    Indicador("Z1", "Crecimiento de la cartera neta", "Crecimiento anualizado", "≥ Inflación (para alcanzar O1)", lambda c: _crec(c, "cartera_neta"), "min", limites_dinamicos=lambda c: (c.inflacion, None)),
+    Indicador("Z2", "Crecimiento de la liquidez", "Crecimiento anualizado", "Congruente con O2", lambda c: _crec(c, "inversiones_liquidas"), "info"),
+    Indicador("Z3", "Crecimiento de inversiones financieras", "Crecimiento anualizado", "Congruente con O3", lambda c: _crec(c, "inversiones_lp"), "info"),
+    Indicador("Z4", "Crecimiento de inversiones no financieras", "Crecimiento anualizado", "Congruente con O4", lambda c: _crec(c, "inversiones_permanentes"), "info"),
+    Indicador("Z5", "Crecimiento del ahorro", "Crecimiento anualizado", "≥ Inflación (para alcanzar O5)", lambda c: _crec(c, "depositos"), "min", limites_dinamicos=lambda c: (c.inflacion, None), aplica=SOCAP),
+    Indicador("Z6", "Crecimiento del fondeo externo", "Crecimiento anualizado", "Congruente con O6", lambda c: _crec(c, "prestamos_bancarios"), "info"),
+    Indicador("Z7", "Crecimiento de aportaciones", "Crecimiento anualizado", "≥ Inflación (para alcanzar O7)", lambda c: _crec(c, "capital_social"), "min", limites_dinamicos=lambda c: (c.inflacion, None), aplica=SOCAP),
+    Indicador("Z8", "Crecimiento del capital institucional", "Crecimiento anualizado", "≥ crecimiento del activo (Z11)", lambda c: _crec(c, "capital_institucional"), "min", limites_dinamicos=lambda c: (c.valores.get("Z11"), None)),
+    Indicador("Z9", "Crecimiento del capital neto", "Crecimiento anualizado", "Congruente con O9", lambda c: _crec(c, "capital_neto"), "info"),
+    Indicador("Z10", "Crecimiento de socios", "Crecimiento anualizado", "≥ Inflación", lambda c: _crec(c, "asociados"), "min", limites_dinamicos=lambda c: (c.inflacion, None)),
+    Indicador("Z11", "Crecimiento del activo total", "Crecimiento anualizado", "≥ Inflación", lambda c: _crec(c, "activo_total"), "min", limites_dinamicos=lambda c: (c.inflacion, None)),
 ]
 
 INDICADORES_POR_CODIGO = {i.codigo: i for i in INDICADORES}
@@ -412,6 +447,7 @@ def calcular_indicadores(db: Session, estado: EstadoFinanciero) -> dict:
         "alertas": alertas,
         "cumplen": len(evaluados) - len(deficientes) - len(alertas),
         "pct_deficientes": len(deficientes) / len(evaluados) if evaluados else 0.0,
+        "indice": indice_solidez(filas),
         "agregados": ctx.a,
         "pce": ctx.pce,
         "factor": ctx.factor,

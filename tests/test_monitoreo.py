@@ -141,20 +141,20 @@ def test_indicadores_principales(db):
     res = calcular_indicadores(db, estado)
     pc = res["por_codigo"]
     at = 1000
-    assert pc["E1"]["valor"] == pytest.approx((800 - 50) / at)
-    assert pc["A1"]["valor"] == pytest.approx(60 / 800)  # mora 1-12 + >12
-    assert pc["A1"]["estatus"] == "deficiente"
-    assert pc["P1"]["valor"] == pytest.approx(1.0)
-    assert pc["P2"]["valor"] == pytest.approx((50 - 15) / 45)
-    # R1: anualizado a 6 meses sobre la cartera neta (un solo punto = saldo actual)
+    assert pc["O1"]["valor"] == pytest.approx((800 - 50) / at)
+    assert pc["E1"]["valor"] == pytest.approx(60 / 800)  # mora 1-12 + >12
+    assert pc["E1"]["estatus"] == "deficiente"
+    assert pc["S1"]["valor"] == pytest.approx(1.0)
+    assert pc["S2"]["valor"] == pytest.approx((50 - 15) / 45)
+    # I1: anualizado a 6 meses sobre la cartera neta (un solo punto = saldo actual)
     assert res["factor"] == pytest.approx(2)
-    assert pc["R1"]["valor"] == pytest.approx(90 * 2 / 750)
-    assert pc["R5"]["estatus"] in ("cumple", "alerta", "deficiente")  # evaluado contra la inflación
-    assert pc["S1"]["estatus"] == "na"  # sin periodo base
+    assert pc["I1"]["valor"] == pytest.approx(90 * 2 / 750)
+    assert pc["I5"]["estatus"] in ("cumple", "alerta", "deficiente")  # evaluado contra la inflación
+    assert pc["Z1"]["estatus"] == "na"  # sin periodo base
     assert 0 < res["pct_deficientes"] < 1
-    assert pc["K1"]["estatus"] == "na"  # no aplica a SOCAP
-    # La brecha de A1 indica cuánto reducir la morosidad
-    assert pc["A1"]["brecha"] == pytest.approx(0.05 * 800 - 60)
+    assert pc["O10"]["estatus"] == "na"  # no aplica a SOCAP
+    # La brecha de E1 indica cuánto reducir la morosidad
+    assert pc["E1"]["brecha"] == pytest.approx(0.05 * 800 - 60)
 
 
 def test_crecimiento_anualizado(db):
@@ -164,7 +164,7 @@ def test_crecimiento_anualizado(db):
     importar_balanza(db, ent, date(2026, 6, 30), mas.encode(), "b1.csv")
     res = calcular_indicadores(db, ent.estados[-1])
     neta0, neta1 = 750, 820
-    assert res["por_codigo"]["S1"]["valor"] == pytest.approx((neta1 / neta0) ** 2 - 1)
+    assert res["por_codigo"]["Z1"]["valor"] == pytest.approx((neta1 / neta0) ** 2 - 1)
 
 
 def test_pce_ifrs9():
@@ -191,8 +191,8 @@ def test_escenario_pesimista_aumenta_pce():
 def test_estrategias_e_interrelacion_cubren_indicadores():
     for ind in INDICADORES:
         assert estrategias(ind.codigo), f"{ind.codigo} sin estrategias"
-    assert "E1" in interrelacion("P1")["afecta"]
-    assert "R10" in interrelacion("P1")["afectado_por"]
+    assert "O1" in interrelacion("S1")["afecta"]
+    assert "I10" in interrelacion("S1")["afectado_por"]
 
 
 def test_plan_prioriza_deficientes(db):
@@ -244,7 +244,7 @@ def test_flujo_web_completo(cliente):
     for ruta in [
         "/monitoreo", "/monitoreo/carga", "/monitoreo/metas", "/monitoreo/metas?tipo=SOFOM", "/monitoreo/mapeo",
         f"/monitoreo/entidades/{ent_id}", f"/monitoreo/entidades/{ent_id}/plan", f"/monitoreo/entidades/{ent_id}/rubros",
-        f"/monitoreo/entidades/{ent_id}/indicador/A1", f"/monitoreo/entidades/{ent_id}/indicador/I7", f"/monitoreo/entidades/{ent_id}/ifrs9",
+        f"/monitoreo/entidades/{ent_id}/indicador/E1", f"/monitoreo/entidades/{ent_id}/indicador/D7", f"/monitoreo/entidades/{ent_id}/ifrs9",
         "/monitoreo/plantilla/balanza.xlsx",
     ]:
         assert cliente.get(ruta).status_code == 200, ruta
@@ -254,16 +254,16 @@ def test_flujo_web_completo(cliente):
     assert {"Indicadores", "Plan de acción", "IFRS 9", "Rubros"} <= set(libro.sheetnames)
 
     # Metas personalizadas y parámetros IFRS 9
-    assert cliente.post("/monitoreo/metas", data={"tipo": "SOCAP", "min_A1": "", "max_A1": "10"}, follow_redirects=False).status_code == 303
+    assert cliente.post("/monitoreo/metas", data={"tipo": "SOCAP", "min_E1": "", "max_E1": "10"}, follow_redirects=False).status_code == 303
     r = cliente.post(f"/monitoreo/entidades/{ent_id}/ifrs9", data={"pd_etapa1": "2", "lgd": "40", "accion": "guardar"}, follow_redirects=False)
     assert r.status_code == 303
     sesion = SessionLocal()
     ent = sesion.get(Entidad, ent_id)
     assert ent.params_ifrs9()["lgd"] == pytest.approx(0.40)
     res = calcular_indicadores(sesion, ent.estados[-1])
-    assert res["por_codigo"]["A1"]["maximo"] == pytest.approx(0.10)
+    assert res["por_codigo"]["E1"]["maximo"] == pytest.approx(0.10)
     sesion.close()
-    cliente.post("/monitoreo/metas", data={"tipo": "SOCAP", "min_A1": "", "max_A1": ""})
+    cliente.post("/monitoreo/metas", data={"tipo": "SOCAP", "min_E1": "", "max_E1": ""})
 
 
 def test_mapeo_por_entidad(cliente):
@@ -276,3 +276,19 @@ def test_mapeo_por_entidad(cliente):
     res = importar_balanza(sesion, sesion.get(Entidad, ent_id), date(2026, 1, 31), b"cuenta,saldo_final\n9901,500\n", "m.csv")
     assert res.rubros.get("otros_activos") == 500
     sesion.close()
+
+
+def test_indice_solidez(db):
+    from app.monitoreo.indicadores import ORDEN_GRUPOS, PESOS_DIMENSION, calificacion
+
+    assert ORDEN_GRUPOS == "SOLIDEZ" and sum(PESOS_DIMENSION.values()) == 100
+    assert {i.grupo for i in INDICADORES} == set(ORDEN_GRUPOS)
+    ent = _entidad(db, "T5")
+    ix = calcular_indicadores(db, ent.estados[-1])["indice"]
+    assert [d["grupo"] for d in ix["dimensiones"]] == list("SOLIDEZ")
+    assert 0 <= ix["puntaje"] <= 100
+    for d in ix["dimensiones"]:
+        if d["evaluados"]:
+            assert d["puntaje"] == pytest.approx(100 * (d["cumple"] + 0.5 * d["alerta"]) / d["evaluados"])
+    assert calificacion(90)[0] == "Sólida" and calificacion(72)[0] == "Estable"
+    assert calificacion(55)[0] == "En vigilancia" and calificacion(10)[0] == "Crítica"

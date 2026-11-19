@@ -3,9 +3,10 @@
 {% block contenido %}
 <h2 class="titulo">Sistema de Evaluación y Monitoreo Financiero</h2>
 <p class="descripcion">
-  Las SOCAPS y SOFOMES importan su balanza de comprobación o sus estados financieros; el sistema calcula los
-  indicadores de protección, estructura financiera, rendimientos, liquidez, activos improductivos y crecimiento, la pérdida crediticia esperada con enfoque IFRS 9, identifica los indicadores
-  deficientes, su interrelación y las estrategias para mejorarlos.
+  Las SOCAPS y SOFOMES importan su balanza de comprobación o sus estados financieros; el sistema calcula los indicadores del
+  modelo <strong>S-O-L-I-D-E-Z</strong> — Salvaguarda de cartera, Orden del balance, Liquidez, Ingresos y rentabilidad,
+  Deterioro y pérdida esperada (IFRS 9), Eficiencia de activos y Zona de crecimiento —, asigna el <strong>Índice SOLIDEZ</strong>
+  (0-100), identifica los indicadores deficientes, su interrelación y las estrategias para mejorarlos.
 </p>
 
 <div class="acciones">
@@ -19,11 +20,11 @@
 <table class="datos">
   <thead>
     <tr>
-      <th>Entidad</th><th>Tipo</th><th>Corte</th>
+      <th>Entidad</th><th>Tipo</th><th>Corte</th><th class="num">Índice SOLIDEZ</th>
       <th class="num">Activo total</th>
-      <th class="num">Morosidad (A1)</th>
-      <th class="num">Capital inst. (E8)</th>
-      <th class="num">Suficiencia PCE (I7)</th>
+      <th class="num">Morosidad (E1)</th>
+      <th class="num">Capital inst. (O8)</th>
+      <th class="num">Suficiencia PCE (D7)</th>
       <th>Indicadores</th><th class="num">% deficientes</th><th></th>
     </tr>
   </thead>
@@ -35,8 +36,10 @@
       {% if r.res %}
         {% set pc = r.res.por_codigo %}
         <td>{{ r.estado.fecha_corte.strftime('%d/%m/%Y') }}</td>
+        <td class="num"><strong>{{ '%.0f' % r.res.indice.puntaje if r.res.indice.puntaje is not none else '—' }}</strong>
+          <span class="pastilla {{ {'cumple': 'ok', 'alerta': 'medio', 'deficiente': 'mal'}.get(r.res.indice.clase, 'na') }}">{{ r.res.indice.calificacion }}</span></td>
         <td class="num">{{ r.res.agregados.activo_total | moneda }}</td>
-        {% for c in ['A1', 'E8', 'I7'] %}
+        {% for c in ['E1', 'O8', 'D7'] %}
           <td class="num"><span class="semaforo {{ pc[c].estatus }}"></span>{{ pc[c] | vind }}</td>
         {% endfor %}
         <td style="min-width:160px">
@@ -51,12 +54,12 @@
         <td class="num"><strong>{{ r.res.pct_deficientes | pctd(0) }}</strong></td>
         <td><a class="boton chico" href="/monitoreo/entidades/{{ r.entidad.id }}">Ver monitoreo</a></td>
       {% else %}
-        <td colspan="7" class="nota">Sin información cargada</td>
+        <td colspan="8" class="nota">Sin información cargada</td>
         <td><a class="boton chico secundario" href="/monitoreo/carga?entidad_id={{ r.entidad.id }}">Importar</a></td>
       {% endif %}
     </tr>
   {% else %}
-    <tr><td colspan="10">No hay entidades registradas. Dé de alta la primera entidad abajo.</td></tr>
+    <tr><td colspan="11">No hay entidades registradas. Dé de alta la primera entidad abajo.</td></tr>
   {% endfor %}
   </tbody>
 </table>

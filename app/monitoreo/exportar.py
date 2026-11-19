@@ -52,8 +52,40 @@ def exportar_monitoreo(entidad, resultados: list[tuple]) -> bytes:
     """``resultados``: lista de (estado, resultado) ordenada por fecha; el último es el periodo evaluado."""
     wb = Workbook()
     estado, actual = resultados[-1]
-    ws = wb.active
-    ws.title = "Indicadores"
+
+    # Índice SOLIDEZ
+    wx = wb.active
+    wx.title = "Índice SOLIDEZ"
+    ix = actual["indice"]
+    wx["A1"] = f"ÍNDICE SOLIDEZ — {entidad.nombre} al {estado.fecha_corte:%d/%m/%Y}"
+    wx["A1"].font = Font(bold=True, size=13, color="14406E")
+    wx["A3"] = "Puntaje global"
+    wx["B3"] = round(ix["puntaje"], 1) if ix["puntaje"] is not None else "N/A"
+    wx["C3"] = ix["calificacion"]
+    wx["A3"].font = wx["B3"].font = wx["C3"].font = Font(bold=True, size=12)
+    if ix["clase"] in COLOR_ESTATUS:
+        wx["C3"].fill = COLOR_ESTATUS[ix["clase"]]
+    _encabezado(wx, 5, ["Dimensión", "Nombre", "Peso", "Puntaje", "Calificación", "Cumplen", "Alerta", "Deficientes"] + [e.fecha_corte.strftime("%d/%m/%Y") for e, _ in resultados])
+    for i, d in enumerate(ix["dimensiones"], start=6):
+        vals = [d["grupo"], d["nombre"], d["peso"] / 100, round(d["puntaje"], 1) if d["puntaje"] is not None else "N/A",
+                d["calificacion"], d["cumple"], d["alerta"], d["deficiente"]]
+        vals += [round(x, 1) if (x := r["indice"]["dimensiones"][i - 6]["puntaje"]) is not None else "N/A" for _, r in resultados]
+        for j, v in enumerate(vals, start=1):
+            c = wx.cell(row=i, column=j, value=v)
+            if j == 3:
+                c.number_format = "0%"
+        if d["clase"] in COLOR_ESTATUS:
+            wx.cell(row=i, column=5).fill = COLOR_ESTATUS[d["clase"]]
+    fila_global = 6 + len(ix["dimensiones"])
+    wx.cell(row=fila_global, column=2, value="Índice SOLIDEZ global").font = Font(bold=True)
+    for j, (_, r) in enumerate(resultados, start=9):
+        g = r["indice"]["puntaje"]
+        wx.cell(row=fila_global, column=j, value=round(g, 1) if g is not None else "N/A").font = Font(bold=True)
+    wx.cell(row=fila_global + 2, column=1, value="Puntaje por dimensión: cumple = 100, alerta = 50, deficiente = 0 (promedio de indicadores evaluados). "
+            "Calificación: ≥ 85 Sólida · ≥ 70 Estable · ≥ 50 En vigilancia · < 50 Crítica.")
+    _anchos(wx, [11, 40, 8, 10, 15, 10, 8, 12] + [12] * len(resultados))
+
+    ws = wb.create_sheet("Indicadores")
     ws["A1"] = f"SISTEMA DE EVALUACIÓN Y MONITOREO FINANCIERO — {entidad.nombre} ({entidad.tipo})"
     ws["A1"].font = Font(bold=True, size=13, color="14406E")
     ws["A2"] = (
