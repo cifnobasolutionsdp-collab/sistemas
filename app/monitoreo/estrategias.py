@@ -1,8 +1,7 @@
 """Estrategias de mejora, interrelación de indicadores y plan de acción.
 
-Las estrategias e interrelaciones de los indicadores PERLAS provienen del
-archivo "Perlitas" (metodología PERLAS del Consejo Mundial de Cooperativas de
-Ahorro y Crédito, WOCCU). Se complementan con estrategias para los
+Las estrategias e interrelaciones de los indicadores financieros provienen
+del archivo de referencia proporcionado. Se complementan con estrategias para los
 indicadores IFRS 9 (pérdida crediticia esperada) y de solvencia/eficiencia.
 """
 from __future__ import annotations
@@ -101,7 +100,7 @@ INTERRELACION_ADICIONAL: dict[str, dict[str, list[str]]] = {
 
 @lru_cache
 def _base() -> dict:
-    with open(Path(__file__).with_name("perlas_base.json"), encoding="utf-8") as f:
+    with open(Path(__file__).with_name("indicadores_base.json"), encoding="utf-8") as f:
         return json.load(f)
 
 

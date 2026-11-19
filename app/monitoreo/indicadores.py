@@ -1,4 +1,6 @@
-"""Cálculo y evaluación de indicadores PERLAS (WOCCU) e IFRS 9.
+"""Cálculo y evaluación de los indicadores del Sistema de Evaluación y Monitoreo
+Financiero (protección, estructura, rendimientos, liquidez, activos
+improductivos, señales expansivas) e IFRS 9.
 
 Los valores se expresan como fracción decimal (0.10 = 10 %), salvo los
 indicadores en "veces". Los indicadores de rendimientos y costos (R) se

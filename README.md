@@ -56,11 +56,12 @@ Todas incluyen **Saldo Vigente y Saldo Vencido**:
 - **Reportes personalizados**: dimensión, periodo, orden y número de
   renglones a elección, con **exportación a CSV**.
 
-### 5. Monitoreo financiero (PERLAS + IFRS 9)
+### 5. Sistema de Evaluación y Monitoreo Financiero
 Las SOCAPS y SOFOMES importan su **balanza de comprobación** o sus **estados
 financieros** (Excel o CSV) y el sistema genera:
 
-- Semáforo de **indicadores P-E-R-L-A-S** (metodología WOCCU, metas de
+- Semáforo de **indicadores financieros** de protección, estructura,
+  rendimientos, liquidez, activos improductivos y crecimiento (metas de
   excelencia parametrizables) con histórico por corte, porcentaje de
   indicadores deficientes y ajuste requerido en pesos para alcanzar cada meta.
 - **IFRS 9**: cartera por etapas, pérdida crediticia esperada (PD × LGD × EAD
@@ -106,7 +107,7 @@ Archivo de ejemplo del lay out: `data/layout_ejemplo.csv` (se regenera con
 pytest
 ```
 
-Cubren: importación de balanzas y estados financieros, indicadores PERLAS,
+Cubren: importación de balanzas y estados financieros, indicadores financieros,
 pérdida esperada IFRS 9 y plan de acción del monitoreo financiero;
 clasificación por mora, provisionamiento, pérdida esperada y
 escenarios de estrés del VaR (con reproducibilidad por semilla), índice de

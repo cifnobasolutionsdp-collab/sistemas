@@ -12,7 +12,7 @@
 {% set pc = res.por_codigo %}
 {% set f = estado.fecha_corte.isoformat() %}
 <h2 class="titulo">{{ entidad.nombre }} <span class="pastilla info">{{ entidad.tipo }}</span></h2>
-<p class="descripcion">Monitoreo financiero P-E-R-L-A-S + IFRS 9 al <strong>{{ estado.fecha_corte.strftime('%d/%m/%Y') }}</strong>
+<p class="descripcion">Sistema de Evaluación y Monitoreo Financiero · corte al <strong>{{ estado.fecha_corte.strftime('%d/%m/%Y') }}</strong>
   · Origen: {{ estado.origen or '—' }}</p>
 
 <form class="filtros" method="get">

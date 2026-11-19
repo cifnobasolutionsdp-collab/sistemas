@@ -1,7 +1,7 @@
 """Rubros financieros estándar del módulo de monitoreo.
 
 Cada estado financiero (o balanza de comprobación) importado se resume en un
-diccionario ``{clave_rubro: importe}``. Los indicadores PERLAS e IFRS 9 se
+diccionario ``{clave_rubro: importe}``. Los indicadores financieros e IFRS 9 se
 calculan exclusivamente a partir de estos rubros, lo que permite recibir
 información de entidades con catálogos de cuentas distintos.
 

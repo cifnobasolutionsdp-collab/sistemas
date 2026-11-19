@@ -5,7 +5,7 @@ dígitos (1 Activo, 2 Pasivo, 3 Capital, 4 Ingresos, 5 Gastos), alineado a la
 estructura de los criterios contables de la CNBV para SOCAPS y SOFOMES con
 cartera clasificada en etapas 1, 2 y 3 (enfoque de pérdida esperada de
 IFRS 9 / NIF C-16). **Cada entidad debe revisar y ajustar las reglas a su
-propio catálogo** desde *Monitoreo financiero → Mapeo de cuentas*, o bien
+propio catálogo** desde *Evaluación y Monitoreo Financiero → Mapeo de cuentas*, o bien
 incluir la columna ``rubro`` en la balanza para asignar cada cuenta de forma
 explícita.
 """

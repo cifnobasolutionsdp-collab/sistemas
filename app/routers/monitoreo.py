@@ -1,4 +1,4 @@
-"""Monitoreo financiero PERLAS + IFRS 9 para SOCAPS y SOFOMES."""
+"""Sistema de Evaluación y Monitoreo Financiero (indicadores + IFRS 9) para SOCAPS y SOFOMES."""
 from __future__ import annotations
 
 import json

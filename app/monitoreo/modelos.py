@@ -1,4 +1,4 @@
-"""Modelos de datos del módulo de Monitoreo Financiero (PERLAS + IFRS 9)."""
+"""Modelos de datos del módulo de Monitoreo Financiero — Sistema de Evaluación y Monitoreo Financiero."""
 from __future__ import annotations
 
 import json

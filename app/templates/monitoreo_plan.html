@@ -10,7 +10,7 @@
 <div class="aviso {{ 'error' if res.deficientes else 'exito' }}">
   El <strong>{{ res.pct_deficientes | pctd(0) }}</strong> de los indicadores presentan deficiencias ({{ res.deficientes | length }} de {{ res.evaluados }});
   {{ res.alertas | length }} en alerta. Los indicadores se ordenan por <strong>efecto palanca</strong>: primero los que, al corregirse,
-  mejoran a más indicadores (según la interrelación PERLAS) y en especial a otros que también están fuera de meta.
+  mejoran a más indicadores (según la interrelación de indicadores) y en especial a otros que también están fuera de meta.
 </div>
 <div class="acciones no-imprimir">
   <button class="boton" onclick="window.print()">Imprimir / PDF</button>

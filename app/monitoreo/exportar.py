@@ -54,7 +54,7 @@ def exportar_monitoreo(entidad, resultados: list[tuple]) -> bytes:
     estado, actual = resultados[-1]
     ws = wb.active
     ws.title = "Indicadores"
-    ws["A1"] = f"MONITOREO FINANCIERO P-E-R-L-A-S + IFRS 9 — {entidad.nombre} ({entidad.tipo})"
+    ws["A1"] = f"SISTEMA DE EVALUACIÓN Y MONITOREO FINANCIERO — {entidad.nombre} ({entidad.tipo})"
     ws["A1"].font = Font(bold=True, size=13, color="14406E")
     ws["A2"] = (
         f"Al {estado.fecha_corte:%d/%m/%Y}: {len(actual['deficientes'])} de {actual['evaluados']} indicadores "
@@ -151,7 +151,7 @@ def plantilla_estados() -> bytes:
     ws = wb.active
     ws.title = "Instrucciones"
     lineas = [
-        "LAY OUT DE ESTADOS FINANCIEROS — Monitoreo financiero PERLAS + IFRS 9",
+        "LAY OUT DE ESTADOS FINANCIEROS — Sistema de Evaluación y Monitoreo Financiero",
         "",
         "1. Capture los importes en las hojas 'Balance General', 'Estado de Resultados' y 'Datos complementarios'.",
         "2. No modifique la columna 'clave'. Puede dejar en blanco los rubros que no apliquen.",
@@ -210,7 +210,7 @@ def plantilla_balanza() -> bytes:
         "• Se aceptan balanzas con cuentas de mayor y subcuentas: el sistema sólo suma las cuentas de detalle.",
         "• Saldos: positivos según su naturaleza, o con signo (deudor +, acreedor −); el sistema detecta la convención.",
         "• Columna opcional 'rubro': asigna la cuenta a un rubro sin depender del mapeo por prefijo.",
-        "• El mapeo por prefijo se administra en Monitoreo financiero → Mapeo de cuentas (general o por entidad).",
+        "• El mapeo por prefijo se administra en Evaluación y Monitoreo Financiero → Mapeo de cuentas (general o por entidad).",
         "• La morosidad por antigüedad, castigos, reservas por etapa y número de socios no vienen en la balanza:",
         "  captúrelos en la hoja 'Datos complementarios' del lay out de estados financieros.",
     ], start=1):

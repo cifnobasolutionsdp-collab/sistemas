@@ -1,4 +1,4 @@
-"""Pruebas del módulo de Monitoreo Financiero (PERLAS + IFRS 9)."""
+"""Pruebas del módulo de Sistema de Evaluación y Monitoreo Financiero."""
 import io
 import os
 import sys

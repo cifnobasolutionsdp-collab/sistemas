@@ -3,7 +3,7 @@
 Aplicación web con módulos de catálogos, consultas, procesos y reportes,
 orientada al cumplimiento de la Ley de Instituciones de Crédito, la LRASCAP
 y las disposiciones de la CNBV en materia de riesgo de crédito. Incluye el
-módulo de Monitoreo Financiero (indicadores PERLAS + IFRS 9) a partir de
+Sistema de Evaluación y Monitoreo Financiero (indicadores + IFRS 9) a partir de
 balanzas de comprobación y estados financieros.
 """
 from pathlib import Path

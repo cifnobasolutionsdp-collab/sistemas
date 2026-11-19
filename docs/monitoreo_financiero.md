@@ -1,15 +1,14 @@
-# Monitoreo Financiero — PERLAS + IFRS 9
+# Sistema de Evaluación y Monitoreo Financiero
 
 Módulo para que las **SOCAPS** y **SOFOMES** importen su **balanza de
 comprobación** o sus **estados financieros** y obtengan un monitoreo de
-indicadores semejante al archivo *Perlitas* (metodología P-E-R-L-A-S del
-Consejo Mundial de Cooperativas de Ahorro y Crédito, WOCCU), ampliado con
+indicadores semejante al archivo de referencia proporcionado, ampliado con
 indicadores de **pérdida crediticia esperada bajo IFRS 9** y con un **plan de
 acción** que prioriza las estrategias de mejora.
 
 ## Flujo
 
-1. **Alta de la entidad** (*Monitoreo financiero → Entidades y semáforo*): clave,
+1. **Alta de la entidad** (*Evaluación y Monitoreo Financiero → Entidades y semáforo*): clave,
    nombre, tipo (SOCAP / SOFOM) y nivel de operación.
 2. **Importación** (*Importar balanza / estados*), por fecha de corte:
    * **Balanza de comprobación** (CSV, XLSX o XLS). Las cuentas se agrupan en
@@ -144,8 +143,8 @@ calibrarse con su experiencia de pérdida y la metodología vigente de la CNBV
 
 ## Fuentes de estrategias e interrelación
 
-Las estrategias y la matriz de interrelación de los indicadores PERLAS
-provienen del archivo *Perlitas* proporcionado (`app/monitoreo/perlas_base.json`).
+Las estrategias y la matriz de interrelación de los indicadores provienen del
+archivo de referencia proporcionado (`app/monitoreo/indicadores_base.json`).
 En ese archivo las señales expansivas usan la numeración de la hoja
 *Explicación* (S1 Activo total … S7 Asociados); se convirtieron a la
 numeración S1–S11 de la hoja de indicadores. Las estrategias e
