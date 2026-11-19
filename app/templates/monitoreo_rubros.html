@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Rubros — {{ entidad.nombre }}{% endblock %}
+{% block contenido %}
+<p class="no-imprimir"><a href="/monitoreo/entidades/{{ entidad.id }}?fecha={{ estado.fecha_corte.isoformat() }}">← {{ entidad.nombre }}</a></p>
+<h2 class="titulo">Rubros financieros al {{ estado.fecha_corte.strftime('%d/%m/%Y') }}</h2>
+<p class="descripcion">{{ entidad.nombre }} · Origen: {{ estado.origen }}</p>
+<div class="tarjetas">
+  <div class="tarjeta"><div class="etiqueta">Activo total</div><div class="valor">{{ ag.activo_total | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Pasivo total</div><div class="valor">{{ ag.pasivo_total | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Capital contable</div><div class="valor">{{ ag.capital_contable | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Descuadre</div><div class="valor {{ 'rojo' if (ag.descuadre | abs) > 1 else 'verde' }}">{{ ag.descuadre | moneda }}</div></div>
+</div>
+<table class="datos">
+  <thead><tr><th>Estado</th><th>Sección</th><th>Clave</th><th>Concepto</th><th class="num">Importe</th></tr></thead>
+  <tbody>
+  {% for r in rubros %}
+    <tr><td class="nota">{{ {'balance': 'Balance', 'resultados': 'Resultados', 'complementario': 'Complementario'}[r.estado] }}</td>
+      <td>{{ r.seccion }}</td><td><code>{{ r.clave }}</code></td><td>{{ r.concepto }}</td>
+      <td class="num">{% if r.clave in datos %}{{ (datos[r.clave] | num) if r.clave == 'asociados' else (datos[r.clave] | moneda) }}{% else %}<span class="nota">—</span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titulo %}{{ codigo }} — {{ entidad.nombre }}{% endblock %}
+{% block contenido %}
+{% set pc = res.por_codigo %}
+{% set f = estado.fecha_corte.isoformat() %}
+{% set ind = fila.ind %}
+<p class="no-imprimir"><a href="/monitoreo/entidades/{{ entidad.id }}?fecha={{ f }}">← {{ entidad.nombre }}</a></p>
+<h2 class="titulo"><span class="codigo {{ fila.estatus }}" style="font-size:18px">{{ codigo }}</span> {{ ind.nombre }}</h2>
+<p class="descripcion">Al {{ estado.fecha_corte.strftime('%d/%m/%Y') }} · Fórmula: {{ ind.formula }}</p>
+
+<div class="tarjetas">
+  <div class="tarjeta"><div class="etiqueta">Valor</div><div class="valor {{ 'rojo' if fila.estatus == 'deficiente' else '' }}">{{ fila | vind }}</div>
+    {% if fila.nota %}<div class="detalle">{{ fila.nota }}</div>{% endif %}</div>
+  <div class="tarjeta"><div class="etiqueta">Meta</div><div class="valor">{{ ind.meta }}</div>
+    {% if fila.minimo is not none or fila.maximo is not none %}<div class="detalle">Mín. {{ fila.minimo | limite(ind.formato) }} · Máx. {{ fila.maximo | limite(ind.formato) }}</div>{% endif %}</div>
+  <div class="tarjeta"><div class="etiqueta">Estatus</div><div class="valor"><span class="semaforo {{ fila.estatus }}"></span>{{ fila.estatus | capitalize }}</div></div>
+  {% if fila.numerador is not none and fila.denominador is not none %}
+  <div class="tarjeta"><div class="etiqueta">Numerador / denominador</div><div class="valor" style="font-size:15px">{{ fila.numerador | moneda }}<br>{{ fila.denominador | moneda }}</div></div>
+  {% endif %}
+  {% if fila.brecha is not none %}
+  <div class="tarjeta"><div class="etiqueta">Ajuste requerido</div><div class="valor rojo">{{ fila.brecha | moneda }}</div><div class="detalle">en el numerador para alcanzar la meta</div></div>
+  {% endif %}
+</div>
+
+<h3>Evolución</h3>
+<table class="datos">
+  <thead><tr>{% for e, _ in historial %}<th class="num">{{ e.fecha_corte.strftime('%d/%m/%Y') }}</th>{% endfor %}</tr></thead>
+  <tbody><tr>{% for e, r in historial %}<td class="num"><span class="semaforo {{ r.por_codigo[codigo].estatus }}"></span>{{ r.por_codigo[codigo] | vind }}</td>{% endfor %}</tr></tbody>
+</table>
+
+<h3>Interrelación con otros indicadores</h3>
+<p class="nota">El color indica el estatus actual de cada indicador relacionado.</p>
+<div class="relaciones">
+  {% for titulo, clave in [('Relación directa — afecta a', 'afecta'), ('Relación directa — es afectado por', 'afectado_por'), ('Relación indirecta — afecta a', 'afecta_indirecta'), ('Relación indirecta — es afectado por', 'afectado_por_indirecta')] %}
+  <div class="caja"><h4>{{ titulo }}</h4>
+    {% for c in rel[clave] %}
+      {% if c in pc %}<a class="codigo {{ pc[c].estatus }}" title="{{ pc[c].ind.nombre }}" href="/monitoreo/entidades/{{ entidad.id }}/indicador/{{ c }}?fecha={{ f }}">{{ c }}</a>
+      {% else %}<span class="codigo">{{ c }}</span>{% endif %}
+    {% else %}<span class="nota">—</span>{% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+<h3>Estrategias para mejorar el indicador</h3>
+{% if estrategias %}
+<ol class="estrategias">{% for e in estrategias %}<li>{{ e }}</li>{% endfor %}</ol>
+{% else %}<p class="nota">Sin estrategias registradas para este indicador.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,103 @@
+cuenta,descripcion,saldo_final
+1,ACTIVO,210260000.00
+11,Disponibilidades,19680000.00
+1101,Caja,2400000.00
+110101,Caja general,2400000.00
+1102,Bancos,17280000.00
+110201,Bancos cuenta de cheques,10560000.00
+110202,Bancos inversión a la vista,6720000.00
+12,Inversiones en valores,22560000.00
+1201,Inversiones de corto plazo,21120000.00
+120101,Pagarés con rendimiento liquidable al vencimiento,21120000.00
+1202,Inversiones de largo plazo,1440000.00
+120201,Certificados bursátiles largo plazo,1440000.00
+13,Cartera de crédito,154580000.00
+1301,Cartera etapa 1,144000000.00
+130101,Cartera etapa 1 — consumo,94080000.00
+130102,Cartera etapa 1 — comercial,35520000.00
+130103,Cartera etapa 1 — vivienda,14400000.00
+1302,Cartera etapa 2,8280000.00
+130201,Cartera etapa 2 — consumo,8280000.00
+1303,Cartera etapa 3,12880000.00
+130301,Cartera etapa 3 — consumo,9660000.00
+130302,Cartera etapa 3 — comercial,3220000.00
+1304,Estimación preventiva,10580000.00
+130401,Estimación preventiva para riesgos crediticios,10580000.00
+14,Otras cuentas por cobrar,1920000.00
+1401,Deudores diversos,1920000.00
+140101,Deudores diversos,1920000.00
+15,Bienes adjudicados,1152000.00
+1501,Bienes adjudicados,1152000.00
+150101,Bienes adjudicados,1152000.00
+16,"Propiedades, mobiliario y equipo",8640000.00
+1601,Inmuebles,6240000.00
+160101,Inmuebles,6240000.00
+1602,Mobiliario y equipo,2400000.00
+160201,Mobiliario y equipo,2400000.00
+17,Inversiones permanentes,288000.00
+1701,Inversiones permanentes,288000.00
+170101,Inversiones permanentes en entidades de segundo piso,288000.00
+18,Otros activos,1440000.00
+1801,Cargos diferidos,1440000.00
+180101,Pagos anticipados y cargos diferidos,1440000.00
+2,PASIVO,181780000.00
+21,Captación tradicional,172180000.00
+2101,Depósitos de exigibilidad inmediata,67200000.00
+210101,Depósitos a la vista,67200000.00
+2102,Depósitos a plazo,104980000.00
+210201,Depósitos a plazo,104980000.00
+22,Préstamos bancarios,5760000.00
+2201,Préstamos bancarios,5760000.00
+220101,Préstamos de banca de desarrollo,5760000.00
+23,Otras cuentas por pagar,2880000.00
+2301,Acreedores diversos,2880000.00
+230101,Acreedores diversos,2880000.00
+24,Créditos diferidos,960000.00
+2401,Créditos diferidos,960000.00
+240101,Créditos diferidos,960000.00
+3,CAPITAL,25920000.00
+31,Capital social,8640000.00
+3101,Capital social,8640000.00
+310101,Certificados de aportación ordinarios,8640000.00
+32,Capital ganado,17280000.00
+3201,Reservas,13440000.00
+320101,Fondo de reserva,13440000.00
+3202,Resultado de ejercicios anteriores,3840000.00
+320201,Resultado de ejercicios anteriores,3840000.00
+4,INGRESOS,18163200.00
+41,Ingresos por intereses,17075200.00
+4101,Intereses de cartera,15360000.00
+410101,Intereses de cartera de crédito,15360000.00
+4102,Intereses de disponibilidades,1664000.00
+410201,Intereses de disponibilidades e inversiones,1664000.00
+4103,Intereses de inversiones LP,51200.00
+410301,Intereses de inversiones de largo plazo,51200.00
+42,Comisiones cobradas,768000.00
+4201,Comisiones cobradas,768000.00
+420101,Comisiones cobradas,768000.00
+43,Otros ingresos,320000.00
+4301,Otros ingresos,320000.00
+430101,Otros ingresos,320000.00
+5,GASTOS,15603200.00
+51,Gastos por intereses,5088000.00
+5101,Intereses por depósitos,4800000.00
+510101,Intereses por depósitos,4800000.00
+5102,Intereses por préstamos,288000.00
+510201,Intereses por préstamos bancarios,288000.00
+52,Comisiones pagadas,192000.00
+5201,Comisiones pagadas,192000.00
+520101,Comisiones pagadas,192000.00
+53,Estimación preventiva,2048000.00
+5301,Estimación preventiva,2048000.00
+530101,Estimación preventiva para riesgos crediticios,2048000.00
+54,Gastos de administración,7744000.00
+5401,Remuneraciones,4736000.00
+540101,Remuneraciones y prestaciones,4736000.00
+5402,Administración y promoción,3008000.00
+540201,Gastos de administración y promoción,3008000.00
+55,Otros gastos,211200.00
+5501,Otros gastos,211200.00
+550101,Otros gastos,211200.00
+56,Impuestos,320000.00
+5601,Impuestos y PTU,320000.00
+560101,Impuestos y PTU,320000.00
