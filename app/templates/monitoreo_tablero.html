@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block titulo %}Monitoreo — {{ entidad.nombre }}{% endblock %}
+{% macro pastilla(estatus) -%}
+  {%- if estatus == 'cumple' %}<span class="pastilla ok">Cumple</span>
+  {%- elif estatus == 'alerta' %}<span class="pastilla medio">Alerta</span>
+  {%- elif estatus == 'deficiente' %}<span class="pastilla mal">Deficiente</span>
+  {%- elif estatus == 'informativo' %}<span class="pastilla info">Informativo</span>
+  {%- else %}<span class="pastilla na">N/A</span>{% endif -%}
+{%- endmacro %}
+{% block contenido %}
+{% set ag = res.agregados %}
+{% set pc = res.por_codigo %}
+{% set f = estado.fecha_corte.isoformat() %}
+<h2 class="titulo">{{ entidad.nombre }} <span class="pastilla info">{{ entidad.tipo }}</span></h2>
+<p class="descripcion">Monitoreo financiero P-E-R-L-A-S + IFRS 9 al <strong>{{ estado.fecha_corte.strftime('%d/%m/%Y') }}</strong>
+  · Origen: {{ estado.origen or '—' }}</p>
+
+<form class="filtros" method="get">
+  <div><label>Fecha de corte</label>
+    <select name="fecha" onchange="this.form.submit()">
+      {% for e in entidad.estados | reverse %}<option value="{{ e.fecha_corte.isoformat() }}" {% if e.id == estado.id %}selected{% endif %}>{{ e.fecha_corte.strftime('%d/%m/%Y') }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="acciones" style="margin:0">
+    <a class="boton" href="/monitoreo/entidades/{{ entidad.id }}/plan?fecha={{ f }}">Plan de acción y estrategias</a>
+    <a class="boton secundario" href="/monitoreo/entidades/{{ entidad.id }}/excel?fecha={{ f }}">Exportar a Excel</a>
+    <a class="boton secundario" href="/monitoreo/entidades/{{ entidad.id }}/rubros?fecha={{ f }}">Rubros financieros</a>
+    <a class="boton secundario" href="/monitoreo/carga?entidad_id={{ entidad.id }}">Importar</a>
+  </div>
+</form>
+
+{% if ag.descuadre and (ag.descuadre | abs) > (ag.activo_total * 0.001) %}
+  <div class="aviso error">El balance no cuadra: Activo − Pasivo − Capital = {{ ag.descuadre | moneda }}. Revise el mapeo de cuentas.</div>
+{% endif %}
+
+<div class="aviso {{ 'error' if res.deficientes else 'exito' }}">
+  En <strong>{{ entidad.nombre }}</strong> el <strong>{{ res.pct_deficientes | pctd(0) }}</strong> de los indicadores presentan deficiencias:
+  <strong>{{ res.deficientes | length }} de {{ res.evaluados }}</strong> indicadores evaluados deben mejorar
+  {% if res.alertas %}y {{ res.alertas | length }} están en alerta (a menos de 10 % de su meta){% endif %}.
+  {% if res.deficientes %}Indicadores deficientes:
+    {% for d in res.deficientes %}<a class="codigo deficiente" href="/monitoreo/entidades/{{ entidad.id }}/indicador/{{ d.codigo }}?fecha={{ f }}">{{ d.codigo }}</a>{% endfor %}
+  {% endif %}
+</div>
+
+<div class="tarjetas">
+  <div class="tarjeta"><div class="etiqueta">Activo total</div><div class="valor">{{ ag.activo_total | moneda }}</div>
+    <div class="detalle">Cartera bruta {{ ag.cartera_bruta | moneda }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Morosidad (A1)</div><div class="valor {{ 'rojo' if pc.A1.estatus == 'deficiente' else 'verde' }}">{{ pc.A1 | vind }}</div>
+    <div class="detalle">Meta {{ pc.A1.ind.meta }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Capital institucional (E8)</div><div class="valor {{ 'rojo' if pc.E8.estatus == 'deficiente' else 'verde' }}">{{ pc.E8 | vind }}</div>
+    <div class="detalle">Meta {{ pc.E8.ind.meta }}</div></div>
+  <div class="tarjeta"><div class="etiqueta">Suficiencia PCE IFRS 9 (I7)</div><div class="valor {{ 'rojo' if pc.I7.estatus == 'deficiente' else 'verde' }}">{{ pc.I7 | vind }}</div>
+    <div class="detalle">{% if res.pce.deficit %}Déficit {{ res.pce.deficit | moneda }}{% else %}Excedente {{ res.pce.excedente | moneda }}{% endif %}</div></div>
+  <div class="tarjeta"><div class="etiqueta">ROA (R12)</div><div class="valor {{ 'rojo' if pc.R12.estatus == 'deficiente' else 'verde' }}">{{ pc.R12 | vind }}</div>
+    <div class="detalle">Excedente {{ ag.excedente_neto | moneda }}</div></div>
+</div>
+
+<details class="no-imprimir" {% if estado.inflacion is none %}open{% endif %}>
+  <summary><strong>Parámetros del periodo</strong> — inflación {{ estado.inflacion | pctd }} · tasa de mercado {{ estado.tasa_mercado | pctd }} · tasa empresarial {{ estado.tasa_empresarial | pctd }}</summary>
+  <form class="filtros" method="post" action="/monitoreo/entidades/{{ entidad.id }}/parametros" style="margin-top:10px">
+    <input type="hidden" name="fecha" value="{{ f }}">
+    <div><label>Inflación anual (%)</label><input class="chico" name="inflacion" value="{{ '%.2f' % (estado.inflacion * 100) if estado.inflacion is not none else '' }}"></div>
+    <div><label>Tasa de mercado (%)</label><input class="chico" name="tasa_mercado" value="{{ '%.2f' % (estado.tasa_mercado * 100) if estado.tasa_mercado is not none else '' }}"></div>
+    <div><label>Tasa empresarial (%)</label><input class="chico" name="tasa_empresarial" value="{{ '%.2f' % (estado.tasa_empresarial * 100) if estado.tasa_empresarial is not none else '' }}"></div>
+    <button class="boton" type="submit">Guardar</button>
+  </form>
+  <p class="nota">Se usan para evaluar R1, R2, R3, R5, R13 y las señales expansivas (S). Sin ellos esos indicadores quedan como informativos.</p>
+</details>
+
+<h3>Indicadores</h3>
+<div class="tabla-scroll">
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Código</th><th>Indicador</th><th>Meta</th>
+      {% for e, _ in historial[:-1] %}<th class="num">{{ e.fecha_corte.strftime('%d/%m/%y') }}</th>{% endfor %}
+      <th class="num">{{ estado.fecha_corte.strftime('%d/%m/%y') }}</th><th>Estatus</th><th class="num">Ajuste requerido</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% set ns = namespace(grupo=None) %}
+  {% for fila in res.filas %}
+    {% if fila.ind.grupo != ns.grupo %}
+      {% set ns.grupo = fila.ind.grupo %}
+      <tr class="grupo"><td colspan="{{ 5 + historial|length }}">{{ ns.grupo }} — {{ grupos[ns.grupo] }}</td></tr>
+    {% endif %}
+    <tr class="fila-{{ fila.estatus }}">
+      <td><a class="codigo {{ fila.estatus }}" href="/monitoreo/entidades/{{ entidad.id }}/indicador/{{ fila.codigo }}?fecha={{ f }}">{{ fila.codigo }}</a></td>
+      <td>{{ fila.ind.nombre }}{% if fila.nota %}<br><span class="nota">{{ fila.nota }}</span>{% endif %}</td>
+      <td class="nota">{{ fila.ind.meta }}</td>
+      {% for e, r in historial[:-1] %}<td class="num nota">{{ r.por_codigo[fila.codigo] | vind }}</td>{% endfor %}
+      <td class="num"><strong>{{ fila | vind }}</strong></td>
+      <td>{{ pastilla(fila.estatus) }}</td>
+      <td class="num nota">{% if fila.brecha is not none %}{{ fila.brecha | moneda }}{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="nota">“Ajuste requerido”: importe en que debe aumentar (positivo) o disminuir (negativo) el numerador del indicador para alcanzar su meta, manteniendo el denominador.
+  Los rendimientos y costos (R) se anualizan ({{ '%.2f' % res.factor }}×) y se calculan sobre saldos promedio del ejercicio.</p>
+
+<h3 id="ifrs9">IFRS 9 — Pérdida crediticia esperada por etapas</h3>
+{% set pce = res.pce %}
+<p class="descripcion">Fuente de la PCE: <strong>{{ pce.fuente_pce }}</strong>. Factor prospectivo ponderado {{ '%.4f' % pce.factor }} · LGD {{ pce.lgd | pctd }}.
+  {% if pce.asignacion_estimada %}La reserva por etapa es una asignación estimada de la EPRC total (no se reportó la reserva por etapa).{% endif %}
+  <a href="/monitoreo/entidades/{{ entidad.id }}/ifrs9">Configurar parámetros IFRS 9</a></p>
+<div class="dos-columnas">
+  <table class="datos">
+    <thead><tr><th>Etapa</th><th class="num">Cartera</th><th class="num">%</th><th class="num">PD aj.</th><th class="num">PCE</th><th class="num">Reserva</th><th class="num">Suficiencia</th></tr></thead>
+    <tbody>
+    {% for e in pce.etapas %}
+      <tr><td>Etapa {{ e.etapa }}</td><td class="num">{{ e.cartera | moneda }}</td><td class="num">{{ e.participacion | pctd(1) }}</td>
+        <td class="num">{{ e.pd | pctd(1) }}</td><td class="num">{{ e.pce | moneda }}</td><td class="num">{{ e.reserva | moneda }}</td>
+        <td class="num">{% if e.suficiencia is not none %}<span class="semaforo {{ 'cumple' if e.suficiencia >= 1 else 'deficiente' }}"></span>{{ e.suficiencia | pctd(0) }}{% else %}—{% endif %}</td></tr>
+    {% endfor %}
+      <tr class="total"><td>Total</td><td class="num">{{ pce.cartera_total | moneda }}</td><td class="num">100%</td><td></td>
+        <td class="num">{{ pce.pce_total | moneda }}</td><td class="num">{{ pce.reserva_total | moneda }}</td><td class="num">{{ pce.suficiencia | pctd(0) }}</td></tr>
+    </tbody>
+  </table>
+  <table class="datos">
+    <thead><tr><th>Escenario</th><th class="num">Peso</th><th class="num">Factor PD</th><th class="num">PCE</th><th class="num">Déficit</th></tr></thead>
+    <tbody>
+    {% for e in pce.escenarios %}
+      <tr><td>{{ e.nombre }}</td><td class="num">{{ e.peso | pctd(0) }}</td><td class="num">{{ '%.2f' % e.factor }}</td><td class="num">{{ e.pce | moneda }}</td>
+        <td class="num {{ 'rojo' if e.deficit else '' }}">{{ e.deficit | moneda }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if plan %}
+<h3>Prioridades del plan de acción</h3>
+<table class="datos">
+  <thead><tr><th>Prioridad</th><th>Indicador</th><th>Causas probables</th><th>Primera estrategia</th></tr></thead>
+  <tbody>
+  {% for p in plan[:6] %}
+    <tr>
+      <td>{{ p.prioridad }}</td>
+      <td><a class="codigo {{ p.fila.estatus }}" href="/monitoreo/entidades/{{ entidad.id }}/indicador/{{ p.codigo }}?fecha={{ f }}">{{ p.codigo }}</a> {{ p.fila.ind.nombre }}</td>
+      <td>{% for c in p.causas %}<span class="codigo {{ pc[c].estatus if c in pc else '' }}">{{ c }}</span>{% else %}—{% endfor %}</td>
+      <td class="nota">{{ p.estrategias[0] if p.estrategias else '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<a class="boton" href="/monitoreo/entidades/{{ entidad.id }}/plan?fecha={{ f }}">Ver plan de acción completo</a>
+{% endif %}
+
+<details class="no-imprimir" style="margin-top:28px">
+  <summary>Administrar</summary>
+  <form method="post" action="/monitoreo/entidades/{{ entidad.id }}/periodos/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar la información del corte {{ estado.fecha_corte.strftime('%d/%m/%Y') }}?')">
+    <input type="hidden" name="fecha" value="{{ f }}"><button class="boton peligro chico" type="submit">Eliminar este corte</button>
+  </form>
+  <form method="post" action="/monitoreo/entidades/{{ entidad.id }}/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar la entidad y toda su información?')">
+    <button class="boton peligro chico" type="submit">Eliminar entidad</button>
+  </form>
+</details>
+{% endblock %}

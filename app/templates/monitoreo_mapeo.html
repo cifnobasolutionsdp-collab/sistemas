@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Mapeo de cuentas{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Mapeo de cuentas contables a rubros</h2>
+<p class="descripcion">Cada cuenta de detalle de la balanza se asigna al rubro de la regla con el prefijo más largo que coincida.
+  Las reglas propias de una entidad tienen prioridad sobre las generales. Las reglas generales iniciales siguen un catálogo de referencia
+  de 4 dígitos (1 Activo · 2 Pasivo · 3 Capital · 4 Ingresos · 5 Gastos); ajústelas al catálogo de cada entidad.</p>
+<form class="filtros" method="get">
+  <div><label>Reglas de</label><select name="entidad_id" onchange="this.form.submit()">
+    <option value="">Generales (todas las entidades)</option>
+    {% for e in entidades %}<option value="{{ e.id }}" {% if e.id == entidad_id %}selected{% endif %}>{{ e.nombre }}</option>{% endfor %}
+  </select></div>
+</form>
+
+<div class="formulario ancho">
+  <form method="post" action="/monitoreo/mapeo">
+    <input type="hidden" name="entidad_id" value="{{ entidad_id or '' }}">
+    <div class="fila-campos">
+      <div class="campo"><label>Prefijo de cuenta *</label><input name="prefijo" required placeholder="Ej. 1301"></div>
+      <div class="campo"><label>Rubro *</label><select name="rubro">
+        {% for r in rubros %}<option value="{{ r.clave }}">{{ r.seccion }} — {{ r.concepto }}</option>{% endfor %}</select></div>
+      <div class="campo"><label>Descripción</label><input name="descripcion"></div>
+    </div>
+    <button class="boton" type="submit">Agregar / actualizar regla</button>
+  </form>
+</div>
+
+<table class="datos">
+  <thead><tr><th>Prefijo</th><th>Rubro</th><th>Descripción</th><th></th></tr></thead>
+  <tbody>
+  {% for r in reglas %}
+    <tr><td><code>{{ r.prefijo }}</code></td>
+      <td>{{ rubros_por_clave[r.rubro].concepto if r.rubro in rubros_por_clave else r.rubro }} <span class="nota">({{ r.rubro }})</span></td>
+      <td>{{ r.descripcion }}</td>
+      <td><form method="post" action="/monitoreo/mapeo/{{ r.id }}/eliminar"><button class="boton chico peligro" type="submit">Eliminar</button></form></td></tr>
+  {% else %}
+    <tr><td colspan="4">Sin reglas{% if entidad_id %} propias; se aplican las reglas generales{% endif %}.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Plan de acción — {{ entidad.nombre }}{% endblock %}
+{% block contenido %}
+{% set pc = res.por_codigo %}
+{% set f = estado.fecha_corte.isoformat() %}
+<p class="no-imprimir"><a href="/monitoreo/entidades/{{ entidad.id }}?fecha={{ f }}">← {{ entidad.nombre }}</a></p>
+<h2 class="titulo">Plan de acción para mejorar indicadores</h2>
+<p class="descripcion">{{ entidad.nombre }} ({{ entidad.tipo }}) · corte al {{ estado.fecha_corte.strftime('%d/%m/%Y') }}</p>
+
+<div class="aviso {{ 'error' if res.deficientes else 'exito' }}">
+  El <strong>{{ res.pct_deficientes | pctd(0) }}</strong> de los indicadores presentan deficiencias ({{ res.deficientes | length }} de {{ res.evaluados }});
+  {{ res.alertas | length }} en alerta. Los indicadores se ordenan por <strong>efecto palanca</strong>: primero los que, al corregirse,
+  mejoran a más indicadores (según la interrelación PERLAS) y en especial a otros que también están fuera de meta.
+</div>
+<div class="acciones no-imprimir">
+  <button class="boton" onclick="window.print()">Imprimir / PDF</button>
+  <a class="boton secundario" href="/monitoreo/entidades/{{ entidad.id }}/excel?fecha={{ f }}">Exportar a Excel</a>
+</div>
+
+{% for p in plan %}
+<div class="plan-item">
+  <h3><span class="codigo {{ p.fila.estatus }}">{{ p.codigo }}</span> {{ p.fila.ind.nombre }}
+    <span class="pastilla {{ 'mal' if p.prioridad == 'Alta' else ('medio' if p.prioridad == 'Media' else 'info') }}">Prioridad {{ p.prioridad }}</span></h3>
+  <div class="meta-linea">Valor actual <strong>{{ p.fila | vind }}</strong> · Meta {{ p.fila.ind.meta }}
+    {% if p.fila.brecha is not none %} · Ajuste requerido en el numerador: <strong>{{ p.fila.brecha | moneda }}</strong>{% endif %}</div>
+  {% if p.causas %}<div class="meta-linea">Causas probables (indicadores que lo afectan y están fuera de meta):
+    {% for c in p.causas %}<span class="codigo {{ pc[c].estatus if c in pc else '' }}" title="{{ p.nombres.get(c, '') }}">{{ c }}</span>{% endfor %}</div>{% endif %}
+  {% if p.arrastra %}<div class="meta-linea">Al corregirlo también mejora:
+    {% for c in p.arrastra %}<span class="codigo {{ pc[c].estatus if c in pc else '' }}" title="{{ p.nombres.get(c, '') }}">{{ c }}</span>{% endfor %}</div>{% endif %}
+  {% if p.estrategias %}
+  <strong>Estrategias recomendadas:</strong>
+  <ol class="estrategias">{% for e in p.estrategias %}<li>{{ e }}</li>{% endfor %}</ol>
+  {% endif %}
+</div>
+{% else %}
+<div class="aviso exito">Todos los indicadores evaluados cumplen su meta. Mantenga el seguimiento mensual.</div>
+{% endfor %}
+{% endblock %}

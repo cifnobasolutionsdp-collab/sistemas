@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titulo %}Metas de indicadores{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Metas de indicadores</h2>
+<p class="descripcion">Metas por omisión basadas en las metas de excelencia PERLAS (WOCCU) del archivo de referencia y en buenas prácticas IFRS 9.
+  Capture un valor personalizado para sobrescribirlas (en %, o en veces para los indicadores de apalancamiento). Deje en blanco para usar la meta por omisión.
+  Las metas que dependen de otros indicadores o de la inflación/tasas (R1–R8, R13, S) se evalúan automáticamente.</p>
+<form class="filtros" method="get">
+  <div><label>Tipo de entidad</label><select name="tipo" onchange="this.form.submit()">
+    {% for k, v in tipos.items() %}<option value="{{ k }}" {% if k == tipo %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+</form>
+<form method="post">
+  <input type="hidden" name="tipo" value="{{ tipo }}">
+  <table class="datos">
+    <thead><tr><th>Código</th><th>Indicador</th><th>Meta por omisión</th><th>Mínimo personalizado</th><th>Máximo personalizado</th></tr></thead>
+    <tbody>
+    {% for r in filas %}{% set fm = r.ind.formato %}{% set k = 1 if fm == 'veces' else 100 %}
+      <tr>
+        <td><strong>{{ r.ind.codigo }}</strong></td><td>{{ r.ind.nombre }}</td>
+        <td class="nota">{{ r.ind.meta }} (mín. {{ r.omision[0] | limite(fm) }} · máx. {{ r.omision[1] | limite(fm) }})</td>
+        <td><input class="chico" name="min_{{ r.ind.codigo }}" value="{{ '%g' % (r.personal.minimo * k) if r.personal and r.personal.minimo is not none else '' }}"></td>
+        <td><input class="chico" name="max_{{ r.ind.codigo }}" value="{{ '%g' % (r.personal.maximo * k) if r.personal and r.personal.maximo is not none else '' }}"></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <button class="boton" type="submit">Guardar metas</button>
+</form>
+{% endblock %}
