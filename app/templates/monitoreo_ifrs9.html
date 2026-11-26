@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Parámetros IFRS 9 — {{ entidad.nombre }}{% endblock %}
+{% block contenido %}
+<p><a href="/monitoreo/entidades/{{ entidad.id }}">← {{ entidad.nombre }}</a></p>
+<h2 class="titulo">Parámetros IFRS 9 — pérdida crediticia esperada</h2>
+<p class="descripcion">PCE = EAD × PD × LGD × factor prospectivo. Se utilizan sólo si la entidad no reporta su propia PCE por etapa
+  (rubros <code>pe_etapa1..3</code>). Calibre las PD y la LGD con la experiencia de pérdida de la entidad y la metodología vigente.</p>
+<div class="formulario">
+  <form method="post">
+    <div class="fila-campos">
+      <div class="campo"><label>PD etapa 1 — 12 meses (%)</label><input name="pd_etapa1" value="{{ '%.2f' % (p.pd_etapa1 * 100) }}"></div>
+      <div class="campo"><label>PD etapa 2 — vida del crédito (%)</label><input name="pd_etapa2" value="{{ '%.2f' % (p.pd_etapa2 * 100) }}"></div>
+      <div class="campo"><label>PD etapa 3 (%)</label><input name="pd_etapa3" value="{{ '%.2f' % (p.pd_etapa3 * 100) }}"></div>
+      <div class="campo"><label>LGD — severidad (%)</label><input name="lgd" value="{{ '%.2f' % (p.lgd * 100) }}"></div>
+    </div>
+    <h4>Escenarios macroeconómicos (forward looking)</h4>
+    {% for i in range(3) %}{% set e = p.escenarios[i] if i < p.escenarios|length else {} %}
+    <div class="fila-campos">
+      <div class="campo"><label>Escenario</label><input name="esc_nombre_{{ i }}" value="{{ e.nombre or '' }}"></div>
+      <div class="campo"><label>Peso (%)</label><input name="esc_peso_{{ i }}" value="{{ '%.1f' % (e.peso * 100) if e.peso is defined else '' }}"></div>
+      <div class="campo"><label>Multiplicador de PD</label><input name="esc_factor_{{ i }}" value="{{ e.factor if e.factor is defined else '' }}"></div>
+    </div>
+    {% endfor %}
+    <button class="boton" type="submit" name="accion" value="guardar">Guardar</button>
+    <button class="boton secundario" type="submit" name="accion" value="restablecer">Restablecer valores por omisión</button>
+  </form>
+</div>
+{% endblock %}

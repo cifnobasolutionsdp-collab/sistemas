@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block titulo %}Evaluación y Monitoreo Financiero{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Sistema de Evaluación y Monitoreo Financiero</h2>
+<p class="descripcion">
+  Las SOCAPS y SOFOMES importan su balanza de comprobación o sus estados financieros; el sistema calcula los indicadores del
+  modelo <strong>S-O-L-I-D-E-Z</strong> — Salvaguarda de cartera, Orden del balance, Liquidez, Ingresos y rentabilidad,
+  Deterioro y pérdida esperada (IFRS 9), Eficiencia de activos y Zona de crecimiento —, asigna el <strong>Índice SOLIDEZ</strong>
+  (0-100), identifica los indicadores deficientes, su interrelación y las estrategias para mejorarlos.
+</p>
+
+<div class="acciones">
+  <a class="boton" href="/monitoreo/carga">Importar información</a>
+  <a class="boton secundario" href="/monitoreo/plantilla/estados.xlsx">Lay out de estados financieros (.xlsx)</a>
+  <a class="boton secundario" href="/monitoreo/plantilla/balanza.xlsx">Lay out de balanza (.xlsx)</a>
+</div>
+
+<h3>Semáforo por entidad (último corte)</h3>
+<div class="tabla-scroll">
+<table class="datos">
+  <thead>
+    <tr>
+      <th>Entidad</th><th>Tipo</th><th>Corte</th><th class="num">Índice SOLIDEZ</th>
+      <th class="num">Activo total</th>
+      <th class="num">Morosidad (E1)</th>
+      <th class="num">Capital inst. (O8)</th>
+      <th class="num">Suficiencia PCE (D7)</th>
+      <th>Indicadores</th><th class="num">% deficientes</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in resumen %}
+    <tr>
+      <td><strong>{{ r.entidad.nombre }}</strong><br><span class="nota">{{ r.entidad.clave }}{% if r.entidad.nivel %} · {{ r.entidad.nivel }}{% endif %}</span></td>
+      <td>{{ r.entidad.tipo }}</td>
+      {% if r.res %}
+        {% set pc = r.res.por_codigo %}
+        <td>{{ r.estado.fecha_corte.strftime('%d/%m/%Y') }}</td>
+        <td class="num"><strong>{{ '%.0f' % r.res.indice.puntaje if r.res.indice.puntaje is not none else '—' }}</strong>
+          <span class="pastilla {{ {'cumple': 'ok', 'alerta': 'medio', 'deficiente': 'mal'}.get(r.res.indice.clase, 'na') }}">{{ r.res.indice.calificacion }}</span></td>
+        <td class="num">{{ r.res.agregados.activo_total | moneda }}</td>
+        {% for c in ['E1', 'O8', 'D7'] %}
+          <td class="num"><span class="semaforo {{ pc[c].estatus }}"></span>{{ pc[c] | vind }}</td>
+        {% endfor %}
+        <td style="min-width:160px">
+          {% set t = r.res.evaluados or 1 %}
+          <div class="medidor">
+            <span class="ok" style="width: {{ 100 * r.res.cumplen / t }}%"></span>
+            <span class="al" style="width: {{ 100 * r.res.alertas|length / t }}%"></span>
+            <span class="ma" style="width: {{ 100 * r.res.deficientes|length / t }}%"></span>
+          </div>
+          <span class="nota">{{ r.res.cumplen }} cumplen · {{ r.res.alertas|length }} alerta · {{ r.res.deficientes|length }} deficientes</span>
+        </td>
+        <td class="num"><strong>{{ r.res.pct_deficientes | pctd(0) }}</strong></td>
+        <td><a class="boton chico" href="/monitoreo/entidades/{{ r.entidad.id }}">Ver monitoreo</a></td>
+      {% else %}
+        <td colspan="8" class="nota">Sin información cargada</td>
+        <td><a class="boton chico secundario" href="/monitoreo/carga?entidad_id={{ r.entidad.id }}">Importar</a></td>
+      {% endif %}
+    </tr>
+  {% else %}
+    <tr><td colspan="11">No hay entidades registradas. Dé de alta la primera entidad abajo.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h3>Alta de entidad</h3>
+<div class="formulario">
+  <form method="post" action="/monitoreo/entidades">
+    <div class="fila-campos">
+      <div class="campo"><label>Clave *</label><input name="clave" required maxlength="30"></div>
+      <div class="campo"><label>Tipo *</label>
+        <select name="tipo">{% for k, v in tipos.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+      </div>
+    </div>
+    <div class="campo"><label>Nombre / razón social *</label><input name="nombre" required maxlength="200"></div>
+    <div class="campo"><label>Nivel de operación / régimen</label><input name="nivel" maxlength="60" placeholder="Ej. Nivel II, SOFOM E.N.R."></div>
+    <button class="boton" type="submit">Registrar entidad</button>
+  </form>
+</div>
+{% endblock %}

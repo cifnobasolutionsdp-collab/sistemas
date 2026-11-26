@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titulo %}Importar información financiera{% endblock %}
+{% block contenido %}
+<h2 class="titulo">Importar balanza de comprobación o estados financieros</h2>
+<p class="descripcion">
+  Formatos: Excel (.xlsx, .xls) o CSV. Si ya existe información de la entidad a la misma fecha de corte, se actualiza
+  (la balanza reemplaza balance y resultados y conserva los datos complementarios).
+</p>
+
+{% if resultado %}
+  {% if resultado.estatus == 'Exitosa' %}
+    <div class="aviso exito">Importación exitosa para <strong>{{ entidad.nombre }}</strong> al {{ fecha_corte.strftime('%d/%m/%Y') }}.
+      <a href="/monitoreo/entidades/{{ entidad.id }}?fecha={{ fecha_corte.isoformat() }}">Ver monitoreo →</a></div>
+  {% elif resultado.estatus == 'Parcial' %}
+    <div class="aviso error">Importación con observaciones para <strong>{{ entidad.nombre }}</strong>. Revise los mensajes.
+      <a href="/monitoreo/entidades/{{ entidad.id }}?fecha={{ fecha_corte.isoformat() }}">Ver monitoreo →</a></div>
+  {% else %}
+    <div class="aviso error">La importación falló.</div>
+  {% endif %}
+  {% if resultado.mensajes %}<pre class="errores">{{ resultado.mensajes | join('\n') }}</pre>{% endif %}
+{% endif %}
+
+{% if not entidades %}
+  <div class="aviso info">Primero registre una entidad en <a href="/monitoreo">Evaluación y Monitoreo Financiero</a>.</div>
+{% else %}
+<div class="formulario">
+  <form method="post" enctype="multipart/form-data">
+    <div class="fila-campos">
+      <div class="campo"><label>Entidad *</label>
+        <select name="entidad_id" required>
+          {% for e in entidades %}<option value="{{ e.id }}" {% if e.id == entidad_id %}selected{% endif %}>{{ e.nombre }} ({{ e.tipo }})</option>{% endfor %}
+        </select>
+      </div>
+      <div class="campo"><label>Fecha de corte *</label><input type="date" name="fecha_corte" required></div>
+    </div>
+    <div class="campo"><label>Tipo de archivo *</label>
+      <select name="tipo">
+        <option value="balanza">Balanza de comprobación (cuentas contables → rubros por mapeo)</option>
+        <option value="estados">Lay out de estados financieros / datos complementarios (clave + importe)</option>
+      </select>
+    </div>
+    <div class="campo"><label>Archivo *</label><input type="file" name="archivo" accept=".xlsx,.xlsm,.xls,.csv,.txt" required></div>
+    <div class="fila-campos">
+      <div class="campo"><label>Inflación anual (%)</label><input name="inflacion" placeholder="4.5"></div>
+      <div class="campo"><label>Tasa de mercado (%)</label><input name="tasa_mercado" placeholder="CETES 28"></div>
+      <div class="campo"><label>Tasa empresarial (%)</label><input name="tasa_empresarial" placeholder="Tasa activa objetivo"></div>
+    </div>
+    <button class="boton" type="submit">Importar</button>
+    <a class="boton secundario" href="/monitoreo/plantilla/estados.xlsx">Lay out de estados (.xlsx)</a>
+    <a class="boton secundario" href="/monitoreo/plantilla/balanza.xlsx">Lay out de balanza (.xlsx)</a>
+  </form>
+</div>
+<p class="nota">La balanza no incluye la morosidad por antigüedad, castigos, reservas por etapa ni número de socios: importe
+  después la hoja <em>Datos complementarios</em> del lay out de estados financieros con la misma fecha de corte.</p>
+{% endif %}
+
+<h3>Bitácora de importaciones</h3>
+<table class="datos">
+  <thead><tr><th>Fecha (UTC)</th><th>Entidad</th><th>Corte</th><th>Tipo</th><th>Archivo</th><th class="num">Renglones</th><th>Estatus</th></tr></thead>
+  <tbody>
+  {% for c in historial %}
+    <tr>
+      <td>{{ c.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>{{ c.entidad.nombre if c.entidad else '—' }}</td>
+      <td>{{ c.fecha_corte.strftime('%d/%m/%Y') if c.fecha_corte else '' }}</td>
+      <td>{{ 'Balanza' if c.tipo == 'balanza' else 'Estados financieros' }}</td>
+      <td>{{ c.archivo }}</td>
+      <td class="num">{{ c.renglones | num }}</td>
+      <td><span class="pastilla {{ 'ok' if c.estatus == 'Exitosa' else ('medio' if c.estatus == 'Parcial' else 'mal') }}">{{ c.estatus }}</span></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7">Sin importaciones registradas.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

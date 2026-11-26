@@ -2,7 +2,9 @@
 
 Aplicación web con módulos de catálogos, consultas, procesos y reportes,
 orientada al cumplimiento de la Ley de Instituciones de Crédito, la LRASCAP
-y las disposiciones de la CNBV en materia de riesgo de crédito.
+y las disposiciones de la CNBV en materia de riesgo de crédito. Incluye el
+Sistema de Evaluación y Monitoreo Financiero (indicadores + IFRS 9) a partir de
+balanzas de comprobación y estados financieros.
 """
 from pathlib import Path
 
@@ -14,7 +16,8 @@ from . import consultas
 from .database import Base, engine, get_db
 from .plantillas import templates
 from .riesgo.provisionamiento import calcular_provisionamiento
-from .routers import catalogos, consultas as consultas_router, procesos, reportes
+from .monitoreo import modelos as _modelos_monitoreo  # noqa: F401  (registra tablas)
+from .routers import catalogos, consultas as consultas_router, monitoreo, procesos, reportes
 
 Base.metadata.create_all(bind=engine)
 
@@ -25,6 +28,7 @@ app.include_router(catalogos.router)
 app.include_router(consultas_router.router)
 app.include_router(procesos.router)
 app.include_router(reportes.router)
+app.include_router(monitoreo.router)
 
 
 @app.get("/")

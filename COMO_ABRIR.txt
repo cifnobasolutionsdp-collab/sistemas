@@ -1,0 +1,23 @@
+SISTEMA DE EVALUACIÓN Y MONITOREO FINANCIERO — CÓMO ABRIRLO
+===========================================================
+
+1. Instale Python (sólo la primera vez)
+   - Entre a https://www.python.org/downloads/ y descargue la versión más reciente.
+   - En Windows, al instalar MARQUE la casilla "Add Python to PATH".
+
+2. Descomprima el archivo .zip
+   - Clic derecho sobre el .zip → "Extraer todo".
+
+3. Abra el sistema con doble clic
+   - Windows: iniciar_windows.bat
+   - Mac:     iniciar_mac.command  (la primera vez: clic derecho → Abrir)
+
+   La primera vez tarda unos minutos porque instala sus componentes y carga
+   datos de demostración. Después abre en segundos.
+
+4. Se abrirá su navegador en  http://localhost:8000/monitoreo
+   - NO cierre la ventana negra mientras use el sistema.
+   - Para salir, cierre esa ventana.
+
+Si el navegador no se abre solo, escriba esa dirección manualmente.
+Manual completo: docs/monitoreo_financiero.md

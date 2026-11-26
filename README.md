@@ -56,6 +56,28 @@ Todas incluyen **Saldo Vigente y Saldo Vencido**:
 - **Reportes personalizados**: dimensión, periodo, orden y número de
   renglones a elección, con **exportación a CSV**.
 
+### 5. Sistema de Evaluación y Monitoreo Financiero
+Las SOCAPS y SOFOMES importan su **balanza de comprobación** o sus **estados
+financieros** (Excel o CSV) y el sistema genera:
+
+- **Modelo S-O-L-I-D-E-Z** de 58 indicadores en siete dimensiones:
+  Salvaguarda de cartera, Orden del balance, Liquidez, Ingresos y
+  rentabilidad, Deterioro y pérdida esperada (IFRS 9), Eficiencia de activos y
+  Zona de crecimiento. Semáforo con histórico por corte, metas
+  parametrizables y ajuste requerido en pesos para alcanzar cada meta.
+- **Índice SOLIDEZ** (0-100) por dimensión y global, con calificación
+  Sólida / Estable / En vigilancia / Crítica.
+- **IFRS 9**: cartera por etapas, pérdida crediticia esperada (PD × LGD × EAD
+  con escenarios prospectivos), suficiencia de reservas, cobertura de etapa
+  3, costo de riesgo, migración entre etapas y capital ajustado.
+- **Interrelación** de indicadores y **estrategias** para mejorar cada uno.
+- **Plan de acción** priorizado por efecto palanca, imprimible, y
+  **exportación a Excel**.
+- Mapeo configurable de cuentas contables a rubros (general o por entidad).
+
+Detalle de lay outs, fórmulas y metodología en `docs/monitoreo_financiero.md`.
+Datos de demostración: `python scripts/seed_monitoreo.py`.
+
 ## Tecnología
 
 - Python 3.10+ · FastAPI · SQLAlchemy 2 · Jinja2
@@ -88,7 +110,9 @@ Archivo de ejemplo del lay out: `data/layout_ejemplo.csv` (se regenera con
 pytest
 ```
 
-Cubren: clasificación por mora, provisionamiento, pérdida esperada y
+Cubren: importación de balanzas y estados financieros, indicadores financieros,
+pérdida esperada IFRS 9 y plan de acción del monitoreo financiero;
+clasificación por mora, provisionamiento, pérdida esperada y
 escenarios de estrés del VaR (con reproducibilidad por semilla), índice de
 concentración, validación de la carga CSV y pruebas de humo de todas las
 rutas de la aplicación.
