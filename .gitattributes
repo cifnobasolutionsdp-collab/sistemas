@@ -1,0 +1,3 @@
+*.bat text eol=crlf
+COMO_ABRIR.txt text eol=crlf
+*.command text eol=lf
